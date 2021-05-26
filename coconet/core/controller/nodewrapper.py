@@ -1,6 +1,6 @@
 import math
-from typing import Union
 
+import numpy as np
 import torch
 
 from coconet.core.controller.pynevertemp.nodes import LayerNode, ReLUNode, FullyConnectedNode, BatchNormNode, \
@@ -20,13 +20,18 @@ class NodeOps:
         Parameters
         ----------
         class_name: str
+            The name of the node type.
         node_id: str
+            The unique identifier of the node.
         data: dict
+            The dictionary containing the node data.
         in_dim: tuple
+            The input of the node.
 
         Returns
         ----------
         LayerNode
+            The concrete LayerNode object.
 
         """
 
@@ -112,18 +117,23 @@ class NodeOps:
         return node
 
     @staticmethod
-    def update_node_input(node: LayerNode, in_dim: Union[tuple, int]) -> LayerNode:
+    def update_node_input(node: LayerNode, in_dim: tuple) -> LayerNode:
         """
-        This method updates the node passed as its input changes.
+        This method updates the in_dim and out_dim parameters of
+        the node passed. A number of controls is performed and the
+        node is returned.
 
         Parameters
         ----------
         node: LayerNode
-        in_dim: Union[tuple, int]
+            The node to update.
+        in_dim: tuple
+            The input shape.
 
         Returns
         ----------
         LayerNode
+            The updated node.
 
         """
 
@@ -276,8 +286,9 @@ class NodeOps:
     @staticmethod
     def update_node_data(node: LayerNode, data: dict) -> LayerNode:
         """
-        This method updates the given node with the new data given.
-        The updated node is returned.
+        This method updates the node data with the ones contained
+        in the dictionary. For each parameter a number of controls
+        is performed and the node is finally returned.
 
         Parameters
         ----------
@@ -291,11 +302,31 @@ class NodeOps:
         """
 
         if isinstance(node, FullyConnectedNode):
-            node.update(node.in_dim[-1],
-                        data["out_features"],
-                        node.in_dim,
-                        Tensor((data["out_features"], node.in_dim[-1])),
-                        Tensor((data["out_features"],)))
+            if type(data["in_features"]) == int and data["in_features"] > 0:
+                node.in_features = data["in_features"]
+            else:
+                raise Exception('FullyConnected - Wrong ''in_features'' value, should be int and > 0')
+
+            if type(data["out_features"]) == int and data["out_features"] > 0:
+                node.out_features = data["out_features"]
+            else:
+                raise Exception('FullyConnected - Wrong ''out_features'' value, should be int and > 0')
+
+            weight = data["weight"]
+            if weight is None:
+                weight = np.random.normal(size=[node.out_features, node.in_features])
+            if weight.shape == (node.out_features, node.in_features):
+                node.weight = weight
+            else:
+                raise Exception('FullyConnected - Wrong weight dimension')
+
+            bias = data["bias"]
+            if bias is None:
+                bias = np.random.normal(size=[node.out_features])
+            if bias.shape == (node.out_features,):
+                node.bias = bias
+            else:
+                raise Exception('FullyConnected - Wrong bias dimension')
         elif isinstance(node, BatchNormNode):
             node.update(data["num_features"],
                         node.in_dim,
