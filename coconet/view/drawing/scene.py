@@ -7,6 +7,8 @@ from PyQt5.QtCore import Qt, QPoint, QRectF, pyqtSignal, QRect
 from PyQt5.QtGui import QBrush, QColor, QPen, QPainter
 from PyQt5.QtWidgets import QGraphicsRectItem, QWidget, QGraphicsScene, QApplication, QGraphicsItem, \
     QAction
+
+from coconet.core.controller.nodewrapper import NodeOps
 from coconet.core.controller.pynevertemp.networks import SequentialNetwork, NeuralNetwork
 from coconet.core.controller.pynevertemp.tensor import Tensor
 
@@ -269,7 +271,7 @@ class Canvas(QWidget):
             if origin_item is not None and destination_item is not None:
                 try:
                     # Update the node input
-                    self.renderer.update_node_input(
+                    NodeOps.update_node_input(
                         self.renderer.project.NN.nodes[destination_id],
                         self.renderer.project.NN.nodes[origin_id].out_dim)
 
