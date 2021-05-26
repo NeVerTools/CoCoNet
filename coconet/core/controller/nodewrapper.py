@@ -1,4 +1,7 @@
+import math
 from typing import Union
+
+import torch
 
 from coconet.core.controller.pynevertemp.nodes import LayerNode, ReLUNode, FullyConnectedNode, BatchNormNode, \
     AveragePoolNode, ConvNode, MaxPoolNode, LRNNode, SoftMaxNode, UnsqueezeNode, FlattenNode, DropoutNode, ReshapeNode
@@ -124,8 +127,151 @@ class NodeOps:
 
         """
 
-        node.in_dim = in_dim
-        return node
+        if type(in_dim) != tuple and len(in_dim) < 0:
+            raise Exception(f"{LayerNode.__class__.__name__} - empty input.")
+        else:
+            out = ()
+            if isinstance(node, ReLUNode):
+                if len(in_dim) > 0:
+                    node.in_dim = in_dim
+                    node.out_dim = in_dim
+
+            elif isinstance(node, FullyConnectedNode):
+                if len(in_dim) > 0 and in_dim[-1] == node.in_features:
+                    node.in_dim = in_dim
+
+                    if len(in_dim) > 1:
+                        for i in range(len(in_dim)):
+                            out += (in_dim[i],)
+                    out += (node.out_features,)
+                    node.out_dim = out
+                else:
+                    raise Exception("FullyConnectedNode - Wrong input: last value of"
+                                    "input should be " + str(node.in_features))
+
+            elif isinstance(node, BatchNormNode):
+                if len(in_dim) > 0:
+                    node.in_dim = in_dim
+                    node.out_dim = in_dim
+
+            elif isinstance(node, AveragePoolNode):
+                if len(in_dim) > 1:
+                    node.in_dim = in_dim
+
+                    if len(in_dim) > 2:
+                        for i in range(len(in_dim) - 2):
+                            out += (in_dim[i],)
+
+                    stride_size = (float(node.stride[0]), float(node.stride[1]))
+                    if node.ceil_mode:
+                        for i in range(2):
+                            out += (math.ceil((in_dim[-2 + i] + 2 * node.padding[i] - node.kernel_size[i]) /
+                                              stride_size[i]) + 1,)
+                    else:
+                        for i in range(2):
+                            out += (math.floor((in_dim[-2 + i] + 2 * node.padding[i] - node.kernel_size[i]) /
+                                               stride_size[i]) + 1,)
+                    node.out_dim = out
+                else:
+                    raise Exception("AveragePoolNode - Wrong input size: should be greater than 1.")
+
+            elif isinstance(node, ConvNode):
+                if len(in_dim) > 2 and 0 < in_dim[-3] == node.in_channels:
+                    node.in_dim = in_dim
+
+                    if len(in_dim) > 3:
+                        for i in range(len(in_dim) - 3):
+                            out += (in_dim[i],)
+                    out += (node.out_channels,)
+
+                    stride_size = (float(node.stride[0]), float(node.stride[1]))
+                    for i in range(2):
+                        out += (math.floor((in_dim[-2 + i] + 2 * node.padding[i] - node.dilation[i] *
+                                            (node.kernel_size[i] - 1) - 1) / stride_size[i]) + 1,)
+                    node.out_dim = out
+                else:
+                    raise Exception("ConvNode - Wrong input size: should be greater than 2"
+                                    "and the third last element should be " + str(node.in_channels))
+
+            elif isinstance(node, MaxPoolNode):
+                if len(in_dim) > 1:
+                    node.in_dim = in_dim
+
+                    if len(in_dim) > 2:
+                        for i in range(len(in_dim) - 2):
+                            out += (in_dim[i],)
+
+                    stride_size = (float(node.stride[0]), float(node.stride[1]))
+                    if node.ceil_mode:
+                        for i in range(2):
+                            out += (math.ceil(((in_dim[-2 + i] + 2 * node.padding[i] - node.dilation[i] * (
+                                    node.kernel_size[i] - 1) - 1) / stride_size[i])) + 1,)
+                    else:
+                        for i in range(2):
+                            out += (math.floor(((in_dim[-2 + i] + 2 * node.padding[i] - node.dilation[i] * (
+                                    node.kernel_size[i] - 1) - 1) / stride_size[i])) + 1,)
+                    node.out_dim = out
+                else:
+                    raise Exception("MaxPoolNode - Wrong input size: should be greater than 1.")
+
+            elif isinstance(node, LRNNode):
+                if len(in_dim) >= 2:
+                    node.in_dim = in_dim
+                    node.out_dim = in_dim
+                else:
+                    raise Exception("LRNNode - Wrong input size: should be greater than 2.")
+
+            elif isinstance(node, SoftMaxNode):
+                if len(in_dim) >= 0:
+                    node.in_dim = in_dim
+                    node.out_dim = in_dim
+                else:
+                    raise Exception("SoftMaxNode - Wrong input.")
+
+            elif isinstance(node, UnsqueezeNode):
+                if len(in_dim) > 0:
+                    node.in_dim = in_dim
+
+                    if len(node.axes) > 0:
+                        out = list(in_dim)
+                        ax = list(node.axes)
+                        for i in range(len(ax)):
+                            if (-len(in_dim) - 1) <= ax[i] <= len(in_dim):
+                                if -len(in_dim) <= ax[i] < 0:
+                                    ax[i] += len(in_dim) + 1
+                                out.insert((ax[i] + 1), 1)
+                                node.out_dim = tuple(out)
+                else:
+                    raise Exception("SoftMaxNode - Wrong input size: empty")
+
+            elif isinstance(node, FlattenNode):
+                if len(in_dim) > 0:
+                    node.in_dim = in_dim
+                    # TODO HOW TO COMPUTE OUT_DIM?
+                else:
+                    raise Exception("FlattenNode - Wrong input size: empty")
+
+            elif isinstance(node, DropoutNode):
+                if len(in_dim) > 0:
+                    node.in_dim = in_dim
+                    node.out_dim = in_dim
+                else:
+                    raise Exception("DropoutNode - Wrong input size: empty")
+
+            elif isinstance(node, ReshapeNode):
+                if len(in_dim) > 0:
+                    node.in_dim = in_dim
+                    try:
+                        out_dim = torch.reshape(torch.randn(in_dim), node.shape)
+                    except Exception:
+                        raise Exception(f'shape [{node.shape}] is invalid for input of dimension [{in_dim}]')
+                    for i in range(len(out_dim.shape)):
+                        out += (out_dim.shape[i],)
+                    node.out_dim = out
+                else:
+                    raise Exception("ReshapeNode - Wrong input size: empty")
+
+            return node
 
     @staticmethod
     def update_node_data(node: LayerNode, data: dict) -> LayerNode:
