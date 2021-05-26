@@ -293,11 +293,14 @@ class NodeOps:
         Parameters
         ----------
         node: LayerNode
+            The node to update.
         data: dict
+            The new data to save.
 
         Returns
         ----------
         LayerNode
+            The updated node.
 
         """
 
@@ -305,12 +308,12 @@ class NodeOps:
             if type(data["in_features"]) == int and data["in_features"] > 0:
                 node.in_features = data["in_features"]
             else:
-                raise Exception('FullyConnected - Wrong ''in_features'' value, should be int and > 0')
+                raise Exception('FullyConnectedNode - Wrong ''in_features'' value, should be int and > 0')
 
             if type(data["out_features"]) == int and data["out_features"] > 0:
                 node.out_features = data["out_features"]
             else:
-                raise Exception('FullyConnected - Wrong ''out_features'' value, should be int and > 0')
+                raise Exception('FullyConnectedNode - Wrong ''out_features'' value, should be int and > 0')
 
             weight = data["weight"]
             if weight is None:
@@ -318,7 +321,7 @@ class NodeOps:
             if weight.shape == (node.out_features, node.in_features):
                 node.weight = weight
             else:
-                raise Exception('FullyConnected - Wrong weight dimension')
+                raise Exception('FullyConnectedNode - Wrong weight dimension')
 
             bias = data["bias"]
             if bias is None:
@@ -326,25 +329,103 @@ class NodeOps:
             if bias.shape == (node.out_features,):
                 node.bias = bias
             else:
-                raise Exception('FullyConnected - Wrong bias dimension')
+                raise Exception('FullyConnectedNode - Wrong bias dimension')
+
         elif isinstance(node, BatchNormNode):
-            node.update(data["num_features"],
-                        node.in_dim,
-                        Tensor((data["num_features"],)),
-                        Tensor((data["num_features"],)),
-                        data["running_mean"],
-                        data["running_var"],
-                        data["eps"],
-                        data["momentum"],
-                        data["affine"],
-                        data["track_running_stats"])
+            for dim in range(len(node.in_dim)):
+                if node.in_dim[dim] == data["num_features"]:
+                    node.num_features = data["num_features"]
+
+            if node.num_features is None:
+                raise Exception(f'BatchNormNode - Wrong input, num_features = {node.num_features}'
+                                f'not feasible with input shape = {node.in_dim} ')
+
+            if data["track_running_stats"] and data["running_mean"] is None and data["running_var"] is None:
+                data["running_mean"] = np.ones(node.num_features)
+                data["running_var"] = np.zeros(node.num_features)
+
+            weight = data["weight"]
+            if weight is None:
+                weight = np.ones(node.num_features)
+            if weight.shape == (node.num_features,):
+                node.weight = weight
+            else:
+                raise Exception('BatchNormNode - Wrong weight dimension')
+
+            bias = data["bias"]
+            if bias is None:
+                bias = np.zeros(node.num_features)
+            if bias.shape == (node.num_features,):
+                node.bias = bias
+            else:
+                raise Exception('BatchNormNode - Wrong bias dimension')
+
+            node.running_mean = data["running_mean"]
+            node.running_var = data["running_var"]
+            node.track_running_stats = data["track_running_stats"]
+            node.eps = data["eps"]
+            node.momentum = data["momentum"]
+            node.affine = data["affine"]
+
         elif isinstance(node, AveragePoolNode):
-            node.update(node.in_dim,
-                        data["kernel_size"],
-                        data["ceil_mode"],
-                        data["padding"],
-                        data["stride_size"],
-                        data["count_include_pad"])
+            if data["stride"] is None:
+                data["stride"] = data["kernel_size"]
+
+            kernel = data["kernel"]
+            if type(kernel) == tuple:
+                if len(kernel) == 2 and kernel[0] > 0 and kernel[1] > 0:
+                    node.kernel_size = kernel
+                elif len(kernel) == 1 and kernel[0] > 0:
+                    kernel = (kernel[0], kernel[0])
+                    node.kernel_size = kernel
+                else:
+                    raise Exception('AveragePoolNode - Wrong kernel size type, must be int'
+                                    'or tuple with values > 0')
+            else:
+                raise Exception('AveragePoolNode - Wrong kernel size type, must be int or tuple with values > 0')
+
+            stride = data["stride"]
+            if type(stride) == tuple:
+                if len(stride) == 2 and stride[0] > 0 and stride[1] > 0:
+                    node.stride = stride
+                elif len(stride) == 1 and stride[0] > 0:
+                    stride = (stride[0], stride[0])
+                    node.stride = stride
+                else:
+                    raise Exception('AveragePoolNode - Wrong stride type, must be int'
+                                    'or tuple with values > 0')
+            else:
+                raise Exception('AveragePoolNode - Wrong stride type, must be int or tuple with values > 0')
+
+            padding = data["padding"]
+            if type(padding) == tuple:
+                if len(padding) == 1:
+                    padding = (padding[0], padding[0])
+                half = list(kernel)
+                half[0] = half[0] / 2.0
+                half[1] = half[1] / 2.0
+
+                if padding[0] <= half[0] and padding[1] <= half[1]:
+                    node.padding = padding
+                else:
+                    raise Exception(f'AveragePoolNode - padding should be smaller than half of kernel size,' 
+                                    f'but got padW = {padding[1]}, padH = {padding[0]},' 
+                                    f'kW = {kernel[1]}, kH = {kernel[0]}')
+            else:
+                raise Exception('AveragePoolNode - padding type must be int or tuple')
+
+            count_include_pad = data["count_include_pad"]
+            if type(count_include_pad) is bool:
+                node.count_include_pad = count_include_pad  # Do not modify shape
+            else:
+                raise Exception('AveragePoolNode - count_include_pad must be bool')
+
+            ceil_mode = data["ceil_mode"]
+            if type(ceil_mode) is bool:
+                node.ceil_mode = ceil_mode
+            else:
+                raise Exception('AveragePoolNode - ceil_mode must be bool')
+
         elif isinstance(node, ConvNode):
             node.update(node.in_dim,
                         data["in_channels"],
