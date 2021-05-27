@@ -6,11 +6,11 @@ from PyQt5.QtWidgets import QStatusBar, QAction, QLabel, QGraphicsRectItem
 
 import coconet.view.styles as style
 from coconet.core.controller.project import Project
-from coconet.view.widget.dialog.dialogs import ConfirmDialog, MessageDialog, MessageType, HelpDialog
 from coconet.view.drawing.element import Line, Block
-from coconet.view.widget.toolbar import BlocksToolbar, BlockButton
 from coconet.view.drawing.scene import DrawingMode, Canvas
-from coconet.view.widget.toolbar import PropertyToolbar
+from coconet.view.widget.dialog.dialogs import ConfirmDialog, MessageDialog, MessageType, HelpDialog
+from coconet.view.widget.toolbar import BlocksToolbar, BlockButton
+from coconet.view.widget.toolbar import ParamToolbar
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -29,7 +29,7 @@ class MainWindow(QtWidgets.QMainWindow):
     toolbar : BlocksToolbar
         Toolbar appearing on the left of the window, showing several buttons to
         add elements to the canvas.
-    properties : PropertyToolbar
+    parameters : ParamToolbar
         Fixed toolbar on the right of the window, displaying details about a
         certain block.
     canvas : Canvas
@@ -74,8 +74,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # Blocks toolbar
         self.toolbar = BlocksToolbar('coconet/res/json/blocks.json')
 
-        # Properties toolbar
-        self.properties = PropertyToolbar()
+        # Parameters toolbar
+        self.parameters = ParamToolbar()
 
         # Project in use
         self.project = Project()
@@ -97,7 +97,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.status_bar.addPermanentWidget(self.status_bar_mode_label)
 
         # And adding them to the window
-        self.addDockWidget(Qt.RightDockWidgetArea, self.properties, Qt.Vertical)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.parameters, Qt.Vertical)
         self.addToolBar(QtCore.Qt.ToolBarArea.LeftToolBarArea, self.toolbar)
         self.setCentralWidget(self.canvas.view)
 
@@ -122,9 +122,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.toolbar.f_buttons["insert_block"].clicked \
             .connect(lambda: self.change_draw_mode(DrawingMode.INSERT_BLOCK))
 
-        # Properties box appearing
-        self.canvas.properties_requested \
-            .connect(lambda: self.properties.display(self.canvas.block_to_show))
+        # Parameters box appearing
+        self.canvas.param_requested \
+            .connect(lambda: self.parameters.display(self.canvas.block_to_show))
 
         # State bar updating
         self.canvas.scene.has_changed_mode \
@@ -209,9 +209,9 @@ class MainWindow(QtWidgets.QMainWindow):
         blocks_action.setCheckable(True)
         blocks_action.setChecked(True)
         blocks_action.toggled.connect(lambda: self.toolbar.change_blocks_mode())
-        details_action = QAction("Properties", self)
+        details_action = QAction("Parameters", self)
         details_action.setShortcut("Ctrl+P")
-        details_action.triggered.connect(lambda: self.canvas.show_properties(self.properties_action_validation()))
+        details_action.triggered.connect(lambda: self.canvas.show_parameters(self.parameters_action_validation()))
 
         # Build File menu
         menu_file.addAction(new_action)
@@ -488,9 +488,9 @@ class MainWindow(QtWidgets.QMainWindow):
             err_dialog = MessageDialog("No block selected.", MessageType.MESSAGE)
             err_dialog.show()
 
-    def properties_action_validation(self) -> Optional[Block]:
+    def parameters_action_validation(self) -> Optional[Block]:
         """
-        This method performs a check on the object on which the properties
+        This method performs a check on the object on which the parameters
         action is called, in order to prevent unwanted operations.
 
         Returns
@@ -505,7 +505,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 # Return block graphic object
                 return self.canvas.scene.blocks[self.canvas.scene.selectedItems()[0]]
             elif type(self.canvas.scene.selectedItems()[0]) is Line:
-                msg_dialog = MessageDialog("No properties available for connections.", MessageType.ERROR)
+                msg_dialog = MessageDialog("No parameters available for connections.", MessageType.ERROR)
                 msg_dialog.show()
         else:
             err_dialog = MessageDialog("No block selected.", MessageType.MESSAGE)

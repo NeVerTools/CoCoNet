@@ -250,7 +250,7 @@ class Block(QtWidgets.QWidget):
     is_head : bool
         Tells if the node is the head of the network.
     edits : dict
-        Dictionary storing the properties to update.
+        Dictionary storing the parameters to update.
 
     Methods
     ----------

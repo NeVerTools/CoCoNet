@@ -1195,7 +1195,7 @@ class AbsSigmoidNode(AbsLayerNode):
 class AbsNeuralNetwork(abc.ABC):
     """
     An abstract class used for our internal representation of a generic NeuralNetwork for Abstract Interpretation.
-    It consists of a graph of AbsLayerNodes. The properties of the computational graph are specialized in the
+    It consists of a graph of AbsLayerNodes. The parameters of the computational graph are specialized in the
     concrete classes. The method forward and backward calls the corresponding methods in the AbsLayerNodes following the
     correct order to compute the output AbsElement.
 

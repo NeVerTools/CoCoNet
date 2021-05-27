@@ -11,15 +11,15 @@ class NetworkNode:
         Name of the class of the block
     input : dict
         Dictionary of the inputs taken by the node, connecting for each
-        input its name to a dictionary of properties such as type, default
+        input its name to a dictionary of parameters such as type, default
         value, description
     param : dict
         Dictionary of the parameters of the block, connecting for each
-        parameter its name to a dictionary of properties such as type, default
+        parameter its name to a dictionary of parameters such as type, default
         value, description
     output : dict
         Dictionary of the outputs of the block, , connecting for each
-        output its name to a dictionary of properties such as type, default
+        output its name to a dictionary of parameters such as type, default
         value, description
     descr : str
         Description of the operation done by the node

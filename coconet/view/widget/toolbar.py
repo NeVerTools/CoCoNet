@@ -11,9 +11,9 @@ from coconet.core.model.network import NetworkNode
 from coconet.view.drawing.element import Block
 
 
-class PropertyToolbar(QDockWidget):
+class ParamToolbar(QDockWidget):
     """
-    This class is a widget for inspecting the properties of a given
+    This class is a widget for inspecting the parameters of a given
     block. It is anchored to the right side of the window and can be
     moved.
 
@@ -46,7 +46,7 @@ class PropertyToolbar(QDockWidget):
         self.scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         self.setWidget(self.scroll_area)
-        self.setWindowTitle("Properties")
+        self.setWindowTitle("Parameters")
         self.setStyleSheet(style.DOCK_STYLE)
 
         # The user can move this bar away
@@ -75,7 +75,7 @@ class PropertyToolbar(QDockWidget):
 class BlockWidget(QWidget):
     """
     This class contains the widget for displaying the description of a network
-    block in the PropertyToolbar. Each block attribute is labeled and wrapped
+    block in the ParamToolbar. Each block attribute is labeled and wrapped
     in a drop-down box.
 
     Attributes
@@ -210,18 +210,18 @@ class DropDownLabel(QWidget):
     default_label : QLabel
         Eventual default value.
     down_button : QPushButton
-        Arrow button to show/hide the description of the property.
+        Arrow button to show/hide the description of the parameter.
     description : QLabel
-        Description of the property.
+        Description of the parameter.
 
     Methods
     ----------
     change_description_mode()
-        This method shows or hides the description of the property.
+        This method shows or hides the description of the parameter.
 
     """
 
-    def __init__(self, name: str, properties: dict):
+    def __init__(self, name: str, parameters: dict):
         super().__init__()
         self.layout = QVBoxLayout()
         self.setContentsMargins(0, 0, 0, 0)
@@ -243,14 +243,14 @@ class DropDownLabel(QWidget):
         self.name_label.setStyleSheet(style.DROPDOWN_NAME_STYLE)
         self.top_layout.addWidget(self.name_label, Qt.AlignLeft)
 
-        self.type_label = QLabel(properties["type"])
+        self.type_label = QLabel(parameters["type"])
         self.type_label.setAlignment(Qt.AlignLeft)
         self.type_label.setToolTip("Type")
         self.type_label.setStyleSheet(style.DROPDOWN_TYPE_STYLE)
         self.top_layout.addWidget(self.type_label, Qt.AlignLeft)
 
-        if "default" in properties:
-            self.default_label = QLabel(properties["default"])
+        if "default" in parameters:
+            self.default_label = QLabel(parameters["default"])
             self.default_label.setStyleSheet(style.DROPDOWN_DEFAULT_STYLE)
             self.default_label.setToolTip("Default value")
             self.default_label.setAlignment(Qt.AlignCenter)
@@ -263,7 +263,7 @@ class DropDownLabel(QWidget):
 
         self.layout.addWidget(self.top)
 
-        self.description = QLabel(properties["description"])
+        self.description = QLabel(parameters["description"])
         self.description.setSizePolicy(QSizePolicy.Minimum,
                                        QSizePolicy.Maximum)
         self.description.setWordWrap(True)
@@ -273,7 +273,7 @@ class DropDownLabel(QWidget):
 
     def __toggle_visibility(self):
         """
-        This method toggles the visibility of the property description
+        This method toggles the visibility of the parameter description
         changing the arrow icon of the button.
 
         """

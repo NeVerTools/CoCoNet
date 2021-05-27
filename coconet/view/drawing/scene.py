@@ -71,8 +71,8 @@ class Canvas(QWidget):
     draw_block(NetworkNode, GraphicBlock, QPoint)
         Add to the scene a new block of the given type or copy an
         existing one, possibly at a defined location.
-    show_properties(QGraphicBlock)
-        Emit a signal to show properties of a block.
+    show_parameters(QGraphicBlock)
+        Emit a signal to show parameters of a block.
     edit_block(QGraphicBlock)
         Let the user change the parameters of a block.
     delete_selected()
@@ -95,7 +95,7 @@ class Canvas(QWidget):
     """
 
     # This signal is emitted when the description box should appear
-    properties_requested = pyqtSignal()
+    param_requested = pyqtSignal()
 
     # Zoom scale
     ZOOM_FACTOR = 1.1
@@ -389,8 +389,8 @@ class Canvas(QWidget):
         block_actions["Delete"].triggered.connect(lambda: self.delete_selected())
         block_actions["Edit"] = QAction("Edit", block)
         block_actions["Edit"].triggered.connect(lambda: self.scene.edit_block(block))
-        block_actions["Properties"] = QAction("Properties", block)
-        block_actions["Properties"].triggered.connect(lambda: self.show_properties(block))
+        block_actions["Parameters"] = QAction("Parameters", block)
+        block_actions["Parameters"].triggered.connect(lambda: self.show_parameters(block))
         block.set_context_menu(block_actions)
 
         self.num_blocks += 1
@@ -402,7 +402,7 @@ class Canvas(QWidget):
 
         return block
 
-    def show_properties(self, block: Block = None):
+    def show_parameters(self, block: Block = None):
         """
         If no block is specified, the last element in the object list is selected.
         If an element is selected, the request for details is emitted.
@@ -427,7 +427,7 @@ class Canvas(QWidget):
         # Check again
         if block is not None:
             self.block_to_show = block
-            self.properties_requested.emit()
+            self.param_requested.emit()
 
     def edit_block(self, block: Block):
         """
@@ -705,7 +705,7 @@ class NetworkScene(QGraphicsScene):
     mouseReleaseEvent(event)
         This method reacts to the moving of a block.
     edit_block(Block)
-        This methods lets the user change the properties of a block.
+        This methods lets the user change the parameters of a block.
 
     """
 

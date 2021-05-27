@@ -419,7 +419,7 @@ class EditDialog(CoCoNetDialog):
         self.has_edits = False
 
         # Build layout
-        title_label = QLabel("Edit properties")
+        title_label = QLabel("Edit parameters")
         title_label.setStyleSheet(style.LABEL_STYLE)
         title_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(title_label, 0, 0, 1, 2)
