@@ -3,7 +3,7 @@ import sys
 
 import numpy as np
 from PyQt5 import QtWidgets, QtGui
-from PyQt5.QtCore import Qt, QLineF, QRectF, QPointF, pyqtSignal, QPoint
+from PyQt5.QtCore import Qt, QLineF, QRectF, QPointF, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QPen, QPolygonF
 from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPolygonItem, QLabel, \
     QVBoxLayout, QWidget, QGridLayout, QGraphicsProxyWidget
@@ -11,8 +11,8 @@ from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsRectItem, QGraphicsTextI
 import coconet.view.styles as style
 import coconet.view.util.utility as u
 from coconet.core.controller.pynevertemp.tensor import Tensor
-
 # Set maximum length of labels in NodeBlock
+from coconet.core.model.network import NetworkProperty
 
 MAX_FLOAT_LABEL_LENGTH = 5
 
@@ -498,3 +498,20 @@ class NodeBlock(QtWidgets.QWidget):
         """
 
         return self.rect.y()
+
+
+class PropertyBlock(QWidget):
+    """
+    This class is a widget for drawing network properties
+    as blocks in the canvas scene.
+
+    Attributes
+    ----------
+    property: NetworkProperty
+        The property element associated to the block.
+
+    """
+
+    def __init__(self, n_property: NetworkProperty):
+        super(PropertyBlock, self).__init__()
+        self.property = n_property
