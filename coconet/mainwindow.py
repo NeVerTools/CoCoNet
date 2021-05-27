@@ -34,7 +34,7 @@ class MainWindow(QtWidgets.QMainWindow):
         certain block.
     canvas : Canvas
         Central view of the window, containing a blank space in which the
-        blocks appear.
+        available_blocks appear.
 
     Methods
     ----------
@@ -72,7 +72,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.init_nav_menu_bar()
 
         # Blocks toolbar
-        self.toolbar = BlocksToolbar('coconet/res/json/blocks.json')
+        self.toolbar = BlocksToolbar('coconet/res/json/available_blocks.json')
 
         # Parameters toolbar
         self.parameters = ParamToolbar()
@@ -291,12 +291,12 @@ class MainWindow(QtWidgets.QMainWindow):
             for counter, item in enumerate(self.canvas.scene.selectedItems()):
                 if type(item) is QGraphicsRectItem:
                     # If the item is a rect, prev_node_id is written
-                    selections += self.canvas.scene.blocks[item].block_id
+                    selections += self.canvas.scene.available_blocks[item].block_id
                     selections += semicolons[counter]
                 elif type(item) is Line:
                     # If the item is a line, origin and destination ids are written
-                    origin = self.canvas.scene.blocks[item.origin].block_id
-                    destination = self.canvas.scene.blocks[item.destination].block_id
+                    origin = self.canvas.scene.available_blocks[item.origin].block_id
+                    destination = self.canvas.scene.available_blocks[item.destination].block_id
                     selections += origin + "->" + destination
                     selections += semicolons[counter]
 
@@ -419,7 +419,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if len(self.canvas.renderer.disconnected_network) == 1:
                 for node in self.canvas.renderer.disconnected_network:
                     try:
-                        self.canvas.renderer.add_single_node(node)
+                        self.canvas.renderer.add_node_to_nn(node)
                         self.project.save(_as)
                     except Exception as e:
                         error_dialog = MessageDialog(str(e), MessageType.ERROR)
@@ -436,7 +436,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 message = MessageDialog("The network is empty!", MessageType.MESSAGE)
                 message.exec()
 
-        elif self.canvas.renderer.is_sequential():
+        elif self.canvas.renderer.is_nn_sequential():
             # If there are logical nodes, the network is sequential
             every_node_connected = True
             # every node has to be in the nodes dictionary
@@ -479,7 +479,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.canvas.scene.selectedItems():
             if type(self.canvas.scene.selectedItems()[0]) is QGraphicsRectItem:
                 # Return block graphic object
-                return self.canvas.scene.blocks[self.canvas.scene.selectedItems()[0]]
+                return self.canvas.scene.available_blocks[self.canvas.scene.selectedItems()[0]]
             elif type(self.canvas.scene.selectedItems()[0]) is Line:
                 msg_dialog = MessageDialog("Can't edit lines, please select a block instead.",
                                            MessageType.ERROR)
@@ -503,7 +503,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.canvas.scene.selectedItems():
             if type(self.canvas.scene.selectedItems()[0]) is QGraphicsRectItem:
                 # Return block graphic object
-                return self.canvas.scene.blocks[self.canvas.scene.selectedItems()[0]]
+                return self.canvas.scene.available_blocks[self.canvas.scene.selectedItems()[0]]
             elif type(self.canvas.scene.selectedItems()[0]) is Line:
                 msg_dialog = MessageDialog("No parameters available for connections.", MessageType.ERROR)
                 msg_dialog.show()

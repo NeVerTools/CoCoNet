@@ -19,7 +19,7 @@ MAX_FLOAT_LABEL_LENGTH = 5
 
 class Line(QGraphicsLineItem):
     """
-    This class is a graphic line with an arrow which connects two blocks of the
+    This class is a graphic line with an arrow which connects two available_blocks of the
     scene.
 
     Attributes
@@ -77,7 +77,7 @@ class Line(QGraphicsLineItem):
         destination_lines = u.get_sides_of(self.destination.sceneBoundingRect())
         origin_lines = u.get_sides_of(self.origin.sceneBoundingRect())
 
-        # Get the shortest edge between the two blocks
+        # Get the shortest edge between the two available_blocks
         self.setLine(self.gen_endpoints(origin_lines, destination_lines))
 
         self.brush = QBrush(QColor(style.GREY_0))
@@ -230,7 +230,7 @@ class Line(QGraphicsLineItem):
 class Block(QtWidgets.QWidget):
     """
     This class is a widget for drawing the network nodes as
-    blocks in the Canvas scene.
+    available_blocks in the Canvas scene.
 
     Attributes
     ----------

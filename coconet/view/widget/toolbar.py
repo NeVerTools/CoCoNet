@@ -308,7 +308,7 @@ class BlockButton(QPushButton):
 
 class BlocksToolbar(QToolBar):
     """
-    This class defines a toolbar containing all the blocks available to draw a
+    This class defines a toolbar containing all the available_blocks available to draw a
     neural network: each type of block is read from a file in order to build a list
     of NetworkNode objects to be displayed.
 
@@ -318,18 +318,18 @@ class BlocksToolbar(QToolBar):
         Path of the JSON file containing all information about the implemented
         nodes available to displaying.
     blocks : dict
-        Dictionary of read blocks connecting each block name with a NetworkNode.
+        Dictionary of read available_blocks connecting each block name with a NetworkNode.
     f_buttons : dict
         Dictionary of buttons connecting a function name to a QPushButton.
     b_buttons : dict
         Dictionary connecting each block name to its QPushButton, which when
         pressed, makes it appear on the canvas.
     toolbar_blocks_label : QLabel
-        Label of the toolbar introducing blocks types.
+        Label of the toolbar introducing available_blocks types.
     toolbar_tools_label : QLabel
         Label of the toolbar introducing tools.
     isToolbar_blocks_label_visible : bool
-        Tells if the blocks button are visible in the toolbar.
+        Tells if the available_blocks button are visible in the toolbar.
     isToolbar_tools_label_visible : bool
         Tells if the tools button are visible in the toolbar.
 
@@ -339,14 +339,14 @@ class BlocksToolbar(QToolBar):
         This method displays on the toolbar the QPushButtons related to
         available tools.
     __init_blocks()
-        This method reads from file all types of blocks storing them.
+        This method reads from file all types of available_blocks storing them.
     __display_blocks()
         This method displays on the toolbar all buttons related to types of
-        blocks.
+        available_blocks.
     change_tools_mode()
         This method changes the visibility of the tools section of the toolbar.
     change_blocks_mode()
-        This method changes the visibility of the blocks section of the toolbar.
+        This method changes the visibility of the available_blocks section of the toolbar.
     show_section(QLabel, dict)
         This method shows the given objects.
     hide_section(QLabel, dict)
@@ -431,7 +431,7 @@ class BlocksToolbar(QToolBar):
 
     def __init_blocks(self):
         """
-        Uploading blocks from a JSON file storing them in a dictionary of
+        Uploading available_blocks from a JSON file storing them in a dictionary of
         NetworkNode objects.
 
         """
@@ -449,7 +449,7 @@ class BlocksToolbar(QToolBar):
 
     def __display_blocks(self):
         """
-        Graphical blocks are displayed in a vertical layout, which is put in
+        Graphical available_blocks are displayed in a vertical layout, which is put in
         a movable toolbar of fixed size.
 
         """
@@ -486,9 +486,9 @@ class BlocksToolbar(QToolBar):
 
     def change_blocks_mode(self):
         """
-        This method handles the visibility of the blocks section of the toolbar.
+        This method handles the visibility of the available_blocks section of the toolbar.
         If all sections are not visible, then the toolbar itself is hidden,
-        while if the toolbar was hidden, it is shown with the blocks section.
+        while if the toolbar was hidden, it is shown with the available_blocks section.
 
         """
 
