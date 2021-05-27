@@ -14,7 +14,7 @@ from coconet.core.controller.project import Project
 from coconet.core.controller.pynevertemp.networks import SequentialNetwork, NeuralNetwork
 from coconet.core.controller.pynevertemp.tensor import Tensor
 from coconet.core.model.network import NetworkNode
-from coconet.view.drawing.element import Block, Line
+from coconet.view.drawing.element import NodeBlock, Line
 from coconet.view.drawing.renderer import SequentialNetworkRenderer
 from coconet.view.widget.dialog.dialogs import EditDialog, MessageDialog, MessageType
 
@@ -32,7 +32,7 @@ class DrawingMode(Enum):
 
 class Canvas(QWidget):
     """
-    This class displays the neural network combining the graphic available_blocks with
+    This class displays the neural network combining the graphic blocks with
     their logical meaning.
 
     Attributes
@@ -41,11 +41,11 @@ class Canvas(QWidget):
         This number tracks how many times the view is zoomed in (if positive)
         or zoomed out (negative)
     num_blocks : int
-        Number of available_blocks in the scene.
+        Number of blocks in the scene.
     blocks : dict
-        Dictionary of the available_blocks in the scene that have as key the rects, and
+        Dictionary of the blocks in the scene that have as key the rects, and
         as value the widget block.
-    block_to_show : Block
+    block_to_show : NodeBlock
         Holds the eventual block whose description has to be displayed.
     renderer : SequentialNetworkRenderer
         Object which checks the network and build the logical network in
@@ -62,11 +62,11 @@ class Canvas(QWidget):
     update_scene()
         Update canvas drawing.
     insert_block()
-        Insert a block between two available_blocks already connected.
+        Insert a block between two blocks already connected.
     draw_line_between_selected()
-        Draw a connection between two available_blocks.
+        Draw a connection between two blocks.
     draw_line_between(QGraphicsRectItem, QGraphicsRectItem)
-        Draw a connection between the two given available_blocks.
+        Draw a connection between the two given blocks.
     draw_block(NetworkNode, GraphicBlock, QPoint)
         Add to the scene a new block of the given type or copy an
         existing one, possibly at a defined location.
@@ -83,7 +83,7 @@ class Canvas(QWidget):
     paste_selected()
         Paste the block copied.
     clear_scene()
-        Remove all available_blocks and connection from the scene.
+        Remove all blocks and connections from the scene.
     draw_network(SequentialNetworkRender)
         Draw the given network.
     zoom_in()
@@ -186,7 +186,7 @@ class Canvas(QWidget):
                     line_1.update_dims(out_dim_1)
                     line_2.update_dims(out_dim_2)
 
-                    # Scene available_blocks are updated
+                    # Scene blocks are updated
                     self.scene.blocks[line_2.origin].in_dim = out_dim_1
                     self.scene.blocks[line_2.destination].in_dim = out_dim_2
 
@@ -210,7 +210,7 @@ class Canvas(QWidget):
 
         """
 
-        # The method draw_line returns a tuple of the two available_blocks connected
+        # The method draw_line returns a tuple of the two blocks connected
         conn_nodes = self.scene.add_line()
         if conn_nodes is not None:
             origin = self.scene.blocks[conn_nodes[0]]
@@ -294,8 +294,8 @@ class Canvas(QWidget):
                     dialog.exec()
                     return
 
-    def draw_block(self, block_type: NetworkNode = None, graphic_block: Block = None,
-                   pos: QPoint = None) -> Block:
+    def draw_block(self, block_type: NetworkNode = None, graphic_block: NodeBlock = None,
+                   pos: QPoint = None) -> NodeBlock:
         """
         This method draws a new block, either by the selection of
         a toolbar item or by the copy of an existing one.
@@ -304,14 +304,14 @@ class Canvas(QWidget):
         ----------
         block_type : NetworkNode
             The concrete network block (new graphical item)
-        graphic_block : Block
+        graphic_block : NodeBlock
             The graphical block (copy item)
         pos : QPoint
             Position to draw the block
 
         Returns
         ----------
-        Block
+        NodeBlock
             The new block created
 
         """
@@ -340,15 +340,15 @@ class Canvas(QWidget):
         if graphic_block is not None:
             # If a graphic block is given, a new block is created copying
             # its data, in_dim, and type
-            block = Block("", graphic_block.node)
+            block = NodeBlock("", graphic_block.node)
             block.block_data = graphic_block.block_data
             block.in_dim = graphic_block.in_dim
             block.update_labels()
         else:
             # If a node is passed, a new block is created
-            block = Block("", block_type)
+            block = NodeBlock("", block_type)
 
-        # Creation of the identifier which depends on the number of available_blocks
+        # Creation of the identifier which depends on the number of blocks
         # before and by the type
         if graphic_block is not None and \
                 graphic_block not in self.scene.blocks.values():
@@ -360,7 +360,7 @@ class Canvas(QWidget):
         # Position the block
         proxy = self.scene.addWidget(block)
 
-        # Create the parent rect of the QWidget Block
+        # Create the parent rect of the QWidget NodeBlock
         # in order to move it in the QGraphicsScene
         rect = QRectF(point.x() + 10, point.y() + 10,
                       block.width() - 20, block.height() - 20)
@@ -401,14 +401,14 @@ class Canvas(QWidget):
 
         return block
 
-    def show_parameters(self, block: Block = None):
+    def show_parameters(self, block: NodeBlock = None):
         """
         If no block is specified, the last element in the object list is selected.
         If an element is selected, the request for details is emitted.
 
         Parameters
         ----------
-        block : Block
+        block : NodeBlock
             Optional selected block to show info of.
 
         """
@@ -428,14 +428,14 @@ class Canvas(QWidget):
             self.block_to_show = block
             self.param_requested.emit()
 
-    def edit_block(self, block: Block):
+    def edit_block(self, block: NodeBlock):
         """
         This method propagates the changes stored in the block.edits
         attribute.
 
         Parameters
         ----------
-        block : Block
+        block : NodeBlock
             The block to update.
 
         """
@@ -541,7 +541,7 @@ class Canvas(QWidget):
             if self.scene.selectedItems():
                 self.delete_selected()
 
-    def copy_selected(self, item: Block = None):
+    def copy_selected(self, item: NodeBlock = None):
         """
         Save the selected item or the parameter in order to paste it.
 
@@ -577,7 +577,7 @@ class Canvas(QWidget):
 
     def clear_scene(self):
         """
-        This method deletes all available_blocks and connections.
+        This method deletes all blocks and connections.
 
         """
 
@@ -598,7 +598,7 @@ class Canvas(QWidget):
     def draw_network(self, network: NeuralNetwork):
         """
         This method draws in the canvas the given Neural Network,
-        associating nodes and edges with available_blocks and lines.
+        associating nodes and edges with blocks and lines.
 
         Parameters
         ----------
@@ -670,9 +670,9 @@ class NetworkScene(QGraphicsScene):
     Attributes
     ----------
     blocks: dict
-        Dictionary that uses rects as keys connected to the related available_blocks.
+        Dictionary that uses rects as keys connected to the related blocks.
     lines: list
-        List of edges between available_blocks.
+        List of edges between blocks.
     mode: DrawingMode
         Current mode, that can be idle or in drawing.
     prev_item: element
@@ -691,19 +691,19 @@ class NetworkScene(QGraphicsScene):
     add_block()
         Ths method lets the user insert a block in the middle of a connection.
     add_line()
-        This method lets the user draw a connection between two available_blocks.
+        This method lets the user draw a connection between two blocks.
     auto_add_line(QGraphicsRectItem, QGraphicsRectItem)
-        This method draws a connection between two available_blocks.
+        This method draws a connection between two blocks.
     delete_select_item()
         This method deletes from the canvas the selected item.
     remove_lines(dict)
         This method removes from the canvas the edged corresponding to the
-        available_blocks in th given dictionary.
+        blocks in th given dictionary.
     mouseDoubleClickEvent(event)
         This method reacts to a double click on a block.
     mouseReleaseEvent(event)
         This method reacts to the moving of a block.
-    edit_block(Block)
+    edit_block(NodeBlock)
         This methods lets the user change the parameters of a block.
 
     """
@@ -714,7 +714,7 @@ class NetworkScene(QGraphicsScene):
     def __init__(self, widget):
         super(QGraphicsScene, self).__init__(widget)
 
-        # List of edges and available_blocks
+        # List of edges and blocks
         self.lines = list()
         self.blocks = dict()
 
@@ -848,8 +848,8 @@ class NetworkScene(QGraphicsScene):
 
     def add_line(self) -> Optional[tuple]:
         """
-        This method adds a new edge between two available_blocks, if selected
-        correctly. It returns the new edge and the connected available_blocks
+        This method adds a new edge between two blocks, if selected
+        correctly. It returns the new edge and the connected blocks
         wrapped in a tuple.
 
         Returns
@@ -882,7 +882,7 @@ class NetworkScene(QGraphicsScene):
                         self.prev_item = None
                         self.set_mode(DrawingMode.IDLE)
 
-                        # Return a tuple with the two available_blocks connected
+                        # Return a tuple with the two blocks connected
                         # and their edge, to restore the scene in case of errors
                         return items_tuple
         else:
@@ -890,7 +890,7 @@ class NetworkScene(QGraphicsScene):
 
     def auto_add_line(self, prev_rect_item, next_rect_item) -> Optional[Line]:
         """
-        This methods adds directly an edge between two given available_blocks.
+        This methods adds directly an edge between two given blocks.
 
         Parameters
         ----------
@@ -951,7 +951,7 @@ class NetworkScene(QGraphicsScene):
         else:
             return None
 
-    def edit_block(self, item: Block = None):
+    def edit_block(self, item: NodeBlock = None):
         """
         This method displays a window in order to let the user edit
         the block parameters. Eventually, a signal is emitted to
@@ -959,7 +959,7 @@ class NetworkScene(QGraphicsScene):
 
         Parameters
         ----------
-        item: Block
+        item: NodeBlock
             The optional block to edit, if None look for selected.
 
         """

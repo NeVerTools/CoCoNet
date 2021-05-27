@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QStatusBar, QAction, QLabel, QGraphicsRectItem
 
 import coconet.view.styles as style
 from coconet.core.controller.project import Project
-from coconet.view.drawing.element import Line, Block
+from coconet.view.drawing.element import Line, NodeBlock
 from coconet.view.drawing.scene import DrawingMode, Canvas
 from coconet.view.widget.dialog.dialogs import ConfirmDialog, MessageDialog, MessageType, HelpDialog
 from coconet.view.widget.toolbar import BlocksToolbar, BlockButton
@@ -34,7 +34,7 @@ class MainWindow(QtWidgets.QMainWindow):
         certain block.
     canvas : Canvas
         Central view of the window, containing a blank space in which the
-        available_blocks appear.
+        blocks appear.
 
     Methods
     ----------
@@ -72,7 +72,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.init_nav_menu_bar()
 
         # Blocks toolbar
-        self.toolbar = BlocksToolbar('coconet/res/json/available_blocks.json')
+        self.toolbar = BlocksToolbar('coconet/res/json/blocks.json')
 
         # Parameters toolbar
         self.parameters = ParamToolbar()
@@ -110,7 +110,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         """
 
-        # Block buttons
+        # NodeBlock buttons
         for b in self.toolbar.b_buttons.values():
             b.clicked.connect(self.create_from(b))
 
@@ -276,7 +276,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.canvas.scene.mode is DrawingMode.DRAW_LINE:
             self.status_bar_mode_label.setText("Line drawing")
         elif self.canvas.scene.mode is DrawingMode.INSERT_BLOCK:
-            self.status_bar_mode_label.setText("Block insertion")
+            self.status_bar_mode_label.setText("NodeBlock insertion")
         else:
             self.status_bar_mode_label.setText("")
 
@@ -291,12 +291,12 @@ class MainWindow(QtWidgets.QMainWindow):
             for counter, item in enumerate(self.canvas.scene.selectedItems()):
                 if type(item) is QGraphicsRectItem:
                     # If the item is a rect, prev_node_id is written
-                    selections += self.canvas.scene.available_blocks[item].block_id
+                    selections += self.canvas.scene.blocks[item].block_id
                     selections += semicolons[counter]
                 elif type(item) is Line:
                     # If the item is a line, origin and destination ids are written
-                    origin = self.canvas.scene.available_blocks[item.origin].block_id
-                    destination = self.canvas.scene.available_blocks[item.destination].block_id
+                    origin = self.canvas.scene.blocks[item.origin].block_id
+                    destination = self.canvas.scene.blocks[item.destination].block_id
                     selections += origin + "->" + destination
                     selections += semicolons[counter]
 
@@ -464,14 +464,14 @@ class MainWindow(QtWidgets.QMainWindow):
                                                   MessageType.ERROR)
             not_sequential_dialog.exec()
 
-    def edit_action_validation(self) -> Optional[Block]:
+    def edit_action_validation(self) -> Optional[NodeBlock]:
         """
         This method performs a check on the object on which the edit
         action is called, in order to prevent unwanted operations.
 
         Returns
         ----------
-        Block
+        NodeBlock
             The graphic wrapper of the NetworkNode selected, if present.
 
         """
@@ -479,7 +479,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.canvas.scene.selectedItems():
             if type(self.canvas.scene.selectedItems()[0]) is QGraphicsRectItem:
                 # Return block graphic object
-                return self.canvas.scene.available_blocks[self.canvas.scene.selectedItems()[0]]
+                return self.canvas.scene.blocks[self.canvas.scene.selectedItems()[0]]
             elif type(self.canvas.scene.selectedItems()[0]) is Line:
                 msg_dialog = MessageDialog("Can't edit lines, please select a block instead.",
                                            MessageType.ERROR)
@@ -488,14 +488,14 @@ class MainWindow(QtWidgets.QMainWindow):
             err_dialog = MessageDialog("No block selected.", MessageType.MESSAGE)
             err_dialog.show()
 
-    def parameters_action_validation(self) -> Optional[Block]:
+    def parameters_action_validation(self) -> Optional[NodeBlock]:
         """
         This method performs a check on the object on which the parameters
         action is called, in order to prevent unwanted operations.
 
         Returns
         ----------
-        Block
+        NodeBlock
             The graphic wrapper of the NetworkNode selected, if present.
 
         """
@@ -503,7 +503,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.canvas.scene.selectedItems():
             if type(self.canvas.scene.selectedItems()[0]) is QGraphicsRectItem:
                 # Return block graphic object
-                return self.canvas.scene.available_blocks[self.canvas.scene.selectedItems()[0]]
+                return self.canvas.scene.blocks[self.canvas.scene.selectedItems()[0]]
             elif type(self.canvas.scene.selectedItems()[0]) is Line:
                 msg_dialog = MessageDialog("No parameters available for connections.", MessageType.ERROR)
                 msg_dialog.show()

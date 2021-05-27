@@ -5,13 +5,13 @@ from PyQt5.QtCore import pyqtSignal
 from coconet.core.controller.nodewrapper import NodeOps
 from coconet.core.controller.project import Project
 from coconet.core.controller.pynevertemp.networks import NeuralNetwork
-from coconet.view.drawing.element import Block
+from coconet.view.drawing.element import NodeBlock
 
 
 class SequentialNetworkRenderer:
     """
     This class is an attribute of the Canvas object: reading the Project
-    attribute it builds a list of graphic Block objects composing the
+    attribute it builds a list of graphic NodeBlock objects composing the
     graph and changes it according to user events.
 
     Attributes
@@ -29,7 +29,7 @@ class SequentialNetworkRenderer:
         Procedure to check whether the network is sequential.
     add_node_to_nn(str)
         Procedure to add a single disconnected node.
-    add_disconnected_block(Block)
+    add_disconnected_block(NodeBlock)
         Procedure to insert a new block in the disconnected set.
     add_edge(str, str)
         Procedure to add a new edge between two nodes.
@@ -109,14 +109,14 @@ class SequentialNetworkRenderer:
         except Exception as e:
             raise e
 
-    def add_disconnected_block(self, block: Block) -> None:
+    def add_disconnected_block(self, block: NodeBlock) -> None:
         """
         This method creates a new entry in the disconnected
         network with the given block.
 
         Parameters
         ----------
-        block: Block
+        block: NodeBlock
             The block to add in the disconnected network.
 
         """
@@ -519,7 +519,7 @@ class SequentialNetworkRenderer:
                 if "<class 'nodes." + b.class_name + "'>" \
                         == str(type(node)):
                     # Create the graphic block
-                    block = Block(node.identifier, b)
+                    block = NodeBlock(node.identifier, b)
                     block_data = NodeOps.node2data(node)
                     block.block_data = block_data[0]
                     block.in_dim = block_data[1]

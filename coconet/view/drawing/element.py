@@ -12,14 +12,14 @@ import coconet.view.styles as style
 import coconet.view.util.utility as u
 from coconet.core.controller.pynevertemp.tensor import Tensor
 
-# Set maximum length of labels in Block
+# Set maximum length of labels in NodeBlock
 
 MAX_FLOAT_LABEL_LENGTH = 5
 
 
 class Line(QGraphicsLineItem):
     """
-    This class is a graphic line with an arrow which connects two available_blocks of the
+    This class is a graphic line with an arrow which connects two blocks of the
     scene.
 
     Attributes
@@ -77,7 +77,7 @@ class Line(QGraphicsLineItem):
         destination_lines = u.get_sides_of(self.destination.sceneBoundingRect())
         origin_lines = u.get_sides_of(self.origin.sceneBoundingRect())
 
-        # Get the shortest edge between the two available_blocks
+        # Get the shortest edge between the two blocks
         self.setLine(self.gen_endpoints(origin_lines, destination_lines))
 
         self.brush = QBrush(QColor(style.GREY_0))
@@ -227,10 +227,10 @@ class Line(QGraphicsLineItem):
         self.destination = None
 
 
-class Block(QtWidgets.QWidget):
+class NodeBlock(QtWidgets.QWidget):
     """
     This class is a widget for drawing the network nodes as
-    available_blocks in the Canvas scene.
+    blocks in the Canvas scene.
 
     Attributes
     ----------
@@ -277,7 +277,7 @@ class Block(QtWidgets.QWidget):
     edited = pyqtSignal()
 
     def __init__(self, block_id, node):
-        super(Block, self).__init__()
+        super(NodeBlock, self).__init__()
         self.block_id = block_id
         self.in_dim = (1,)
         self.node = node
@@ -292,7 +292,7 @@ class Block(QtWidgets.QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setStyleSheet(style.GRAPHIC_BLOCK_STYLE)
 
-        # Block title label
+        # NodeBlock title label
         self.type_label = QLabel(node.name)
         self.type_label.setStyleSheet(style.BLOCK_TITLE_STYLE)
 
@@ -472,28 +472,6 @@ class Block(QtWidgets.QWidget):
         self.setContextMenuPolicy(Qt.ActionsContextMenu)
         for action in actions.values():
             self.addAction(action)
-
-    def contains(self, point: QPoint) -> bool:
-        """
-        This methods checks whether the given QPoint is
-        inside the block.
-
-        Parameters
-        ----------
-        point: QPoint
-            The given point to check.
-
-        Returns
-        ----------
-        bool
-            True if the point is inside, False otherwise.
-
-        """
-
-        if self.x() + self.width() > point.x() > self.x() - self.width() / 2:
-            if self.y() + self.height() > point.y() > self.y() - self.height() / 2:
-                return True
-        return False
 
     def x(self) -> float:
         """
