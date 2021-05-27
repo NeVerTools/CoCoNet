@@ -1,3 +1,8 @@
+import abc
+
+from coconet.core.controller.pynevertemp.strategies.verification import NeVerProperty
+
+
 class NetworkNode:
     """
     This class describes a network node block available for the user, with inputs,
@@ -27,10 +32,31 @@ class NetworkNode:
     """
 
     def __init__(self, name: str, class_name: str, input: dict, param: dict, output: dict, descr: str):
-        super().__init__()
         self.name = name
         self.class_name = class_name
         self.input = input
         self.param = param
         self.output = output
         self.descr = descr
+
+
+class NetworkProperty(abc.ABC):
+    """
+    Abstract class representing a generic property
+
+    """
+
+
+class PolyhedralProperty(NetworkProperty):
+    """
+    Concrete property supported by NeVer
+
+    Attributes
+    ----------
+    p: NeVerProperty
+        The pyNeVer representation of the property.
+
+    """
+
+    def __init__(self, p: NeVerProperty):
+        self.p = p
