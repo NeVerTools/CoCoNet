@@ -7,49 +7,14 @@ from PyQt5.QtCore import Qt, QLineF, QRectF, QPointF, pyqtSignal, QPoint
 from PyQt5.QtGui import QBrush, QColor, QPen, QPolygonF
 from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPolygonItem, QLabel, \
     QVBoxLayout, QWidget, QGridLayout, QGraphicsProxyWidget
-from coconet.core.controller.pynevertemp.tensor import Tensor
 
 import coconet.view.styles as style
 import coconet.view.util.utility as u
+from coconet.core.controller.pynevertemp.tensor import Tensor
 
 # Set maximum length of labels in Block
 
 MAX_FLOAT_LABEL_LENGTH = 5
-
-
-def gen_endpoints(origin_sides: dict, destination_sides: dict) -> QLineF:
-    """
-    This method finds the shortest path between two rectangles.
-
-    Parameters
-    ----------
-    origin_sides : dict
-        The dictionary {side_label: side_size} of the starting rect.
-    destination_sides : dict
-        The dictionary {side_label: side_size} of the ending rect.
-
-    Returns
-    ----------
-    QLineF
-        The shortest line.
-
-    """
-
-    # Init the line with the maximum possible value
-    shortest_line = QLineF(-sys.maxsize / 2, -sys.maxsize / 2,
-                           sys.maxsize / 2, sys.maxsize / 2)
-    for o_side, origin_side in origin_sides.items():
-        o_mid_x, o_mid_y = u.get_midpoint(o_side, origin_side)
-
-        for d_side, destination_side in destination_sides.items():
-            d_mid_x, d_mid_y = u.get_midpoint(d_side, destination_side)
-
-            # Update line
-            line = QLineF(o_mid_x, o_mid_y, d_mid_x, d_mid_y)
-            if line.length() < shortest_line.length():
-                shortest_line = line
-
-    return shortest_line
 
 
 class Line(QGraphicsLineItem):
@@ -113,7 +78,7 @@ class Line(QGraphicsLineItem):
         origin_lines = u.get_sides_of(self.origin.sceneBoundingRect())
 
         # Get the shortest edge between the two blocks
-        self.setLine(gen_endpoints(origin_lines, destination_lines))
+        self.setLine(self.gen_endpoints(origin_lines, destination_lines))
 
         self.brush = QBrush(QColor(style.GREY_0))
         self.pen = QPen(QColor(style.GREY_0))
@@ -134,6 +99,41 @@ class Line(QGraphicsLineItem):
         self.arrow_size = 15.0
 
         self.draw_arrow()
+
+    @staticmethod
+    def gen_endpoints(origin_sides: dict, destination_sides: dict) -> QLineF:
+        """
+        This method finds the shortest path between two rectangles.
+
+        Parameters
+        ----------
+        origin_sides : dict
+            The dictionary {side_label: side_size} of the starting rect.
+        destination_sides : dict
+            The dictionary {side_label: side_size} of the ending rect.
+
+        Returns
+        ----------
+        QLineF
+            The shortest line.
+
+        """
+
+        # Init the line with the maximum possible value
+        shortest_line = QLineF(-sys.maxsize / 2, -sys.maxsize / 2,
+                               sys.maxsize / 2, sys.maxsize / 2)
+        for o_side, origin_side in origin_sides.items():
+            o_mid_x, o_mid_y = u.get_midpoint(o_side, origin_side)
+
+            for d_side, destination_side in destination_sides.items():
+                d_mid_x, d_mid_y = u.get_midpoint(d_side, destination_side)
+
+                # Update line
+                line = QLineF(o_mid_x, o_mid_y, d_mid_x, d_mid_y)
+                if line.length() < shortest_line.length():
+                    shortest_line = line
+
+        return shortest_line
 
     def draw_arrow(self) -> None:
         """
