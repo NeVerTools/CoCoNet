@@ -9,15 +9,15 @@ from coconet.core.controller.pynevertemp.tensor import Tensor
 import numpy as np
 
 
-def combine_batchnorm1d(linear: nodes.FullyConnectedNode, batchnorm: nodes.BatchNorm1DNode) -> nodes.FullyConnectedNode:
+def combine_batchnorm1d(linear: nodes.FullyConnectedNode, batchnorm: nodes.BatchNormNode) -> nodes.FullyConnectedNode:
     """
-    Utility function to combine a BatchNorm1DNode node with a FullyConnectedNode in a corresponding FullyConnectedNode.
+    Utility function to combine a BatchNormNode node with a FullyConnectedNode in a corresponding FullyConnectedNode.
 
     Parameters
     ----------
     linear : FullyConnectedNode
         FullyConnectedNode to combine.
-    batchnorm : BatchNorm1DNode
+    batchnorm : BatchNormNode
         BatchNorm1DNode to combine.
 
     Return
