@@ -309,6 +309,19 @@ class NodeButton(QPushButton):
 
 
 class PropertyButton(QPushButton):
+    """
+    Graphic button that carries information related to a property.
+
+    Attributes
+    ----------
+    name : str
+        The string appearing on the button.
+    property : NetworkProperty
+        The property that will be displayed if the user clicks on the
+        button.
+
+    """
+
     def __init__(self, name: str, property: NetworkProperty):
         self.name = name
         self.property = property
@@ -428,6 +441,7 @@ class BlocksToolbar(QToolBar):
             self.b_buttons[k] = button
 
     def __init_properties(self):
+        # TODO UPDATE WITH JSON
         k = "Polyhedral"
         self.properties[k] = PolyhedralNetworkProperty(NeVerProperty(Tensor([]), Tensor([]), [], []))
 
@@ -497,6 +511,12 @@ class BlocksToolbar(QToolBar):
             self.addWidget(b)
 
     def __display_properties(self):
+        """
+        Graphical properties are displayed in a vertical layout, which is put in
+        a movable toolbar of fixed size.
+
+        """
+
         # Labels
         self.toolbar_properties_label.setAlignment(Qt.AlignCenter)
         self.toolbar_properties_label.setStyleSheet(style.LABEL_STYLE)
