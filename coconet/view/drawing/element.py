@@ -267,6 +267,7 @@ class GraphicBlock(QtWidgets.QWidget):
         super(GraphicBlock, self).__init__()
         self.block_id = block_id
         self.layout = QVBoxLayout()
+        self.layout.setSpacing(0)
         self.rect = None
         self.proxy_control = None
 
