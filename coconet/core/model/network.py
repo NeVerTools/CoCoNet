@@ -1,6 +1,6 @@
 import abc
 
-from coconet.core.controller.pynevertemp.strategies.verification import NeVerProperty
+from coconet.core.controller.pynevertemp.strategies.verification import NeVerProperty, Property
 
 
 class NetworkNode:
@@ -11,23 +11,23 @@ class NetworkNode:
     Attributes
     ----------
     name : str
-        Name of the block
+        Name of the block.
     class_name : str
-        Name of the class of the block
+        Name of the class of the block.
     input : dict
         Dictionary of the inputs taken by the node, connecting for each
         input its name to a dictionary of parameters such as type, default
-        value, description
+        value, description.
     param : dict
         Dictionary of the parameters of the block, connecting for each
         parameter its name to a dictionary of parameters such as type, default
-        value, description
+        value, description.
     output : dict
         Dictionary of the outputs of the block, , connecting for each
         output its name to a dictionary of parameters such as type, default
-        value, description
+        value, description.
     descr : str
-        Description of the operation done by the node
+        Description of the operation done by the node.
 
     """
 
@@ -42,21 +42,29 @@ class NetworkNode:
 
 class NetworkProperty(abc.ABC):
     """
-    Abstract class representing a generic property
+    Abstract class representing a generic property.
+
+    Attributes
+    ----------
+    p: Property
+        A generic pyNeVer-supported property.
 
     """
 
+    def __init__(self, p: Property):
+        self.p = p
 
-class PolyhedralProperty(NetworkProperty):
+
+class PolyhedralNetworkProperty(NetworkProperty):
     """
-    Concrete property supported by NeVer
+    Concrete property supported by NeVer.
 
     Attributes
     ----------
     p: NeVerProperty
-        The pyNeVer representation of the property.
+        The pyNeVer representation of the polyhedral property.
 
     """
 
     def __init__(self, p: NeVerProperty):
-        self.p = p
+        super().__init__(p)

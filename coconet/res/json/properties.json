@@ -1,0 +1,33 @@
+{
+  "Polyhedral":{
+    "name": "PolyhedralProperty",
+    "input": {
+      "X": {
+        "type": "Tensor",
+        "description": "Input tensor of variables."
+      }
+    },
+    "formats": {
+      "plain": {
+        "type": "string",
+        "description": "Plain SMT-LIB string describing the property.",
+        "required": "false"
+      },
+      "guided": {
+        "variable": {
+          "description": "Variable to constrain.",
+          "required": "true"
+        },
+        "operator": {
+          "description": "Relational operator.",
+          "required": "true"
+        },
+        "bound": {
+          "description": "Constraint value.",
+          "required": "false",
+          "default": "0"
+        }
+      }
+    }
+  }
+}

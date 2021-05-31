@@ -12,7 +12,7 @@ import coconet.view.styles as style
 import coconet.view.util.utility as u
 from coconet.core.controller.pynevertemp.tensor import Tensor
 # Set maximum length of labels in NodeBlock
-from coconet.core.model.network import NetworkProperty
+from coconet.core.model.network import NetworkProperty, PolyhedralNetworkProperty
 
 MAX_FLOAT_LABEL_LENGTH = 5
 
@@ -512,6 +512,22 @@ class PropertyBlock(QWidget):
 
     """
 
-    def __init__(self, n_property: NetworkProperty):
+    def __init__(self, property: NetworkProperty):
         super(PropertyBlock, self).__init__()
-        self.property = n_property
+        self.property = property
+
+
+class PolyhedralPropertyBlock(PropertyBlock):
+    """
+    This class represents the widget associated to a
+    polyhedral property in NeVer.
+
+    Attributes
+    ----------
+    property: PolyhedralNetworkProperty
+        The concrete property element for this block.
+
+    """
+
+    def __init__(self, property: PolyhedralNetworkProperty):
+        super().__init__(property)
