@@ -372,8 +372,8 @@ class Canvas(QWidget):
         rect.setZValue(10)
         proxy.setParentItem(rect)
         proxy.setPos(point.x(), point.y())
-        block.proxy_control = proxy
-        block.rect = rect
+        block.set_proxy(proxy)
+        block.set_rect_item(rect)
 
         # If the block is edited, the network will be updated
         block.edited.connect(lambda: self.edit_block(block))

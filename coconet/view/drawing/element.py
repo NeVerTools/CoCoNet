@@ -1,3 +1,4 @@
+import abc
 import math
 import sys
 
@@ -11,8 +12,7 @@ from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsRectItem, QGraphicsTextI
 import coconet.view.styles as style
 import coconet.view.util.utility as u
 from coconet.core.controller.pynevertemp.tensor import Tensor
-# Set maximum length of labels in NodeBlock
-from coconet.core.model.network import NetworkProperty, PolyhedralNetworkProperty
+from coconet.core.model.network import PolyhedralNetworkProperty
 
 MAX_FLOAT_LABEL_LENGTH = 5
 
@@ -227,24 +227,167 @@ class Line(QGraphicsLineItem):
         self.destination = None
 
 
-class NodeBlock(QtWidgets.QWidget):
+class GraphicBlock(QtWidgets.QWidget):
+    """
+    This class works as a base class for graphical block objects in
+    NeVer. It provides a rectangle widget that can be customized
+    by inheriting from this class.
+
+    Attributes
+    ----------
+    block_id: str
+        String unique identifier for the block.
+    layout: QVBoxLayout
+        Block layout, vertical by default.
+    rect: QGraphicsRectItem
+        pyQt rectangle object associated to the block.
+    proxy_control: QGraphicsProxyWidget
+        pyQt proxy holding the widget inside the scene.
+
+    Methods
+    ----------
+    init_layout()
+        Abstract method that builds the block layout.
+    set_proxy(QGraphicsProxyWidget)
+        Procedure to assign a proxy controller to the block.
+    set_rect(QGraphicsRectItem)
+        Procedure to assign a rect item to the block.
+    set_context_menu(dict)
+        Procedure to assign a context menu to the block.
+    resizeEvent(QtGui.QResizeEvent)
+        Procedure to handle the resizing of the widget.
+    x()
+        Top-left x coordinate getter.
+    y()
+        Top-left y coordinate getter.
+
+    """
+
+    def __init__(self, block_id: str):
+        super(GraphicBlock, self).__init__()
+        self.block_id = block_id
+        self.layout = QVBoxLayout()
+        self.rect = None
+        self.proxy_control = None
+
+        self.setLayout(self.layout)
+
+        # Set style and transparent background for the rounded corners
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setStyleSheet(style.GRAPHIC_BLOCK_STYLE)
+
+    @abc.abstractmethod
+    def init_layout(self):
+        """
+        Abstract method to implement in child class(es).
+
+        """
+        pass
+
+    def set_proxy(self, proxy: QGraphicsProxyWidget) -> None:
+        """
+        This method assigns a pyQt proxy controller to the
+        graphic block.
+
+        Parameters
+        ----------
+        proxy: QGraphicsProxyWidget
+            The controller to set.
+
+        """
+
+        self.proxy_control = proxy
+
+    def set_rect_item(self, rect: QGraphicsRectItem) -> None:
+        """
+        This method assigns a pyQt rect object to the
+        graphic block.
+
+        Parameters
+        ----------
+        rect: QGraphicsRectItem
+            The rectangle widget associated to the block.
+
+        """
+
+        self.rect = rect
+
+    def set_context_menu(self, actions) -> None:
+        """
+        This method builds a context menu with the given actions.
+
+        Parameters
+        ----------
+        actions: dict
+            The menu actions to display.
+
+        """
+
+        self.setContextMenuPolicy(Qt.ActionsContextMenu)
+        for action in actions.values():
+            self.addAction(action)
+
+    def resizeEvent(self, evt: QtGui.QResizeEvent) -> None:
+        """
+        This method resizes the selection rectangle when a
+        QResizeEvent happens.
+
+        Parameters
+        ----------
+        evt: QResizeEvent
+            The resize event.
+
+        """
+
+        if self.proxy_control is not None:
+            # The new dimensions of the rect are given by the new dimensions
+            # of the proxy widget
+            x = self.proxy_control.geometry().x() + 10
+            y = self.proxy_control.geometry().y() + 10
+            width = self.proxy_control.geometry().width() - 20
+            height = self.proxy_control.geometry().height() - 20
+
+            self.rect.setRect(QRectF(x, y, width, height))
+
+    def x(self) -> float:
+        """
+        Returns the x coordinate top-left corner of the rect.
+
+        Returns
+        ----------
+        float
+            The absolute coordinate.
+
+        """
+
+        return self.rect.x()
+
+    def y(self) -> float:
+        """
+        Returns the y coordinate top-left corner of the rect.
+
+        Returns
+        ----------
+        float
+            The absolute coordinate.
+
+        """
+
+        return self.rect.y()
+
+
+class NodeBlock(GraphicBlock):
     """
     This class is a widget for drawing the network nodes as
     blocks in the Canvas scene.
 
     Attributes
     ----------
-    block_id : str
-        String identifier of the block.
     node : NetworkNode
         Node associated to the block.
     block_data : dict
         Dictionary holding the node parameters, with string
         keys and numerical values.
-    rect : QGraphicsRectItem
-        Graphic rect associated to the block.
-    proxy_control : QGraphicsProxyWidget
-        Proxy holding the widget inside the scene.
     dim_labels : dict
         Dictionary with parameter dimension labels.
     is_head : bool
@@ -254,69 +397,39 @@ class NodeBlock(QtWidgets.QWidget):
 
     Methods
     ----------
-    init_layout(QVBoxLayout)
-        Procedure to build the node layout.
     text_to_tuple(str)
         Procedure to convert a string in a tuple.
     update_labels()
         Procedure to update the labels after a change.
-    resizeEvent(QtGui.QResizeEvent)
-        Handles the resizing of the widget after updating
-        the parameters dimensions.
-    set_context_menu(dict)
-        Procedure to build a context menu.
-    contains(QPoint)
-        Procedure to check if a point is inside the block.
-    x()
-        Top-left x coordinate.
-    y()
-        Top-left y coordinate.
 
     """
 
     edited = pyqtSignal()
 
     def __init__(self, block_id, node):
-        super(NodeBlock, self).__init__()
-        self.block_id = block_id
+        super().__init__(block_id)
         self.in_dim = (1,)
         self.node = node
         self.block_data = dict()
 
         self.is_head = True
-        self.rect = None
-        self.proxy_control = None
         self.edits = None
-
-        # Setting style and transparent background for the rounded corners
-        self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setStyleSheet(style.GRAPHIC_BLOCK_STYLE)
 
         # NodeBlock title label
         self.type_label = QLabel(node.name)
         self.type_label.setStyleSheet(style.BLOCK_TITLE_STYLE)
 
         self.dim_labels = dict()
-
-        # Main vertical layout: it contains the label title and grid
-        layout = QVBoxLayout()
-        layout.setSpacing(0)
-        layout.addWidget(self.type_label)
-        self.setLayout(layout)
+        self.layout.addWidget(self.type_label)
         if self.node.param:
-            self.init_layout(layout)
+            self.init_layout()
         else:
             self.type_label.setStyleSheet(style.ZERO_PARS_BLOCK_TITLE)
 
-    def init_layout(self, layout: QVBoxLayout) -> None:
+    def init_layout(self) -> None:
         """
         This method sets up the the block layout with
         attributes and values.
-
-        Parameters
-        ----------
-        layout: QVBoxLayout
-            The layout to build.
 
         """
 
@@ -324,7 +437,7 @@ class NodeBlock(QtWidgets.QWidget):
         grid = QWidget()
         grid_layout = QGridLayout()
         grid.setLayout(grid_layout)
-        layout.addWidget(grid)
+        self.layout.addWidget(grid)
 
         # Iterate and display parameters, count rows
         par_labels = dict()
@@ -436,88 +549,8 @@ class NodeBlock(QtWidgets.QWidget):
             elif isinstance(value, tuple):
                 self.dim_labels[name].setText("<" + 'x'.join(map(str, value)) + ">")
 
-    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        """
-        This method resizes the selection rectangle when a
-        QResizeEvent happens.
 
-        Parameters
-        ----------
-        a0: event
-
-        """
-
-        if self.proxy_control is not None:
-            # The new dimensions of the rect are given by the new dimensions
-            # of the proxy widget
-            x = self.proxy_control.geometry().x() + 10
-            y = self.proxy_control.geometry().y() + 10
-            width = self.proxy_control.geometry().width() - 20
-            height = self.proxy_control.geometry().height() - 20
-
-            self.rect.setRect(QRectF(x, y, width, height))
-
-    def set_context_menu(self, actions) -> None:
-        """
-        This method builds a context menu with the given actions.
-
-        Parameters
-        ----------
-        actions: dict
-            The menu actions to display.
-
-        """
-
-        # Context Menu
-        self.setContextMenuPolicy(Qt.ActionsContextMenu)
-        for action in actions.values():
-            self.addAction(action)
-
-    def x(self) -> float:
-        """
-        Returns the x coordinate top-left corner of the rect
-
-        Returns
-        ----------
-        float
-            The absolute coordinate
-
-        """
-
-        return self.rect.x()
-
-    def y(self) -> float:
-        """
-        Returns the y coordinate top-left corner of the rect
-
-        Returns
-        ----------
-        float
-            The absolute coordinate
-
-        """
-
-        return self.rect.y()
-
-
-class PropertyBlock(QWidget):
-    """
-    This class is a widget for drawing network properties
-    as blocks in the canvas scene.
-
-    Attributes
-    ----------
-    property: NetworkProperty
-        The property element associated to the block.
-
-    """
-
-    def __init__(self, property: NetworkProperty):
-        super(PropertyBlock, self).__init__()
-        self.property = property
-
-
-class PolyhedralPropertyBlock(PropertyBlock):
+class PolyhedralPropertyBlock(GraphicBlock):
     """
     This class represents the widget associated to a
     polyhedral property in NeVer.
@@ -529,5 +562,9 @@ class PolyhedralPropertyBlock(PropertyBlock):
 
     """
 
-    def __init__(self, property: PolyhedralNetworkProperty):
-        super().__init__(property)
+    def __init__(self, block_id: str, property: PolyhedralNetworkProperty):
+        super().__init__(block_id)
+        self.property = property
+
+    def init_layout(self):
+        pass
