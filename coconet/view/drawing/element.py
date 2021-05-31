@@ -422,7 +422,7 @@ class NodeBlock(GraphicBlock):
         self.dim_labels = dict()
 
         # Override title label
-        self.title_label = QLabel(node.name)
+        self.title_label.setText(node.name)
         self.layout.addWidget(self.title_label)
 
         if self.node.param:
