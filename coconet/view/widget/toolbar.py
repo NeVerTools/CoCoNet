@@ -68,11 +68,11 @@ class ParamToolbar(QDockWidget):
 
         # Show toolbar and fit dimensions
         self.show()
-        self.scroll_area.setWidget(BlockWidget(block))
+        self.scroll_area.setWidget(BlockInspector(block))
         self.scroll_area.setMinimumWidth(self.scroll_area.sizeHint().width())
 
 
-class BlockWidget(QWidget):
+class BlockInspector(QWidget):
     """
     This class contains the widget for displaying the description of a network
     block in the ParamToolbar. Each block attribute is labeled and wrapped
@@ -382,7 +382,7 @@ class BlocksToolbar(QToolBar):
         self.setStyleSheet(style.TOOLBAR_STYLE)
 
         self.setOrientation(Qt.Vertical)
-        self.setMovable(True)
+        self.setMovable(True)  # TODO MAKE FALSE?
         self.setFloatable(True)
 
     def __display_tools(self):
