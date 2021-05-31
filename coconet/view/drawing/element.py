@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsRectItem, QGraphicsTextI
 import coconet.view.styles as style
 import coconet.view.util.utility as u
 from coconet.core.controller.pynevertemp.tensor import Tensor
-from coconet.core.model.network import PolyhedralNetworkProperty
+from coconet.core.model.network import NetworkProperty
 
 MAX_FLOAT_LABEL_LENGTH = 5
 
@@ -279,7 +279,6 @@ class GraphicBlock(QtWidgets.QWidget):
         # Set style and transparent background for the rounded corners
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setStyleSheet(style.GRAPHIC_BLOCK_STYLE)
-        self.title_label.setStyleSheet(style.BLOCK_TITLE_STYLE)
 
     @abc.abstractmethod
     def init_layout(self):
@@ -423,12 +422,13 @@ class NodeBlock(GraphicBlock):
 
         # Override title label
         self.title_label.setText(node.name)
+        self.title_label.setStyleSheet(style.NODE_TITLE_STYLE)
         self.layout.addWidget(self.title_label)
 
         if self.node.param:
             self.init_layout()
         else:
-            self.title_label.setStyleSheet(style.ZERO_PARS_BLOCK_TITLE)
+            self.title_label.setStyleSheet(style.EMPTY_NODE_TITLE)
 
     def init_layout(self) -> None:
         """
@@ -450,11 +450,11 @@ class NodeBlock(GraphicBlock):
             # Set the label
             par_labels[name] = QLabel(name)
             par_labels[name].setAlignment(Qt.AlignLeft)
-            par_labels[name].setStyleSheet(style.PAR_BLOCK_STYLE)
+            par_labels[name].setStyleSheet(style.PAR_NODE_STYLE)
 
             self.dim_labels[name] = QLabel()
             self.dim_labels[name].setAlignment(Qt.AlignCenter)
-            self.dim_labels[name].setStyleSheet(style.DIM_BLOCK_STYLE)
+            self.dim_labels[name].setStyleSheet(style.DIM_NODE_STYLE)
 
             grid_layout.addWidget(par_labels[name], count, 0)
             grid_layout.addWidget(self.dim_labels[name], count, 1)
@@ -554,19 +554,19 @@ class NodeBlock(GraphicBlock):
                 self.dim_labels[name].setText("<" + 'x'.join(map(str, value)) + ">")
 
 
-class PolyhedralPropertyBlock(GraphicBlock):
+class PropertyBlock(GraphicBlock):
     """
     This class represents the widget associated to a
-    polyhedral property in NeVer.
+    SMTLIB property in NeVer.
 
     Attributes
     ----------
-    property: PolyhedralNetworkProperty
-        The concrete property element for this block.
+    property: NetworkProperty
+        The property element for this block.
 
     """
 
-    def __init__(self, block_id: str, property: PolyhedralNetworkProperty):
+    def __init__(self, block_id: str, property: NetworkProperty):
         super().__init__(block_id)
         self.property = property
 
@@ -578,5 +578,5 @@ class PolyhedralPropertyBlock(GraphicBlock):
         """
 
         # Override title label
-        self.title_label = QLabel("Polyhedral Property")
-        self.layout.addWidget(self.title_label)
+        self.title_label.setText("Polyhedral Property")
+        self.title_label.setStyleSheet(style.PROPERTY_TITLE_STYLE)

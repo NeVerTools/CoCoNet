@@ -130,7 +130,7 @@ class MessageDialog(CoCoNetDialog):
         # Set the dialog stile depending on message_type
         if message_type == MessageType.MESSAGE:
             title_label = QLabel("Message")
-            title_label.setStyleSheet(style.LABEL_STYLE)
+            title_label.setStyleSheet(style.NODE_LABEL_STYLE)
         else:
             title_label = QLabel("Error")
             title_label.setStyleSheet(style.ERROR_LABEL_STYLE)
@@ -201,7 +201,7 @@ class ConfirmDialog(CoCoNetDialog):
 
         # Set title label
         title_label = QLabel(self.title)
-        title_label.setStyleSheet(style.LABEL_STYLE)
+        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
         title_label.setAlignment(Qt.AlignCenter)
 
         # Set message label
@@ -277,7 +277,7 @@ class InputDialog(CoCoNetDialog):
 
         # Set title label
         title_label = QLabel("Input required")
-        title_label.setStyleSheet(style.LABEL_STYLE)
+        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
         title_label.setAlignment(Qt.AlignCenter)
 
         # Set message label
@@ -420,7 +420,7 @@ class EditDialog(CoCoNetDialog):
 
         # Build layout
         title_label = QLabel("Edit parameters")
-        title_label.setStyleSheet(style.LABEL_STYLE)
+        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
         title_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(title_label, 0, 0, 1, 2)
 

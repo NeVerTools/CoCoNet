@@ -2,14 +2,14 @@ from typing import Optional
 
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QStatusBar, QAction, QLabel, QGraphicsRectItem
+from PyQt5.QtWidgets import QStatusBar, QAction, QLabel, QGraphicsRectItem, QPushButton
 
 import coconet.view.styles as style
 from coconet.core.controller.project import Project
 from coconet.view.drawing.element import Line, NodeBlock
 from coconet.view.drawing.scene import DrawingMode, Canvas
 from coconet.view.widget.dialog.dialogs import ConfirmDialog, MessageDialog, MessageType, HelpDialog
-from coconet.view.widget.toolbar import BlocksToolbar, NodeButton
+from coconet.view.widget.toolbar import BlocksToolbar, NodeButton, PropertyButton
 from coconet.view.widget.toolbar import ParamToolbar
 
 
@@ -188,7 +188,7 @@ class MainWindow(QtWidgets.QMainWindow):
         insert_block_action.triggered.connect(lambda: self.change_draw_mode(DrawingMode.INSERT_BLOCK))
         prop_action = QAction("Edit", self)
         prop_action.setShortcut("Ctrl+E")
-        prop_action.triggered.connect(lambda: self.canvas.scene.edit_block(self.edit_action_validation()))
+        prop_action.triggered.connect(lambda: self.canvas.scene.edit_node(self.edit_action_validation()))
 
         # View actions
         z_in_action = QAction("Zoom in", self)
@@ -248,20 +248,23 @@ class MainWindow(QtWidgets.QMainWindow):
         # Help menu
         self.nav_menu_bar.addAction("Help", self.show_help)
 
-    def create_from(self, button: NodeButton):
+    def create_from(self, button: QPushButton):
         """
         This method draws on the canvas the block corresponding to the pressed
         BlockButton.
 
         Parameters
         ----------
-        button : NodeButton
+        button : QPushButton
             The pressed button.
 
         """
 
         def pressed():
-            self.canvas.draw_node(button.node_type)
+            if isinstance(button, NodeButton):
+                self.canvas.draw_node(button.node_type)
+            elif isinstance(button, PropertyButton):
+                self.canvas.draw_property(button.property)
 
         return pressed
 

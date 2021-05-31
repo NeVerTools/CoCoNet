@@ -14,6 +14,9 @@ BLUE_1 = "#0077AA"
 RED_1 = "#FF0055"
 RED_2 = "#E60000"
 
+ORANGE_0 = "#FF9900"
+ORANGE_1 = "#FFAD33"
+
 """ CANVAS AND GRAPH STYLESHEETS """
 VIEW_STYLE = ("QGraphicsView {"
               "border: 1px solid " + GREY_2 + ";" +
@@ -52,55 +55,71 @@ GRAPHIC_BLOCK_STYLE = ("QWidget {"
                        "}")
 
 """ LABELS STYLESHEETS """
-BLOCK_TITLE_STYLE = ("QLabel {"
-                     "color: white;"
-                     "background-color: " + BLUE_0 + ";" +
-                     "margin-bottom: -5px;"  # Overwrites double margin
-                     "padding: 7px;"
-                     "font-family: calibri;"
-                     "font-size: 18px;"
-                     "border-top-left-radius: 10px;"
-                     "border-top-right-radius: 10px;"
-                     "border-bottom-left-radius: 0px;"
-                     "border-bottom-right-radius: 0px;"
-                     "}"
-                     "QLabel:hover {"
-                     "background-color: " + BLUE_1 + ";" +
-                     "}")
+NODE_TITLE_STYLE = ("QLabel {"
+                    "color: white;"
+                    "background-color: " + BLUE_0 + ";" +
+                    "margin-bottom: -5px;"  # Overwrites double margin
+                    "padding: 7px;"
+                    "font-family: calibri;"
+                    "font-size: 18px;"
+                    "border-top-left-radius: 10px;"
+                    "border-top-right-radius: 10px;"
+                    "border-bottom-left-radius: 0px;"
+                    "border-bottom-right-radius: 0px;"
+                    "}"
+                    "QLabel:hover {"
+                    "background-color: " + BLUE_1 + ";" +
+                    "}")
 
-ZERO_PARS_BLOCK_TITLE = ("QLabel {"
-                         "color: white;"
-                         "background-color: #005588;"
-                         "padding: 7px;"
-                         "font-family: calibri;"
-                         "font-size: 18px;"
-                         "border-radius: 10px;"
-                         "}"
-                         "QLabel:hover {"
-                         "background-color: #0077AA;"
-                         "}")
+PROPERTY_TITLE_STYLE = ("QLabel {"
+                        "color: white;"
+                        "background-color: " + ORANGE_0 + ";" +
+                        "margin-bottom: -5px;"
+                        "padding: 7px;"
+                        "font-family: calibri;"
+                        "font-size: 18px;"
+                        "border-top-left-radius: 10px;"
+                        "border-top-right-radius: 20px;"
+                        "border-bottom-left-radius: 0px;"
+                        "border-bottom-right-radius: 0px;"
+                        "}"
+                        "QLabel:hover {"
+                        "background-color: " + ORANGE_1 + ";" +
+                        "}")
 
-PAR_BLOCK_STYLE = ("border: none;"
-                   "border-radius: 0px;"
-                   "color: white;"
-                   "font-weight: bold;"
-                   "font-family: calibri;")
+EMPTY_NODE_TITLE = ("QLabel {"
+                    "color: white;"
+                    "background-color: #005588;"
+                    "padding: 7px;"
+                    "font-family: calibri;"
+                    "font-size: 18px;"
+                    "border-radius: 10px;"
+                    "}"
+                    "QLabel:hover {"
+                    "background-color: #0077AA;"
+                    "}")
 
-DIM_BLOCK_STYLE = ("border: none;"
-                   "border-radius: 0px;"
-                   "font-family: calibri;"
-                   "color: " + GREY_4 + ";")
+PAR_NODE_STYLE = ("border: none;"
+                  "border-radius: 0px;"
+                  "color: white;"
+                  "font-weight: bold;"
+                  "font-family: calibri;")
+
+DIM_NODE_STYLE = ("border: none;"
+                  "border-radius: 0px;"
+                  "font-family: calibri;"
+                  "color: " + GREY_4 + ";")
 
 """ BLOCKS_LIST STYLESHEET """
-LABEL_STYLE = ("QLabel {"
-               "color: white;"
-               "background-color: " + GREEN_1 + ";" +
-               "text-transform: uppercase;"
-               "margin: 5px;"
-               "padding: 4px;"
-               "font-weight: bold;"
-               "max-height: 17px;"
-               "}")
+NODE_LABEL_STYLE = ("QLabel {"
+                    "color: white;"
+                    "background-color: " + GREEN_1 + ";" +
+                    "text-transform: uppercase;"
+                    "margin: 5px;"
+                    "padding: 4px;"
+                    "font-weight: bold;"
+                    "max-height: 17px;"
+                    "}")
 
 HIDDEN_LABEL_STYLE = ("height: 0px;"
                       "color: rgba(0, 0, 0, 0);"
@@ -232,7 +251,7 @@ STATUS_BAR_WIDGET_STYLE = ("color: " + GREY_4 + ";" +
                            "padding: 1px;"
                            "border-right: 1px solid " + GREY_2)
 
-""" PROPERTIES BOX """
+""" PARAMETERS BOX """
 CLOSE_BUTTON_STYLE = ("QPushButton {"
                       "color: " + GREY_4 + ";" +
                       "font-weight: bold;"

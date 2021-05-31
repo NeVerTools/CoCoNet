@@ -13,8 +13,8 @@ from coconet.core.controller.nodewrapper import NodeOps
 from coconet.core.controller.project import Project
 from coconet.core.controller.pynevertemp.networks import SequentialNetwork, NeuralNetwork
 from coconet.core.controller.pynevertemp.tensor import Tensor
-from coconet.core.model.network import NetworkNode
-from coconet.view.drawing.element import NodeBlock, Line
+from coconet.core.model.network import NetworkNode, NetworkProperty
+from coconet.view.drawing.element import NodeBlock, Line, PropertyBlock
 from coconet.view.drawing.renderer import SequentialNetworkRenderer
 from coconet.view.widget.dialog.dialogs import EditDialog, MessageDialog, MessageType
 
@@ -61,18 +61,20 @@ class Canvas(QWidget):
     ----------
     update_scene()
         Update canvas drawing.
-    insert_block()
+    insert_node()
         Insert a block between two blocks already connected.
     draw_line_between_selected()
         Draw a connection between two blocks.
     draw_line_between(QGraphicsRectItem, QGraphicsRectItem)
         Draw a connection between the two given blocks.
-    draw_block(NetworkNode, GraphicBlock, QPoint)
+    draw_node(NetworkNode, GraphicBlock, QPoint)
         Add to the scene a new block of the given type or copy an
         existing one, possibly at a defined location.
+    draw_property(NetworkProperty, GraphicBlock, QPoint)
+        Add to the scene a new property or copy an existing one.
     show_parameters(QGraphicBlock)
         Emit a signal to show parameters of a block.
-    edit_block(QGraphicBlock)
+    edit_node(QGraphicBlock)
         Let the user change the parameters of a block.
     delete_selected()
         Delete the selected block.
@@ -133,9 +135,9 @@ class Canvas(QWidget):
         if self.scene.mode == DrawingMode.DRAW_LINE:
             self.draw_line_between_selected()
         elif self.scene.mode == DrawingMode.INSERT_BLOCK:
-            self.insert_block()
+            self.insert_node()
 
-    def insert_block(self):
+    def insert_node(self):
         """
         This method inserts a block inside the network. The selected
         edge is split in two edges.
@@ -294,7 +296,7 @@ class Canvas(QWidget):
                     dialog.exec()
                     return
 
-    def draw_node(self, block_type: NetworkNode = None, graphic_block: NodeBlock = None,
+    def draw_node(self, block_type: NetworkNode = None, copy: NodeBlock = None,
                   pos: QPoint = None) -> NodeBlock:
         """
         This method draws a new block, either by the selection of
@@ -304,7 +306,7 @@ class Canvas(QWidget):
         ----------
         block_type : NetworkNode
             The concrete network block (new graphical item)
-        graphic_block : NodeBlock
+        copy : NodeBlock
             The graphical block (copy item)
         pos : QPoint
             Position to draw the block
@@ -316,7 +318,7 @@ class Canvas(QWidget):
 
         """
 
-        assert block_type is None or graphic_block is None, \
+        assert block_type is None or copy is None, \
             "Improper use of method, only a block must be specified."
 
         # Get the visible area of the scene
@@ -337,12 +339,12 @@ class Canvas(QWidget):
 
         # Create a new block or copy the given one
         block = None
-        if graphic_block is not None:
+        if copy is not None:
             # If a graphic block is given, a new block is created copying
             # its data, in_dim, and type
-            block = NodeBlock("", graphic_block.node)
-            block.block_data = graphic_block.block_data
-            block.in_dim = graphic_block.in_dim
+            block = NodeBlock("", copy.node)
+            block.block_data = copy.block_data
+            block.in_dim = copy.in_dim
             block.update_labels()
         else:
             # If a node is passed, a new block is created
@@ -350,9 +352,9 @@ class Canvas(QWidget):
 
         # Creation of the identifier which depends on the number of blocks
         # before and by the type
-        if graphic_block is not None and \
-                graphic_block not in self.scene.blocks.values():
-            block.block_id = graphic_block.block_id
+        if copy is not None and \
+                copy not in self.scene.blocks.values():
+            block.block_id = copy.block_id
         else:
             new_block_id = str(self.num_blocks) + block.node.name[0:2]
             block.block_id = new_block_id
@@ -376,7 +378,7 @@ class Canvas(QWidget):
         block.set_rect_item(rect)
 
         # If the block is edited, the network will be updated
-        block.edited.connect(lambda: self.edit_block(block))
+        block.edited.connect(lambda: self.edit_node(block))
 
         # Set context menu actions
         block_actions = dict()
@@ -398,6 +400,111 @@ class Canvas(QWidget):
         # Add block to Canvas, Scene and Network
         self.scene.blocks[rect] = block
         self.renderer.add_disconnected_block(block)
+
+        return block
+
+    def draw_property(self, property: NetworkProperty = None, copy: PropertyBlock = None,
+                      pos: QPoint = None) -> PropertyBlock:
+        """
+        This method creates a graphic PropertyBlock for representing
+        the property to draw. If the property is legal, the PropertyBlock
+        is created and returned.
+
+        Parameters
+        ----------
+        property : NetworkProperty, optional
+            The property to draw on the canvas.
+        copy : PropertyBlock, optional
+            The property to copy in the canvas.
+        pos : QPoint, optional
+            The position to draw the property.
+
+        Returns
+        -------
+        PropertyBlock
+            The graphical property block to add.
+
+        """
+
+        assert property is None or copy is None, \
+            "Improper use of method, only a block must be specified."
+
+        # Get the visible area of the scene
+        viewport_rect = QRect(0, 0, self.view.viewport().width(),
+                              self.view.viewport().height())
+        viewport = self.view.mapToScene(viewport_rect).boundingRect()
+        start_x = viewport.x()
+        start_y = viewport.y()
+
+        # The initial point of each block is translated of 20px in order not to
+        # overlap them (always in the visible area)
+        if pos is None:
+            point = QPoint(start_x + 20 * (self.num_blocks % 20) + 20,
+                           start_y + 20 * (self.num_blocks % 20) + 20)
+        else:
+            point = pos
+        transparent = QColor(0, 0, 0, 0)
+
+        # Create a new block or copy the given one
+        block = None
+        if copy is not None:
+            # If a graphic block is given, a new block is created copying
+            # its data, in_dim, and type
+            block = PropertyBlock("", copy.property)
+        else:
+            # If a node is passed, a new block is created
+            block = NodeBlock("", property)
+
+        # Creation of the identifier which depends on the number of blocks
+        # before and by the type
+        if copy is not None and \
+                copy not in self.scene.blocks.values():
+            block.block_id = copy.block_id
+        else:
+            new_block_id = str(self.num_blocks) + block.node.name[0:2]
+            block.block_id = new_block_id
+
+        # Position the block
+        proxy = self.scene.addWidget(block)
+
+        # Create the parent rect of the QWidget NodeBlock
+        # in order to move it in the QGraphicsScene
+        rect = QRectF(point.x() + 10, point.y() + 10,
+                      block.width() - 20, block.height() - 20)
+
+        # Add rect
+        rect = self.scene.addRect(rect, QPen(transparent), QBrush(transparent))
+        rect.setFlag(QGraphicsItem.ItemIsMovable, True)
+        rect.setFlag(QGraphicsItem.ItemIsSelectable, True)
+        rect.setZValue(10)
+        proxy.setParentItem(rect)
+        proxy.setPos(point.x(), point.y())
+        block.set_proxy(proxy)
+        block.set_rect_item(rect)
+
+        # If the block is edited, the network will be updated
+        # block.edited.connect(lambda: self.edit_node(block))
+
+        # Set context menu actions
+        # block_actions = dict()
+        # block_actions["Copy"] = QAction("Copy", block)
+        # block_actions["Copy"].triggered.connect(lambda: self.copy_selected(block))
+        # block_actions["Cut"] = QAction("Cut", block)
+        # block_actions["Cut"].triggered.connect(lambda: self.cut_selected())
+        # block_actions["Delete"] = QAction("Delete", block)
+        # block_actions["Delete"].triggered.connect(lambda: self.delete_selected())
+        # block_actions["Edit"] = QAction("Edit", block)
+        # block_actions["Edit"].triggered.connect(lambda: self.scene.edit_block(block))
+        # block_actions["Parameters"] = QAction("Parameters", block)
+        # block_actions["Parameters"].triggered.connect(lambda: self.show_parameters(block))
+        # block.set_context_menu(block_actions)
+
+        self.num_blocks += 1
+        self.update_scene()
+
+        # Add block to Canvas, Scene and Network
+        self.scene.blocks[rect] = block
+        # self.renderer.add_disconnected_block(block)
 
         return block
 
@@ -428,7 +535,7 @@ class Canvas(QWidget):
             self.block_to_show = block
             self.param_requested.emit()
 
-    def edit_block(self, block: NodeBlock):
+    def edit_node(self, block: NodeBlock):
         """
         This method propagates the changes stored in the block.edits
         attribute.
@@ -573,7 +680,10 @@ class Canvas(QWidget):
 
         if self.copied_items:
             for copied_item in self.copied_items:
-                self.draw_node(None, copied_item)
+                if isinstance(copied_item, NodeBlock):
+                    self.draw_node(None, copied_item)
+                elif isinstance(copied_item, PropertyBlock):
+                    self.draw_property(None, copied_item)
 
     def clear_scene(self):
         """
@@ -626,6 +736,8 @@ class Canvas(QWidget):
             # Draw connections
             if edge[0] is not None and edge[1] is not None:
                 self.draw_line_between(edge[0], edge[1])
+
+        # TODO DRAW PROPERTIES
 
     @QtCore.pyqtSlot()
     def zoom_in(self):

@@ -137,7 +137,7 @@ class BlockInspector(QWidget):
         # Parameters section
         if block.node.param:
             self.parameters_label = QLabel("Parameters")
-            self.parameters_label.setStyleSheet(style.LABEL_STYLE)
+            self.parameters_label.setStyleSheet(style.NODE_LABEL_STYLE)
             self.parameters = QWidget()
             self.parameters_layout = QVBoxLayout()
             self.parameters_layout.setSpacing(0)
@@ -150,7 +150,7 @@ class BlockInspector(QWidget):
         # Inputs section
         if block.node.input:
             self.inputs_label = QLabel("Input")
-            self.inputs_label.setStyleSheet(style.LABEL_STYLE)
+            self.inputs_label.setStyleSheet(style.NODE_LABEL_STYLE)
             self.inputs = QWidget()
             self.inputs_layout = QVBoxLayout()
             self.inputs_layout.setSpacing(0)
@@ -163,7 +163,7 @@ class BlockInspector(QWidget):
         # Outputs section
         if block.node.output:
             self.outputs_label = QLabel("Output")
-            self.outputs_label.setStyleSheet(style.LABEL_STYLE)
+            self.outputs_label.setStyleSheet(style.NODE_LABEL_STYLE)
             self.outputs = QWidget()
             self.outputs_layout = QVBoxLayout()
             self.outputs_layout.setSpacing(0)
@@ -461,7 +461,7 @@ class BlocksToolbar(QToolBar):
         # Setting the label of the toolbar
         self.addWidget(self.toolbar_tools_label)
         self.toolbar_tools_label.setAlignment(Qt.AlignCenter)
-        self.toolbar_tools_label.setStyleSheet(style.LABEL_STYLE)
+        self.toolbar_tools_label.setStyleSheet(style.NODE_LABEL_STYLE)
 
         # Setting the first row with horizontal layout
         row_1 = QWidget()
@@ -503,7 +503,7 @@ class BlocksToolbar(QToolBar):
 
         # Labels
         self.toolbar_blocks_label.setAlignment(Qt.AlignCenter)
-        self.toolbar_blocks_label.setStyleSheet(style.LABEL_STYLE)
+        self.toolbar_blocks_label.setStyleSheet(style.NODE_LABEL_STYLE)
 
         # Buttons
         self.addWidget(self.toolbar_blocks_label)
@@ -519,7 +519,7 @@ class BlocksToolbar(QToolBar):
 
         # Labels
         self.toolbar_properties_label.setAlignment(Qt.AlignCenter)
-        self.toolbar_properties_label.setStyleSheet(style.LABEL_STYLE)
+        self.toolbar_properties_label.setStyleSheet(style.NODE_LABEL_STYLE)
 
         # Buttons
         self.addWidget(self.toolbar_properties_label)
@@ -581,7 +581,7 @@ class BlocksToolbar(QToolBar):
         """
 
         label.show()
-        label.setStyleSheet(style.LABEL_STYLE)
+        label.setStyleSheet(style.NODE_LABEL_STYLE)
         for tool in buttons.values():
             tool.show()
             if type(tool) is NodeButton:
