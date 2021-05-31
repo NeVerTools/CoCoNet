@@ -294,8 +294,8 @@ class Canvas(QWidget):
                     dialog.exec()
                     return
 
-    def draw_block(self, block_type: NetworkNode = None, graphic_block: NodeBlock = None,
-                   pos: QPoint = None) -> NodeBlock:
+    def draw_node(self, block_type: NetworkNode = None, graphic_block: NodeBlock = None,
+                  pos: QPoint = None) -> NodeBlock:
         """
         This method draws a new block, either by the selection of
         a toolbar item or by the copy of an existing one.
@@ -573,7 +573,7 @@ class Canvas(QWidget):
 
         if self.copied_items:
             for copied_item in self.copied_items:
-                self.draw_block(None, copied_item)
+                self.draw_node(None, copied_item)
 
     def clear_scene(self):
         """
@@ -617,8 +617,8 @@ class Canvas(QWidget):
 
         for block in nodes.copy_selected().values():  # TODO <===== ????
             # For each block draw the corresponding graphic
-            new_block = self.draw_block(graphic_block=block,
-                                        pos=QPoint(50, tot_height))
+            new_block = self.draw_node(graphic_block=block,
+                                       pos=QPoint(50, tot_height))
             # Increment height as block.h + 50
             tot_height += (new_block.rect.rect().height() + 50)
 

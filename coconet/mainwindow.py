@@ -9,7 +9,7 @@ from coconet.core.controller.project import Project
 from coconet.view.drawing.element import Line, NodeBlock
 from coconet.view.drawing.scene import DrawingMode, Canvas
 from coconet.view.widget.dialog.dialogs import ConfirmDialog, MessageDialog, MessageType, HelpDialog
-from coconet.view.widget.toolbar import BlocksToolbar, BlockButton
+from coconet.view.widget.toolbar import BlocksToolbar, NodeButton
 from coconet.view.widget.toolbar import ParamToolbar
 
 
@@ -47,7 +47,7 @@ class MainWindow(QtWidgets.QMainWindow):
         selected items.
     change_draw_mode(newmode)
         Changes the drawing mode of the canvas.
-    create_from(BlockButton)
+    create_from(NodeButton)
         Draws in the canvas the block corresponding to the button pressed.
     reset()
         Clears both graphical and logical network.
@@ -248,20 +248,20 @@ class MainWindow(QtWidgets.QMainWindow):
         # Help menu
         self.nav_menu_bar.addAction("Help", self.show_help)
 
-    def create_from(self, button: BlockButton):
+    def create_from(self, button: NodeButton):
         """
         This method draws on the canvas the block corresponding to the pressed
         BlockButton.
 
         Parameters
         ----------
-        button : BlockButton
+        button : NodeButton
             The pressed button.
 
         """
 
         def pressed():
-            self.canvas.draw_block(button.block_type)
+            self.canvas.draw_node(button.node_type)
 
         return pressed
 

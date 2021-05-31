@@ -7,7 +7,9 @@ from PyQt5.QtWidgets import QDockWidget, QScrollArea, QSizePolicy, QWidget, QVBo
 from PyQt5.QtWidgets import QToolBar, QToolButton
 
 import coconet.view.styles as style
-from coconet.core.model.network import NetworkNode
+from coconet.core.controller.pynevertemp.strategies.verification import NeVerProperty
+from coconet.core.controller.pynevertemp.tensor import Tensor
+from coconet.core.model.network import NetworkNode, PolyhedralNetworkProperty, NetworkProperty
 from coconet.view.drawing.element import NodeBlock
 
 
@@ -286,24 +288,31 @@ class DropDownLabel(QWidget):
             self.down_button.setText("\u25bc")
 
 
-class BlockButton(QPushButton):
+class NodeButton(QPushButton):
     """
-    Graphical button that carries information related to a type of block
+    Graphical button that carries information related to a type of node.
 
     Attributes
     ----------
     name : str
-        The string appearing on the button
-    block_type : NetworkNode
+        The string appearing on the button.
+    node_type : NetworkNode
         The type of node that will be displayed if the user clicks on the
-        button
+        button.
 
     """
 
-    def __init__(self, name: str, block_type: NetworkNode):
+    def __init__(self, name: str, node_type: NetworkNode):
         self.name = name
-        self.block_type = block_type
-        super(BlockButton, self).__init__(name)
+        self.node_type = node_type
+        super(NodeButton, self).__init__(name)
+
+
+class PropertyButton(QPushButton):
+    def __init__(self, name: str, property: NetworkProperty):
+        self.name = name
+        self.property = property
+        super(PropertyButton, self).__init__(name)
 
 
 class BlocksToolbar(QToolBar):
@@ -314,24 +323,33 @@ class BlocksToolbar(QToolBar):
 
     Attributes
     ----------
-    FILE_PATH : str
+    NODE_FILE_PATH : str
         Path of the JSON file containing all information about the implemented
         nodes available to displaying.
     blocks : dict
-        Dictionary of read blocks connecting each block name with a NetworkNode.
+        Dictionary of blocks connecting each block name with a NetworkNode.
+    properties : dict
+        Dictionary of properties connecting each property name with a NetworkProperty.
     f_buttons : dict
         Dictionary of buttons connecting a function name to a QPushButton.
     b_buttons : dict
-        Dictionary connecting each block name to its QPushButton, which when
-        pressed, makes it appear on the canvas.
-    toolbar_blocks_label : QLabel
-        Label of the toolbar introducing blocks types.
+        Dictionary connecting each block name to a QPushButton, which
+        makes the corresponding node appear.
+    p_buttons : dict
+        Dictionary connecting each property name to a QPushButton, which
+        makes the corresponding property appear.
     toolbar_tools_label : QLabel
         Label of the toolbar introducing tools.
-    isToolbar_blocks_label_visible : bool
-        Tells if the blocks button are visible in the toolbar.
+    toolbar_blocks_label : QLabel
+        Label of the toolbar introducing blocks types.
+    toolbar_properties_label : QLabel
+        Label of the toolbar introducing property names.
     isToolbar_tools_label_visible : bool
         Tells if the tools button are visible in the toolbar.
+    isToolbar_blocks_label_visible : bool
+        Tells if the blocks button are visible in the toolbar.
+    isToolbar_properties_label_visible : bool
+        Tells if the properties button are visible in the toolbar.
 
     Methods
     ----------
@@ -354,26 +372,32 @@ class BlocksToolbar(QToolBar):
 
     """
 
-    def __init__(self, file_path):
+    def __init__(self, node_file_path: str):
         super().__init__()
-        self.FILE_PATH = file_path
+        self.NODE_FILE_PATH = node_file_path
         self.setContextMenuPolicy(Qt.PreventContextMenu)
         self.blocks = dict()
+        self.properties = dict()
 
         # Graphic buttons
         self.f_buttons = dict()
         self.b_buttons = dict()
+        self.p_buttons = dict()
 
         # Labels
-        self.toolbar_blocks_label = QLabel("Nodes")
         self.toolbar_tools_label = QLabel("Tools")
-        self.isToolbar_blocks_label_visible = True
+        self.toolbar_blocks_label = QLabel("Nodes")
+        self.toolbar_properties_label = QLabel("Properties")
         self.isToolbar_tools_label_visible = True
+        self.isToolbar_blocks_label_visible = True
+        self.isToolbar_properties_label_visible = True
 
         # Setup view
         self.__display_tools()
         self.__init_blocks()
         self.__display_blocks()
+        self.__init_properties()
+        self.__display_properties()
 
         # Toolbar style
         for item in self.children():
@@ -384,6 +408,33 @@ class BlocksToolbar(QToolBar):
         self.setOrientation(Qt.Vertical)
         self.setMovable(True)  # TODO MAKE FALSE?
         self.setFloatable(True)
+
+    def __init_blocks(self):
+        """
+        Uploading blocks from a JSON file storing them in a dictionary of
+        NetworkNode objects.
+
+        """
+
+        with open(self.NODE_FILE_PATH) as json_file:
+            blocks_dict = json.loads(json_file.read())
+
+        for k, b in blocks_dict.items():
+            self.blocks[k] = NetworkNode(k, b["name"], b["input"], b["parameters"],
+                                         b["output"], b["description"])
+            button = NodeButton(k, self.blocks[k])
+            button.setToolTip(b["description"])
+            button.setStyleSheet(style.BUTTON_STYLE)
+            self.b_buttons[k] = button
+
+    def __init_properties(self):
+        k = "Polyhedral"
+        self.properties[k] = PolyhedralNetworkProperty(NeVerProperty(Tensor([]), Tensor([]), [], []))
+
+        button = PropertyButton(k, self.properties[k])
+        button.setToolTip(k)
+        button.setStyleSheet(style.BUTTON_STYLE)
+        self.p_buttons[k] = button
 
     def __display_tools(self):
         """
@@ -429,24 +480,6 @@ class BlocksToolbar(QToolBar):
         self.addWidget(row_1)
         self.addSeparator()
 
-    def __init_blocks(self):
-        """
-        Uploading blocks from a JSON file storing them in a dictionary of
-        NetworkNode objects.
-
-        """
-
-        with open(self.FILE_PATH) as json_file:
-            blocks_dict = json.loads(json_file.read())
-
-        for k, b in blocks_dict.items():
-            self.blocks[k] = NetworkNode(k, b["name"], b["input"], b["parameters"],
-                                         b["output"], b["description"])
-            button = BlockButton(k, self.blocks[k])
-            button.setToolTip(b["description"])
-            button.setStyleSheet(style.BUTTON_STYLE)
-            self.b_buttons[k] = button
-
     def __display_blocks(self):
         """
         Graphical blocks are displayed in a vertical layout, which is put in
@@ -462,6 +495,16 @@ class BlocksToolbar(QToolBar):
         self.addWidget(self.toolbar_blocks_label)
         for b in self.b_buttons.values():
             self.addWidget(b)
+
+    def __display_properties(self):
+        # Labels
+        self.toolbar_properties_label.setAlignment(Qt.AlignCenter)
+        self.toolbar_properties_label.setStyleSheet(style.LABEL_STYLE)
+
+        # Buttons
+        self.addWidget(self.toolbar_properties_label)
+        for p in self.p_buttons.values():
+            self.addWidget(p)
 
     def change_tools_mode(self):
         """
@@ -521,7 +564,7 @@ class BlocksToolbar(QToolBar):
         label.setStyleSheet(style.LABEL_STYLE)
         for tool in buttons.values():
             tool.show()
-            if type(tool) is BlockButton:
+            if type(tool) is NodeButton:
                 tool.setStyleSheet(style.BUTTON_STYLE)
 
     @staticmethod
@@ -540,5 +583,5 @@ class BlocksToolbar(QToolBar):
         label.setStyleSheet(style.HIDDEN_LABEL_STYLE)
         for tool in buttons.values():
             tool.hide()
-            if type(tool) is BlockButton:
+            if type(tool) is NodeButton:
                 tool.setStyleSheet(style.HIDDEN_LABEL_STYLE)

@@ -119,7 +119,7 @@ ERROR_LABEL_STYLE = ("QLabel {"
                      "font-weight: bold;"
                      "}")
 
-BUTTON_STYLE = ("BlockButton, QPushButton { "
+BUTTON_STYLE = ("NodeButton, QPushButton { "
                 "background-color: " + GREY_2 + ";" +
                 "border: 2px solid " + GREY_1 + ";" +
                 "padding: 6px;"
@@ -128,7 +128,7 @@ BUTTON_STYLE = ("BlockButton, QPushButton { "
                 "border-radius: 5px;"
                 "margin: 2px;"
                 "}"
-                "BlockButton:hover, QPushButton:hover {"
+                "NodeButton:hover, QPushButton:hover {"
                 "background-color: " + GREY_4 + ";" +
                 "border: 2px solid " + GREY_3 + ";" +
                 "font-weight: bold;"
