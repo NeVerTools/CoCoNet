@@ -55,7 +55,7 @@ GRAPHIC_BLOCK_STYLE = ("QWidget {"
 BLOCK_TITLE_STYLE = ("QLabel {"
                      "color: white;"
                      "background-color: " + BLUE_0 + ";" +
-                     "margin-bottom: -5px;"
+                     # "margin-bottom: -5px;"
                      "padding: 7px;"
                      "font-family: calibri;"
                      "font-size: 18px;"
