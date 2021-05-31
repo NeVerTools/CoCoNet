@@ -243,6 +243,8 @@ class GraphicBlock(QtWidgets.QWidget):
         pyQt rectangle object associated to the block.
     proxy_control: QGraphicsProxyWidget
         pyQt proxy holding the widget inside the scene.
+    title_label: QLabel
+        pyQt label for the block head.
 
     Methods
     ----------
@@ -270,12 +272,14 @@ class GraphicBlock(QtWidgets.QWidget):
         self.layout.setSpacing(0)
         self.rect = None
         self.proxy_control = None
+        self.title_label = QLabel("Graphic block")
 
         self.setLayout(self.layout)
 
         # Set style and transparent background for the rounded corners
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setStyleSheet(style.GRAPHIC_BLOCK_STYLE)
+        self.title_label.setStyleSheet(style.BLOCK_TITLE_STYLE)
 
     @abc.abstractmethod
     def init_layout(self):
@@ -415,21 +419,20 @@ class NodeBlock(GraphicBlock):
 
         self.is_head = True
         self.edits = None
-
-        # NodeBlock title label
-        self.type_label = QLabel(node.name)
-        self.type_label.setStyleSheet(style.BLOCK_TITLE_STYLE)
-
         self.dim_labels = dict()
-        self.layout.addWidget(self.type_label)
+
+        # Override title label
+        self.title_label = QLabel(node.name)
+        self.layout.addWidget(self.title_label)
+
         if self.node.param:
             self.init_layout()
         else:
-            self.type_label.setStyleSheet(style.ZERO_PARS_BLOCK_TITLE)
+            self.title_label.setStyleSheet(style.ZERO_PARS_BLOCK_TITLE)
 
     def init_layout(self) -> None:
         """
-        This method sets up the the block layout with
+        This method sets up the the node block layout with
         attributes and values.
 
         """
@@ -567,5 +570,13 @@ class PolyhedralPropertyBlock(GraphicBlock):
         super().__init__(block_id)
         self.property = property
 
-    def init_layout(self):
-        pass
+    def init_layout(self) -> None:
+        """
+        This method sets up the the property block layout with
+        the property parameters.
+
+        """
+
+        # Override title label
+        self.title_label = QLabel("Polyhedral Property")
+        self.layout.addWidget(self.title_label)
