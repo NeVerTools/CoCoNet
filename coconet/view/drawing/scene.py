@@ -10,7 +10,6 @@ from PyQt5.QtWidgets import QGraphicsRectItem, QWidget, QGraphicsScene, QApplica
 
 import coconet.view.styles as style
 from coconet.core.controller.nodewrapper import NodeOps
-from coconet.core.controller.project import Project
 from coconet.core.controller.pynevertemp.networks import SequentialNetwork, NeuralNetwork
 from coconet.core.controller.pynevertemp.tensor import Tensor
 from coconet.core.model.network import NetworkNode, NetworkProperty
@@ -104,11 +103,11 @@ class Canvas(QWidget):
     # Max number of zoom allowed
     MAX_ZOOM = 100
 
-    def __init__(self, project: Project, blocks: dict):
+    def __init__(self, network: SequentialNetwork, blocks: dict):
         super(Canvas, self).__init__()
         self.zooms = 0
         self.num_blocks = 0
-        self.renderer = SequentialNetworkRenderer(project, blocks)
+        self.renderer = SequentialNetworkRenderer(network, blocks)
 
         self.scene = NetworkScene(self)
         self.scene.selectionChanged.connect(lambda: self.update_scene())
@@ -181,8 +180,8 @@ class Canvas(QWidget):
                     old_line.remove_self()
 
                     # inputs and dimensions labels are updated
-                    out_dim_1 = self.renderer.project.NN.nodes[prev_node.block_id].out_dim
-                    out_dim_2 = self.renderer.project.NN.nodes[middle_node.block_id].out_dim
+                    out_dim_1 = self.renderer.NN.nodes[prev_node.block_id].out_dim
+                    out_dim_2 = self.renderer.NN.nodes[middle_node.block_id].out_dim
 
                     # Dimension labels are updated
                     line_1.update_dims(out_dim_1)
@@ -223,11 +222,11 @@ class Canvas(QWidget):
                 legal = self.renderer.add_edge(origin.block_id,
                                                destination.block_id)
                 if legal:
-                    if self.renderer.project.NN.get_first_node().identifier in origin.block_id:
+                    if self.renderer.NN.get_first_node().identifier in origin.block_id:
                         origin.is_head = True
 
                     # Draw dimensions
-                    in_dim = self.renderer.project.NN.nodes[destination.block_id].in_dim
+                    in_dim = self.renderer.NN.nodes[destination.block_id].in_dim
                     destination.in_dim = in_dim
                     destination.is_head = False
 
@@ -273,16 +272,16 @@ class Canvas(QWidget):
                 try:
                     # Update the node input
                     NodeOps.update_node_input(
-                        self.renderer.project.NN.nodes[destination_id],
-                        self.renderer.project.NN.nodes[origin_id].out_dim)
+                        self.renderer.NN.nodes[destination_id],
+                        self.renderer.NN.nodes[origin_id].out_dim)
 
                     # Update sequential nodes, if any
-                    if len(self.renderer.project.NN.edges[destination_id]) > 1:
+                    if len(self.renderer.NN.edges[destination_id]) > 1:
                         self.renderer.update_network_from(destination_id, origin_id)
 
                     # The new line is drawn
                     line = self.scene.auto_add_line(origin_item, destination_item)
-                    out_dim = self.renderer.project.NN.nodes[
+                    out_dim = self.renderer.NN.nodes[
                         self.scene.blocks[origin_item].block_id].out_dim
                     line.update_dims(out_dim)
 
@@ -585,7 +584,7 @@ class Canvas(QWidget):
             # Update dimensions in edges & nodes
             for line in self.scene.lines:
                 origin_id = self.scene.blocks[line.origin].block_id
-                new_dim = self.renderer.project.NN.nodes[origin_id].out_dim
+                new_dim = self.renderer.NN.nodes[origin_id].out_dim
                 line.update_dims(new_dim)
 
                 self.scene.blocks[line.destination].in_dim = new_dim
@@ -609,9 +608,9 @@ class Canvas(QWidget):
             item = self.scene.delete_selected()
             if item is not None:
                 if type(item) == QGraphicsRectItem:
-                    if self.scene.blocks[item].block_id in self.renderer.project.NN.nodes.keys():
+                    if self.scene.blocks[item].block_id in self.renderer.NN.nodes.keys():
                         # Get the first node
-                        first_node = self.renderer.project.NN.get_first_node()
+                        first_node = self.renderer.NN.get_first_node()
 
                         # If the node is in the network, delete it
                         new_tuple = self.renderer.delete_node(self.scene.blocks[item].block_id)
@@ -621,7 +620,7 @@ class Canvas(QWidget):
                             self.draw_line_between(new_tuple[0], new_tuple[1])
 
                             # New first node
-                            new_first_node = self.renderer.project.NN.get_first_node()
+                            new_first_node = self.renderer.NN.get_first_node()
                             # If the first node is changed
                             if first_node is not new_first_node:
                                 self.renderer.disconnected_network[new_first_node.identifier] \
@@ -692,7 +691,7 @@ class Canvas(QWidget):
         """
 
         self.renderer.disconnected_network = {}
-        self.renderer.project.NN = SequentialNetwork("")
+        self.renderer.NN = SequentialNetwork("")
 
         # Recreate the scene
         self.scene = NetworkScene(self)
@@ -725,9 +724,9 @@ class Canvas(QWidget):
         # Track the total height for ordering the network
         tot_height = 0
 
-        for block in nodes.copy_selected().values():  # TODO <===== ????
+        for block in nodes.values():  # TODO <===== ????
             # For each block draw the corresponding graphic
-            new_block = self.draw_node(graphic_block=block,
+            new_block = self.draw_node(copy=block,
                                        pos=QPoint(50, tot_height))
             # Increment height as block.h + 50
             tot_height += (new_block.rect.rect().height() + 50)
@@ -1087,7 +1086,7 @@ class NetworkScene(QGraphicsScene):
             dialog.exec()
 
             # Catch new parameters
-            if dialog.edit_data:
+            if dialog.edited_data:
                 edited_data = dialog.has_edits
 
                 # The block emits a signal

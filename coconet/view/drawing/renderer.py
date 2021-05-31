@@ -3,8 +3,7 @@ import copy
 from PyQt5.QtCore import pyqtSignal
 
 from coconet.core.controller.nodewrapper import NodeOps
-from coconet.core.controller.project import Project
-from coconet.core.controller.pynevertemp.networks import NeuralNetwork
+from coconet.core.controller.pynevertemp.networks import NeuralNetwork, SequentialNetwork
 from coconet.view.drawing.element import NodeBlock
 
 
@@ -16,7 +15,7 @@ class SequentialNetworkRenderer:
 
     Attributes
     ----------
-    project: Project
+    NN: SequentialNetwork
         Internal representation of the network.
     disconnected_network: dict
         Dictionary containing the network blocks.
@@ -54,8 +53,8 @@ class SequentialNetworkRenderer:
 
     drawable_block = pyqtSignal()
 
-    def __init__(self, project: Project, json_blocks: dict):
-        self.project = project
+    def __init__(self, NN: SequentialNetwork, json_blocks: dict):
+        self.NN = NN
         self.available_blocks = json_blocks
         self.disconnected_network = dict()
 
@@ -70,22 +69,21 @@ class SequentialNetworkRenderer:
 
         """
 
-        net = self.project.NN
         if len(self.disconnected_network) == 1:
             # If there is only one node, the network is sequential
             return True
         else:  # TODO rewrite with for loop?
             # Each node must be connected to the next with only one edge.
-            n = net.get_first_node().identifier
+            n = self.NN.get_first_node().identifier
             count = 1
-            while len(net.edges[n]) == 1:
-                n = net.get_next_node(net.nodes[n]).identifier
+            while len(self.NN.edges[n]) == 1:
+                n = self.NN.get_next_node(self.NN.nodes[n]).identifier
                 count += 1
             # If one node has one or more edges, the network is not sequential
-            if len(net.edges[n]) > 1:
+            if len(self.NN.edges[n]) > 1:
                 return False
             # Finally, the count of nodes should equal the nodes in the network.
-            return count == len(net.nodes)
+            return count == len(self.NN.nodes)
 
     def add_node_to_nn(self, node_id: str) -> None:
         """
@@ -104,8 +102,8 @@ class SequentialNetworkRenderer:
                 block = self.disconnected_network[node_id]
                 node = NodeOps.create_node(block.node.class_name, node_id,
                                            block.block_data, block.in_dim)
-                self.project.NN.nodes[node_id] = node
-                self.project.NN.edges[node_id] = []
+                self.NN.nodes[node_id] = node
+                self.NN.edges[node_id] = []
         except Exception as e:
             raise e
 
@@ -147,7 +145,7 @@ class SequentialNetworkRenderer:
         destination_block = self.disconnected_network[destination_id]
 
         # If there are no nodes the origin becomes the first node and the second is added
-        if not self.project.NN.nodes:
+        if not self.NN.nodes:
             st_node = NodeOps.create_node(origin_block.node.class_name,
                                           origin_block.block_id,
                                           origin_block.block_data,
@@ -156,8 +154,8 @@ class SequentialNetworkRenderer:
                                           destination_block.block_id,
                                           destination_block.block_data,
                                           st_node.out_dim)
-            self.project.NN.add_node(st_node)
-            self.project.NN.add_node(nd_node)
+            self.NN.add_node(st_node)
+            self.NN.add_node(nd_node)
 
             self.disconnected_network[nd_node.identifier].block_data = NodeOps.node2data(nd_node)[0]
             self.disconnected_network[nd_node.identifier].in_dim = nd_node.in_dim
@@ -167,7 +165,7 @@ class SequentialNetworkRenderer:
 
         # If the network is not empty but the nodes are not present they are created.
         # N.B. the network may become non sequential.
-        elif origin_id not in self.project.NN.nodes and destination_id not in self.project.NN.nodes:
+        elif origin_id not in self.NN.nodes and destination_id not in self.NN.nodes:
             st_node = NodeOps.create_node(origin_block.node.class_name,
                                           origin_block.block_id,
                                           origin_block.block_data,
@@ -177,10 +175,10 @@ class SequentialNetworkRenderer:
                                           destination_block.block_data,
                                           st_node.out_dim)
 
-            self.project.NN.nodes[origin_id] = st_node
-            self.project.NN.nodes[destination_id] = nd_node
-            self.project.NN.edges[origin_id] = [destination_id]
-            self.project.NN.edges[destination_id] = []
+            self.NN.nodes[origin_id] = st_node
+            self.NN.nodes[destination_id] = nd_node
+            self.NN.edges[origin_id] = [destination_id]
+            self.NN.edges[destination_id] = []
 
             self.disconnected_network[nd_node.identifier].block_data = NodeOps.node2data(nd_node)[0]
             self.disconnected_network[nd_node.identifier].in_dim = nd_node.in_dim
@@ -190,42 +188,42 @@ class SequentialNetworkRenderer:
 
         # If the nodes are all connected but one and the node are present the network
         # would be a loop, which is illegal.
-        elif len(self.project.NN.nodes) == self.count_edges() + 1 and \
-                origin_id in self.project.NN.nodes and \
-                destination_id in self.project.NN.nodes:
+        elif len(self.NN.nodes) == self.count_edges() + 1 and \
+                origin_id in self.NN.nodes and \
+                destination_id in self.NN.nodes:
 
             return False
 
         # If the origin has no connections after or the destination has no connections before
         # try to draw the new connection.
-        elif (origin_id not in self.project.NN.nodes or len(self.project.NN.edges[origin_id]) == 0) and \
+        elif (origin_id not in self.NN.nodes or len(self.NN.edges[origin_id]) == 0) and \
                 not self.has_nodes_before(destination_id):
-            if origin_id not in self.project.NN.nodes:
+            if origin_id not in self.NN.nodes:
                 orig_node = NodeOps.create_node(origin_block.node.class_name,
                                                 origin_block.block_id,
                                                 origin_block.block_data,
                                                 origin_block.in_dim)
-                self.project.NN.nodes[origin_id] = orig_node
-                self.project.NN.edges[origin_id] = []
+                self.NN.nodes[origin_id] = orig_node
+                self.NN.edges[origin_id] = []
             else:
-                orig_node = self.project.NN.nodes[origin_id]
+                orig_node = self.NN.nodes[origin_id]
 
-            if destination_id not in self.project.NN.nodes:
+            if destination_id not in self.NN.nodes:
                 dest_node = NodeOps.create_node(destination_block.node.class_name,
                                                 destination_block.block_id,
                                                 destination_block.block_data,
                                                 orig_node.out_dim)
-                self.project.NN.nodes[destination_id] = dest_node
-                self.project.NN.edges[destination_id] = []
+                self.NN.nodes[destination_id] = dest_node
+                self.NN.edges[destination_id] = []
             else:
-                dest_node = self.project.NN.nodes[destination_id]
+                dest_node = self.NN.nodes[destination_id]
                 NodeOps.update_node_input(dest_node, orig_node.out_dim)
 
                 # Update blocks after
-                if len(self.project.NN.edges[destination_id]) > 0:
+                if len(self.NN.edges[destination_id]) > 0:
                     self.update_network_from(destination_id, origin_id)
 
-            self.project.NN.edges[origin_id].append(destination_id)
+            self.NN.edges[origin_id].append(destination_id)
             self.disconnected_network[dest_node.identifier].block_data = NodeOps.node2data(dest_node)[0]
             self.disconnected_network[dest_node.identifier].in_dim = dest_node.in_dim
             self.disconnected_network[dest_node.identifier].update_labels()
@@ -247,7 +245,7 @@ class SequentialNetworkRenderer:
         """
 
         edges = 0
-        for edge_list in self.project.NN.edges.values():
+        for edge_list in self.NN.edges.values():
             edges += len(edge_list)
         return edges
 
@@ -268,7 +266,7 @@ class SequentialNetworkRenderer:
 
         """
 
-        for dest in self.project.NN.edges.values():
+        for dest in self.NN.edges.values():
             if block_id in dest:
                 return True
         return False
@@ -285,7 +283,7 @@ class SequentialNetworkRenderer:
 
         """
 
-        self.project.NN.edges[block_id] = []
+        self.NN.edges[block_id] = []
 
     def insert_node(self, cur_node_id: str, prev_node_id: str) -> bool:
         """
@@ -307,12 +305,12 @@ class SequentialNetworkRenderer:
         """
 
         if prev_node_id == cur_node_id or \
-                cur_node_id not in self.project.NN.nodes.keys() or \
-                prev_node_id not in self.project.NN.nodes.keys():
+                cur_node_id not in self.NN.nodes.keys() or \
+                prev_node_id not in self.NN.nodes.keys():
             return False
         else:
             try:
-                prev_node = self.project.NN.nodes[prev_node_id]
+                prev_node = self.NN.nodes[prev_node_id]
                 middle_node_block = self.disconnected_network[cur_node_id]
 
                 middle_node = NodeOps.create_node(middle_node_block.node.class_name,
@@ -320,14 +318,14 @@ class SequentialNetworkRenderer:
                                                   middle_node_block.block_data,
                                                   in_dim=prev_node.out_dim)
 
-                next_node = self.project.NN.get_next_node(prev_node)
+                next_node = self.NN.get_next_node(prev_node)
 
                 # Adjust the network
-                self.project.NN.edges[prev_node_id] = []
-                self.project.NN.edges[prev_node_id].append(middle_node.identifier)
-                self.project.NN.edges[cur_node_id] = []
-                self.project.NN.edges[cur_node_id].append(next_node.identifier)
-                self.project.NN.nodes[cur_node_id] = middle_node
+                self.NN.edges[prev_node_id] = []
+                self.NN.edges[prev_node_id].append(middle_node.identifier)
+                self.NN.edges[cur_node_id] = []
+                self.NN.edges[cur_node_id].append(next_node.identifier)
+                self.NN.nodes[cur_node_id] = middle_node
 
                 # Update the network
                 self.update_network_from(next_node.identifier,
@@ -357,7 +355,7 @@ class SequentialNetworkRenderer:
         """
 
         # Check if the node exists
-        if block_id not in self.project.NN.nodes.keys():
+        if block_id not in self.NN.nodes.keys():
             return False
 
         # Copy current data
@@ -376,15 +374,15 @@ class SequentialNetworkRenderer:
         if in_dim is not None:
             self.disconnected_network[block_id].in_dim = in_dim
 
-        node = self.project.NN.nodes[block_id]
+        node = self.NN.nodes[block_id]
 
         try:
             NodeOps.update_node_data(node, data)
             if in_dim is not None:
                 NodeOps.update_node_input(node, in_dim)
 
-            if node is not self.project.NN.get_last_node():
-                next_node = self.project.NN.get_next_node(node)
+            if node is not self.NN.get_last_node():
+                next_node = self.NN.get_next_node(node)
                 self.update_network_from(next_node.identifier, node.identifier)
 
             return True
@@ -399,8 +397,8 @@ class SequentialNetworkRenderer:
             if in_dim is not None:
                 NodeOps.update_node_input(node, old_in_dim)
 
-            if node is not self.project.NN.get_last_node():
-                next_node = self.project.NN.get_next_node(node)
+            if node is not self.NN.get_last_node():
+                next_node = self.NN.get_next_node(node)
                 self.update_network_from(next_node.identifier, node.identifier)
 
             raise Exception(str(e))
@@ -423,13 +421,13 @@ class SequentialNetworkRenderer:
         """
 
         new_edge = None
-        if block_id in self.project.NN.nodes:
+        if block_id in self.NN.nodes:
             # Unroll the sequential network and find the previous node
-            for k, node in self.project.NN.nodes.items():
+            for k, node in self.NN.nodes.items():
                 # If the node to remove isn't the last add the next node to the edges of the previous node
-                if block_id in self.project.NN.edges[k]:
-                    if block_id != self.project.NN.get_last_node().identifier:
-                        next_node_id = self.project.NN.get_next_node(self.project.NN.nodes[block_id]) \
+                if block_id in self.NN.edges[k]:
+                    if block_id != self.NN.get_last_node().identifier:
+                        next_node_id = self.NN.get_next_node(self.NN.nodes[block_id]) \
                             .identifier
 
                         try:
@@ -437,24 +435,24 @@ class SequentialNetworkRenderer:
                             self.update_network_from(next_node_id, k)
 
                             # Remove the edge between the previous node and the one to delete
-                            self.project.NN.edges[k].remove(block_id)
-                            self.project.NN.edges[k].append(next_node_id)
+                            self.NN.edges[k].remove(block_id)
+                            self.NN.edges[k].append(next_node_id)
                             new_edge = (k, next_node_id)
                         except Exception as e:
                             raise Exception(e)
                     else:
                         # If the node is the last node
-                        self.project.NN.edges[k].remove(block_id)
+                        self.NN.edges[k].remove(block_id)
                     break
 
             # Delete the LayerNode and return the new edge to draw
-            self.project.NN.nodes.pop(block_id)
-            self.project.NN.edges.pop(block_id)
+            self.NN.nodes.pop(block_id)
+            self.NN.edges.pop(block_id)
 
-            if len(self.project.NN.nodes) == 1:
-                only_node = self.project.NN.get_first_node().identifier
-                self.project.NN.nodes.pop(only_node)
-                self.project.NN.edges.pop(only_node)
+            if len(self.NN.nodes) == 1:
+                only_node = self.NN.get_first_node().identifier
+                self.NN.nodes.pop(only_node)
+                self.NN.edges.pop(only_node)
 
         # Remove the block from the disconnected graph
         if block_id in self.disconnected_network:
@@ -477,8 +475,8 @@ class SequentialNetworkRenderer:
 
         """
 
-        node = self.project.NN.nodes[node_id]
-        in_dim = self.project.NN.nodes[prev_node_id].out_dim
+        node = self.NN.nodes[node_id]
+        in_dim = self.NN.nodes[prev_node_id].out_dim
 
         if node is not None:
             while node is not None:
@@ -489,7 +487,7 @@ class SequentialNetworkRenderer:
                 self.disconnected_network[node.identifier].update_labels()
 
                 in_dim = node.out_dim
-                node = self.project.NN.get_next_node(node)
+                node = self.NN.get_next_node(node)
 
     def render(self, nn: NeuralNetwork) -> tuple:
         """
@@ -516,8 +514,7 @@ class SequentialNetworkRenderer:
 
         for node in nn.nodes.values():
             for b in self.available_blocks.values():
-                if "<class 'nodes." + b.class_name + "'>" \
-                        == str(type(node)):
+                if b.class_name == node.__class__.__name__:
                     # Create the graphic block
                     block = NodeBlock(node.identifier, b)
                     block_data = NodeOps.node2data(node)

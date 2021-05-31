@@ -82,7 +82,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.project.opened_net.connect(lambda: self.canvas.draw_network(self.project.NN))
 
         # Drawing Canvas
-        self.canvas = Canvas(self.project, self.toolbar.blocks)
+        self.canvas = Canvas(self.project.NN, self.toolbar.blocks)
 
         # Status bar
         self.status_bar = QStatusBar()
@@ -416,8 +416,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         """
 
-        if len(self.canvas.renderer.project.NN.nodes) == 0 or \
-                len(self.canvas.renderer.project.NN.edges) == 0:
+        if len(self.canvas.renderer.NN.nodes) == 0 or \
+                len(self.canvas.renderer.NN.edges) == 0:
             # Limit case: one disconnected node -> new network with one node
             if len(self.canvas.renderer.disconnected_network) == 1:
                 for node in self.canvas.renderer.disconnected_network:

@@ -90,7 +90,6 @@ class Project(QObject):
             self.opened_net.emit()
             # Other network data is saved
             self.file_path = self.input_handler.file_path
-            self.file_name = self.input_handler.file_name
 
         # Loading dialog closed and cursor restored
         self.close_loading_dialog()
@@ -112,7 +111,6 @@ class Project(QObject):
         """
 
         self.file_path = self.output_handler.file_path
-        self.file_name = self.output_handler.file_name
 
         self.close_loading_dialog()
 
