@@ -30,8 +30,6 @@ class Project(QObject):
     ----------
     file_path : str
         The path of the opened network
-    file_name : tuple
-        Path and format of the opened network
     NN : SequentialNetwork
         The current sequential network
     input_handler : InputHandler
