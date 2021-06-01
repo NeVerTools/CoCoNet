@@ -367,7 +367,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.clear()
         self.project.file_name = ("", "")
-        self.project.file_path = ""
         self.setWindowTitle(self.SYSNAME)
 
     def open(self):
