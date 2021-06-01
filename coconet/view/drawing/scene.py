@@ -263,9 +263,9 @@ class Canvas(QWidget):
 
         # Find the rects corresponding to the given ids
         for rect, block in self.scene.blocks.items():
-            if block.block_id in origin_id:
+            if block.block_id == origin_id:
                 origin_item = rect
-            if block.block_id in destination_id:
+            if block.block_id == destination_id:
                 destination_item = rect
 
             if origin_item is not None and destination_item is not None:
@@ -717,7 +717,8 @@ class Canvas(QWidget):
         """
 
         # Renderer returns the elements to draw
-        to_draw = self.renderer.render(network)
+        self.renderer.NN = network
+        to_draw = self.renderer.render()
         nodes = to_draw[0]
         edges = to_draw[1]
 

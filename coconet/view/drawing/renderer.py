@@ -489,7 +489,7 @@ class SequentialNetworkRenderer:
                 in_dim = node.out_dim
                 node = self.NN.get_next_node(node)
 
-    def render(self, nn: NeuralNetwork) -> tuple:
+    def render(self) -> tuple:
         """
         This method builds the graphic network to draw,
         composed of the nodes in the disconnected network
@@ -497,8 +497,6 @@ class SequentialNetworkRenderer:
 
         Parameters
         ----------
-        nn: NeuralNetwork
-            The internal network to render.
 
         Returns
         ----------
@@ -512,7 +510,7 @@ class SequentialNetworkRenderer:
         self.disconnected_network = {}
         edges = list()
 
-        for node in nn.nodes.values():
+        for node in self.NN.nodes.values():
             for b in self.available_blocks.values():
                 if b.class_name == node.__class__.__name__:
                     # Create the graphic block
@@ -524,7 +522,7 @@ class SequentialNetworkRenderer:
                     self.disconnected_network[node.identifier] = block
 
         # Fetch connections
-        for node, destination in nn.edges.items():
+        for node, destination in self.NN.edges.items():
             if len(destination) > 0:
                 edges.append((node, destination[0]))
 
