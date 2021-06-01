@@ -53,12 +53,8 @@ class Line(QGraphicsLineItem):
         Assign validity for this line.
     update_dims(tuple)
         Update the line dimensions.
-    update(QRectF)
+    update_pos(QRectF)
         Update the line position given the new rect position.
-    change_origin(QRectF)
-        The origin of the line changes.
-    change_destination(QRectF)
-        The destination of the line changes.
     remove_self()
         Delete this line.
 
@@ -211,6 +207,26 @@ class Line(QGraphicsLineItem):
         self.dim_label.setHtml("<div style = 'background-color: " + style.RED_2 +
                                "; color: white; font-family: consolas;'>" +
                                str(dims) + "</div>")
+        self.dim_label.setPos(self.line().center())
+
+    def update_pos(self, new_target: QRectF):
+        """
+        This method updates the line as it origin or its destination has
+        changed location.
+        :param new_target: QRectF
+        """
+        if new_target == self.destination:
+            self.destination = new_target
+        elif new_target == self.origin:
+            self.origin = new_target
+
+        # Get the four sides of the rects
+        destination_lines = u.get_sides_of(self.destination.sceneBoundingRect())
+        origin_lines = u.get_sides_of(self.origin.sceneBoundingRect())
+
+        # Get the shortest edge between the two blocks
+        self.setLine(self.gen_endpoints(origin_lines, destination_lines))
+        self.draw_arrow()
         self.dim_label.setPos(self.line().center())
 
     def remove_self(self) -> None:

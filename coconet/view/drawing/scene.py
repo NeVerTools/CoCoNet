@@ -6,7 +6,7 @@ from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtCore import Qt, QPoint, QRectF, pyqtSignal, QRect
 from PyQt5.QtGui import QBrush, QColor, QPen, QPainter
 from PyQt5.QtWidgets import QGraphicsRectItem, QWidget, QGraphicsScene, QApplication, QGraphicsItem, \
-    QAction
+    QAction, QGraphicsSceneMouseEvent
 
 import coconet.view.styles as style
 from coconet.core.controller.nodewrapper import NodeOps
@@ -1062,6 +1062,29 @@ class NetworkScene(QGraphicsScene):
             return item
         else:
             return None
+
+    def mouseDoubleClickEvent(self, event: QGraphicsSceneMouseEvent):
+        """
+        This method reacts to a double click, allowing to edit the clicked block.
+        :param event: QGraphicsSceneMouseEvent
+        """
+        self.edit_block()
+
+        super(NetworkScene, self).mouseDoubleClickEvent(event)
+
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
+        """
+        This method reacts to a mouse release: if a rect is selected, it has
+        been moved and its edges have to are updated.
+        :param event: QGraphicsSceneMouseEvent
+        """
+        if len(self.selectedItems()) > 0:
+            item = self.selectedItems().pop()
+            if type(item) is QGraphicsRectItem:
+                for line in self.lines:
+                    line.update_pos(item)
+
+        super(NetworkScene, self).mouseReleaseEvent(event)
 
     def edit_block(self, item: NodeBlock = None):
         """
