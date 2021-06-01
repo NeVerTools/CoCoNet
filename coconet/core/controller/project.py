@@ -1,14 +1,14 @@
 import os
 
 import onnx
-import coconet.core.controller.pynevertemp.networks as pynn
 import torch
 from PyQt5.QtCore import pyqtSignal, QObject, Qt, QThread
 from PyQt5.QtWidgets import QFileDialog, QApplication
-from coconet.core.controller.pynevertemp.strategies.conversion import ONNXNetwork, \
-    ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork
 from tensorflow import keras
 
+import coconet.core.controller.pynevertemp.networks as pynn
+from coconet.core.controller.pynevertemp.strategies.conversion import ONNXNetwork, \
+    ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork, AlternativeRepresentation
 from coconet.view.widget.dialog.dialogs import LoadingDialog, MessageDialog, MessageType, InputDialog
 
 # Formats available for opening and saving networks
@@ -30,7 +30,7 @@ class Project(QObject):
     ----------
     file_path : str
         The path of the opened network
-    NN : SequentialNetwork
+    network : NeuralNetwork
         The current sequential network
     input_handler : InputHandler
         It is instantiated to open and convert a network from a file.
@@ -68,49 +68,10 @@ class Project(QObject):
         self.file_path = ""
         self.file_name = ("", "")
 
-        self.NN = pynn.SequentialNetwork("")
+        self.network = pynn.SequentialNetwork("")
 
         self.input_handler = None
         self.output_handler = None
-
-        self.loading_dialog = LoadingDialog("")
-
-    def load_network(self):
-        """
-        This method loads a network, path and filename,
-        closing the loading dialog and restoring the cursor.
-        
-        """
-
-        # If a network has been read, the signal to draw is is emitted
-        if self.input_handler.NN is not None:
-            self.NN = self.input_handler.NN
-            self.opened_net.emit()
-            # Other network data is saved
-            self.file_path = self.input_handler.file_path
-
-        # Loading dialog closed and cursor restored
-        self.close_loading_dialog()
-
-    def close_loading_dialog(self):
-        """
-        This method closes the loading dialog and restores the cursor
-
-        """
-
-        self.loading_dialog.close()
-        QApplication.restoreOverrideCursor()
-
-    def save_network(self):
-        """
-        This method saves the opened network, path and filename,
-        closing the save dialog and restoring the cursor.
-
-        """
-
-        self.file_path = self.output_handler.file_path
-
-        self.close_loading_dialog()
 
     def open(self):
         """
@@ -125,33 +86,12 @@ class Project(QObject):
 
         # If a file has been selected:
         if filepath != ("", ""):
-            self.input_handler = InputHandler(filepath[0])
+            self.input_handler = InputHandler()
 
-            # A "wait cursor" appears locking the interface
+            # A "wait cursor" appears
             QApplication.setOverrideCursor(Qt.WaitCursor)
-            self.loading_dialog = LoadingDialog("Reading network...")
-
-            # Create a thread and connect the end with the proper method
-            thread = QThread()
-            thread.finished.connect(lambda: self.close_loading_dialog())
-
-            # Move InputHandler to the new thread
-            self.input_handler.moveToThread(thread)
-            thread.started.connect(lambda: self.input_handler.open())
-
-            self.input_handler.network_read.connect(
-                lambda: self.loading_dialog.set_content("Converting network..."))
-            self.input_handler.network_converted.connect(lambda: thread.quit())
-            self.input_handler.network_converted.connect(lambda: self.input_handler.deleteLater())
-            self.input_handler.network_converted.connect(lambda: self.load_network())
-            self.input_handler.input_shape_required.connect(lambda: self.read_input_shape())
-            self.input_handler.network_not_converted.connect(lambda: self.close_loading_dialog())
-
-            thread.finished.connect(lambda: thread.deleteLater())
-
-            # Start the thread and show the loading dialog
-            thread.start()
-            self.loading_dialog.exec()
+            self.network = self.input_handler.read_network(filepath)
+            QApplication.restoreOverrideCursor()
 
             # At the end of the loading, the main thread looks for potential
             # exceptions in the input_handler
@@ -163,7 +103,7 @@ class Project(QObject):
                                              MessageType.ERROR)
                 error_dialog.show()
 
-    def read_input_shape(self):
+    def read_input_dialog(self):
         """
         This method allows the user to define the input shape of the network
         before opening.
@@ -184,7 +124,7 @@ class Project(QObject):
         if input_dialog.input is not None:
             # Pass input to input_handler and open
             self.input_handler.network_input = input_dialog.input
-            self.input_handler.open(input_dialog.input)
+            self.input_handler.convert_network(input_dialog.input)
         else:
             # Stop the thread and abort loading
             self.input_handler.network_not_converted.emit()
@@ -211,7 +151,7 @@ class Project(QObject):
             file_name = self.file_name
 
         if file_name != ("", ""):
-            self.output_handler = OutputHandler(file_name[0], self.NN)
+            self.output_handler = OutputHandler(file_name[0], self.network)
 
             # A  "wait cursor" appears locking the interface
             QApplication.setOverrideCursor(Qt.WaitCursor)
@@ -247,161 +187,141 @@ class Project(QObject):
                 # an error message
 
 
-class InputHandler(QObject):
+class InputHandler:
     """
-    This class reads and converts a network of a supported format.
+    This class provides an interface for reading a file containing a
+    NeuralNetwork and converting it in the internal representation.
 
     Attributes
     ----------
-    file_path: str
-        Complete path of the network.
     extension: str
         Format of the network.
     alt_repr: AlternativeRepresentation
         Network in original format.
-    NN: SequentialNetwork
-        Network converted in the internal format.
-    converter: ConversionStrategy
-        Converter from an alternative representation.
     network_input: tuple
         Optional input of the network.
+    strategy: ConversionStrategy
+        Converter from an alternative representation.
     input_exception: Exception
         Optional exception in the input stage.
     conversion_exception: Exception
-        Optional exception in the converting stage.
+        Optional exception in the conversion stage.
 
     Methods
     ----------
-    open()
-        Procedure to open the network.
-    get_network_input_shape()
-        Procedure to apply an inout shape.
-    read_network()
-        Procedure to convert the network in the
+    read_network(str, tuple)
+        Procedure to read and convert the network in the
         internal representation.
+    set_input_shape(tuple)
+        Procedure to apply an input shape.
 
     """
 
-    # Loading success signal
-    network_read = pyqtSignal()
-    # Conversion success signal
-    network_converted = pyqtSignal()
-    # Conversion failure signal
-    network_not_converted = pyqtSignal()
-    # Input shape required signal
-    input_shape_required = pyqtSignal()
-
-    def __init__(self, file_path: str):
-        super(QObject, self).__init__()
-        self.file_path = file_path
+    def __init__(self):
         self.extension = ""
-
         self.alt_repr = None
-        self.NN = None
-
-        self.converter = None
         self.network_input = None
+        self.strategy = None
 
         self.input_exception = None
         self.conversion_exception = None
 
-    def open(self, input: tuple = None):
+    def read_network(self, path: str) -> pynn.NeuralNetwork:
         """
-        This method opens a network from a file and converts it into
-        the internal representation.
+        This method converts the network from the file to an alternative
+        representation.
+
+        Parameters
+        ----------
+        path : str
+            The network file path.
+
+        Returns
+        ----------
+        NeuralNetwork
+            The internal representation of the converted network.
 
         """
 
-        if self.file_path != "":
-            # Get extension
-            self.extension = self.file_path.split(".")[-1]
+        if path == "":
+            raise Exception("Invalid path.")
 
-            # Load the network
-            self.read_network()
-            self.network_read.emit()
+        # Get extension
+        self.extension = path.split(".")[-1]
+        net_id = path.split("/")[-1].split(".")[0]
 
-            # Convert the network
-            if self.alt_repr is not None:
-                try:
-                    # Converting the network in the internal representation
-                    # If the chosen format has got an initial input for the network,
-                    # it is converted in the internal representation
-                    if isinstance(self.alt_repr, ONNXNetwork):
-                        self.converter = ONNXConverter()
-                        self.NN = self.converter.to_neural_network(self.alt_repr)
-                        # A signal is emitted for the interface to change
-                        self.network_converted.emit()
-                    else:
-                        if input is None:
-                            # For the other formats an input is required, so a signal
-                            # is emitted for the interface to display a dialog to
-                            # get an input from the user
-                            self.input_shape_required.emit()
-                        else:
-                            self.network_input = input
-                            self.get_network_input_shape()
+        if self.extension in SUPPORTED_FORMATS['ONNX']:
+            model_proto = onnx.load(path)
+            self.alt_repr = ONNXNetwork(net_id + "_onnx", model_proto, True)
 
-                except Exception as e:
-                    # Even in case of conversion_exception, the signal of the ending of the
-                    # ending is emitted in order to update the interface
-                    self.conversion_exception = e
-                    self.network_not_converted.emit()
-            else:
-                self.conversion_exception = Exception("Error in network reading.")
-                self.network_not_converted.emit()
+        elif self.extension in SUPPORTED_FORMATS['PyTorch']:
+            module = torch.load(path)
+            self.alt_repr = PyTorchNetwork(net_id + "_pytorch", module, True)
 
-    def get_network_input_shape(self):
+        elif self.extension in SUPPORTED_FORMATS['TensorFlow']:
+            head = os.path.split(path)[0]
+            module = keras.models.load_model(head)
+            # self.alt_repr = TensorflowNetwork(net_id + "_tensorflow", module, True)
+            self.alt_repr = TensorflowNetwork(net_id + "_tensorflow", True)
+
+        # Convert the network
+        if self.alt_repr is not None:
+            try:
+                # Converting the network in the internal representation
+                # If the chosen format has got an initial input for the network,
+                # it is converted in the internal representation
+                if isinstance(self.alt_repr, ONNXNetwork):
+                    self.strategy = ONNXConverter()
+                    return self.strategy.to_neural_network(self.alt_repr)
+                else:
+                    # TODO DISPLAY DIALOG INPUT SHAPE
+                    self.network_input = ()
+                    return self.set_input_shape(self.network_input)
+
+            except Exception as e:
+                # Even in case of conversion_exception, the signal of the ending of the
+                # ending is emitted in order to update the interface
+                self.conversion_exception = e
+        else:
+            self.conversion_exception = Exception("Error in network reading.")
+
+    def set_input_shape(self, input_shape: tuple) -> pynn.NeuralNetwork:
         """
         This method is called when an input for the network is required, and
         not provided by the original format. The network is converted starting
         from that input.
 
+        Parameters
+        ----------
+        input_shape : tuple
+            The provided shape.
+
+        Returns
+        ----------
+        NeuralNetwork
+            The network with the new input shape.
+
         """
 
         try:
-            if self.network_input is None:
+            if input_shape is None:
                 raise Exception("Can't open the network without a valid input")
 
             # Select the format
             if isinstance(self.alt_repr, PyTorchNetwork):
-                self.converter = PyTorchConverter()
+                self.strategy = PyTorchConverter()
 
             elif isinstance(self.alt_repr, TensorflowNetwork):
-                self.converter = TensorflowConverter()
+                self.strategy = TensorflowConverter()
 
             # Converting the network with the given input
-            self.NN = self.converter.to_neural_network(self.alt_repr, self.network_input)
-            # the finishing signal is emitted for the thread to stop
-            self.network_converted.emit()
+            # TODO ASSOCIATE NEW INPUT SHAPE?
+            return self.strategy.to_neural_network(self.alt_repr)
 
         except Exception as e:
             # If the input is not correct, an conversion_exception is saved and an interaction
             # with the user is required again
             self.input_exception = e
-            self.input_shape_required.emit()
-
-    def read_network(self):
-        """
-        This method converts the network from the file to an alternative
-        representation.
-
-        """
-
-        net_id = self.file_path.split("/")[-1]
-        net_id = net_id.split(".")[0]
-
-        if self.extension in SUPPORTED_FORMATS['ONNX']:
-            model_proto = onnx.load(self.file_path)
-            self.alt_repr = ONNXNetwork(net_id + "_onnx", model_proto, True)
-
-        elif self.extension in SUPPORTED_FORMATS['PyTorch']:
-            module = torch.load(self.file_path)
-            self.alt_repr = PyTorchNetwork(net_id + "_pytorch", module, True)
-
-        elif self.extension in SUPPORTED_FORMATS['TensorFlow']:
-            head = os.path.split(self.file_path)[0]
-            module = keras.models.load_model(head)
-            self.alt_repr = TensorflowNetwork(net_id + "_tensorflow", module, True)
 
 
 class OutputHandler(QObject):

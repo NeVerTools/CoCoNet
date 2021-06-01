@@ -79,10 +79,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Project in use
         self.project = Project()
-        self.project.opened_net.connect(lambda: self.canvas.draw_network(self.project.NN))
+        self.project.opened_net.connect(lambda: self.canvas.draw_network(self.project.network))
 
         # Drawing Canvas
-        self.canvas = Canvas(self.project.NN, self.toolbar.blocks)
+        self.canvas = Canvas(self.project.network, self.toolbar.blocks)
 
         # Status bar
         self.status_bar = QStatusBar()
@@ -395,12 +395,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.update_status()
                     # A file is opened
                     self.project.open()
-                    self.setWindowTitle(self.SYSNAME + " - " + self.project.NN.identifier)
+                    self.setWindowTitle(self.SYSNAME + " - " + self.project.network.identifier)
         else:
             # If the canvas was already empty, the opening function is directly
             # called
             self.project.open()
-            self.setWindowTitle(self.SYSNAME + " - " + self.project.NN.identifier)
+            self.setWindowTitle(self.SYSNAME + " - " + self.project.network.identifier)
 
     def save(self, _as: bool = True):
         """
@@ -444,7 +444,7 @@ class MainWindow(QtWidgets.QMainWindow):
             every_node_connected = True
             # every node has to be in the nodes dictionary
             for node in self.canvas.renderer.disconnected_network:
-                if node not in self.project.NN.nodes:
+                if node not in self.project.network.nodes:
                     every_node_connected = False
                     break
 
