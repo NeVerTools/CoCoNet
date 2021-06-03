@@ -120,7 +120,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Insert block button
         self.toolbar.f_buttons["insert_block"].clicked \
-            .connect(lambda: self.change_draw_mode(DrawingMode.INSERT_BLOCK))
+            .connect(lambda: self.change_draw_mode(DrawingMode.DRAW_BLOCK))
+
+        # Insert property button
+        self.toolbar.f_buttons["add_property"].clicked \
+            .connect(lambda: self.change_draw_mode(DrawingMode.DRAW_PROPERTY))
 
         # Parameters box appearing
         self.canvas.param_requested \
@@ -185,7 +189,7 @@ class MainWindow(QtWidgets.QMainWindow):
         draw_line_action.triggered.connect(lambda: self.change_draw_mode(DrawingMode.DRAW_LINE))
         insert_block_action = QAction("Insert block in connection", self)
         insert_block_action.setShortcut("Ctrl+I")
-        insert_block_action.triggered.connect(lambda: self.change_draw_mode(DrawingMode.INSERT_BLOCK))
+        insert_block_action.triggered.connect(lambda: self.change_draw_mode(DrawingMode.DRAW_BLOCK))
         prop_action = QAction("Edit", self)
         prop_action.setShortcut("Ctrl+E")
         prop_action.triggered.connect(lambda: self.canvas.scene.edit_node(self.edit_action_validation()))
@@ -276,10 +280,12 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         # Show the canvas drawing mode
-        if self.canvas.scene.mode is DrawingMode.DRAW_LINE:
+        if self.canvas.scene.mode == DrawingMode.DRAW_LINE:
             self.status_bar_mode_label.setText("Line drawing")
-        elif self.canvas.scene.mode is DrawingMode.INSERT_BLOCK:
-            self.status_bar_mode_label.setText("NodeBlock insertion")
+        elif self.canvas.scene.mode == DrawingMode.DRAW_BLOCK:
+            self.status_bar_mode_label.setText("Block insertion")
+        elif self.canvas.scene.mode == DrawingMode.DRAW_PROPERTY:
+            self.status_bar_mode_label.setText("Property insertion")
         else:
             self.status_bar_mode_label.setText("")
 
@@ -318,22 +324,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         """
 
-        curmode = self.canvas.scene.mode
-        # If the mode is specified, the given CanvasMode is set
-        if newmode == DrawingMode.DRAW_LINE:
-            if curmode == DrawingMode.DRAW_LINE:
-                self.canvas.scene.set_mode(DrawingMode.IDLE)
-            else:
-                self.canvas.scene.set_mode(DrawingMode.DRAW_LINE)
-        elif newmode == DrawingMode.INSERT_BLOCK:
-            if curmode == DrawingMode.INSERT_BLOCK:
-                self.canvas.scene.set_mode(DrawingMode.IDLE)
-            else:
-                self.canvas.scene.set_mode(DrawingMode.INSERT_BLOCK)
+        if newmode is None:
+            self.canvas.scene.set_mode(DrawingMode.IDLE)
         else:
-            # If the mode is not specified, the canvas mode is set to IDLE
-            if curmode == DrawingMode.DRAW_LINE or curmode == DrawingMode.INSERT_BLOCK:
+            curmode = self.canvas.scene.mode
+            if newmode == curmode:
                 self.canvas.scene.set_mode(DrawingMode.IDLE)
+            else:
+                self.canvas.scene.set_mode(newmode)
 
     def clear(self):
         """

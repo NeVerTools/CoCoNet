@@ -20,13 +20,14 @@ from coconet.view.widget.dialog.dialogs import EditDialog, MessageDialog, Messag
 
 class DrawingMode(Enum):
     """
-    This class represents the possible drawing modes in the scene
+    This class represents the possible drawing modes in the scene.
 
     """
 
     IDLE = 0
     DRAW_LINE = 1
-    INSERT_BLOCK = 2
+    DRAW_BLOCK = 2
+    DRAW_PROPERTY = 3
 
 
 class Canvas(QWidget):
@@ -133,8 +134,10 @@ class Canvas(QWidget):
 
         if self.scene.mode == DrawingMode.DRAW_LINE:
             self.draw_line_between_selected()
-        elif self.scene.mode == DrawingMode.INSERT_BLOCK:
+        elif self.scene.mode == DrawingMode.DRAW_BLOCK:
             self.insert_node()
+        elif self.scene.mode == DrawingMode.DRAW_PROPERTY:
+            self.insert_property()
 
     def insert_node(self):
         """
@@ -202,6 +205,10 @@ class Canvas(QWidget):
                 dialog = MessageDialog(str(e) + "\nPlease check dimensions.",
                                        MessageType.ERROR)
                 dialog.exec()
+
+    def insert_property(self):
+        # TODO
+        pass
 
     def draw_line_between_selected(self):
         """
@@ -598,8 +605,7 @@ class Canvas(QWidget):
 
         """
 
-        if self.scene.mode == DrawingMode.DRAW_LINE or \
-                self.scene.mode == DrawingMode.INSERT_BLOCK:
+        if self.scene.mode != DrawingMode.IDLE:
             dialog = MessageDialog("Cannot delete items in draw or insert mode.",
                                    MessageType.MESSAGE)
             dialog.exec()
@@ -725,7 +731,7 @@ class Canvas(QWidget):
         # Track the total height for ordering the network
         tot_height = 0
 
-        for block in nodes.values():  # TODO <===== ????
+        for block in nodes.values():
             # For each block draw the corresponding graphic
             new_block = self.draw_node(copy=block,
                                        pos=QPoint(50, tot_height))
@@ -777,7 +783,7 @@ class Canvas(QWidget):
 class NetworkScene(QGraphicsScene):
     """
     This class represents the graphic scene where the
-    network is drawn, selected and updtaed.
+    network is drawn, selected and updated.
 
     Attributes
     ----------
@@ -857,8 +863,8 @@ class NetworkScene(QGraphicsScene):
             self.prev_item = None
             QApplication.restoreOverrideCursor()
             self.clearSelection()
-        elif self.mode == DrawingMode.DRAW_LINE or self.mode == DrawingMode.INSERT_BLOCK:
-            # Cross-shaped cursor in DRAW_LINE or INSERT_BLOCK mode
+        else:
+            # Cross-shaped cursor in DRAW_LINE or DRAW_BLOCK mode
             self.prev_item = None
             self.selected_item = None
             QApplication.restoreOverrideCursor()
@@ -886,8 +892,9 @@ class NetworkScene(QGraphicsScene):
 
     def add_block(self) -> Optional[tuple]:
         """
-        This method inserts a block in a selected connection
-        and adds it to the network.
+        This method inserts the block created by the interface in the
+        NetworkScene. The block may be inserted alone or in an existing
+        connection.
 
         Returns
         ----------
@@ -898,7 +905,7 @@ class NetworkScene(QGraphicsScene):
 
         """
 
-        if self.mode == DrawingMode.INSERT_BLOCK and len(self.selectedItems()) > 0:
+        if self.mode == DrawingMode.DRAW_BLOCK and len(self.selectedItems()) > 0:
             self.selected_item = self.selectedItems().pop()
             new_connections = None
             # Select the current item and the previous
