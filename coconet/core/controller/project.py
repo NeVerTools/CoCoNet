@@ -79,7 +79,7 @@ class Project(QObject):
 
             # A "wait cursor" appears
             QApplication.setOverrideCursor(Qt.WaitCursor)
-            self.network = self.input_handler.read_network(self.file_name)
+            self.network = self.input_handler.read_network(self.file_name[0])
             QApplication.restoreOverrideCursor()
 
             # At the end of the loading, the main thread looks for potential
@@ -91,6 +91,8 @@ class Project(QObject):
                                              + str(self.input_handler.conversion_exception),
                                              MessageType.ERROR)
                 error_dialog.show()
+            else:
+                self.opened_net.emit()
 
     def read_input_dialog(self):
         """
