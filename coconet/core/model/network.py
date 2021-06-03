@@ -1,5 +1,3 @@
-import abc
-
 from coconet.core.controller.pynevertemp.strategies.verification import NeVerProperty, Property
 
 
@@ -40,7 +38,7 @@ class NetworkNode:
         self.descr = descr
 
 
-class NetworkProperty(abc.ABC):
+class NetworkProperty:
     """
     Abstract class representing a generic property.
 

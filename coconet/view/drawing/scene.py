@@ -27,7 +27,6 @@ class DrawingMode(Enum):
     IDLE = 0
     DRAW_LINE = 1
     DRAW_BLOCK = 2
-    DRAW_PROPERTY = 3
 
 
 class Canvas(QWidget):
@@ -40,8 +39,10 @@ class Canvas(QWidget):
     zooms : int
         This number tracks how many times the view is zoomed in (if positive)
         or zoomed out (negative)
-    num_blocks : int
-        Number of blocks in the scene.
+    num_nodes : int
+        Number of node blocks in the scene.
+    num_props : int
+        Number of property blocks in the scene.
     blocks : dict
         Dictionary of the blocks in the scene that have as key the rects, and
         as value the widget block.
@@ -107,7 +108,8 @@ class Canvas(QWidget):
     def __init__(self, network: SequentialNetwork, blocks: dict):
         super(Canvas, self).__init__()
         self.zooms = 0
-        self.num_blocks = 0
+        self.num_nodes = 0
+        self.num_props = 0
         self.renderer = SequentialNetworkRenderer(network, blocks)
 
         self.scene = NetworkScene(self)
@@ -136,8 +138,6 @@ class Canvas(QWidget):
             self.draw_line_between_selected()
         elif self.scene.mode == DrawingMode.DRAW_BLOCK:
             self.insert_node()
-        elif self.scene.mode == DrawingMode.DRAW_PROPERTY:
-            self.insert_property()
 
     def insert_node(self):
         """
@@ -205,14 +205,6 @@ class Canvas(QWidget):
                 dialog = MessageDialog(str(e) + "\nPlease check dimensions.",
                                        MessageType.ERROR)
                 dialog.exec()
-
-    def insert_property(self):
-        # TODO
-        if self.scene.mode == DrawingMode.DRAW_PROPERTY and len(self.scene.selectedItems()) > 0:
-            self.scene.selected_item = self.scene.selectedItems().pop()
-
-            if isinstance(self.scene.selected_item, PropertyBlock):
-                self.scene.prev_item = self.scene.selected_item
 
     def draw_line_between_selected(self):
         """
@@ -341,8 +333,8 @@ class Canvas(QWidget):
         # The initial point of each block is translated of 20px in order not to
         # overlap them (always in the visible area)
         if pos is None:
-            point = QPoint(start_x + 20 * (self.num_blocks % 20) + 20,
-                           start_y + 20 * (self.num_blocks % 20) + 20)
+            point = QPoint(start_x + 20 * (self.num_nodes % 20) + 20,
+                           start_y + 20 * (self.num_nodes % 20) + 20)
         else:
             point = pos
         transparent = QColor(0, 0, 0, 0)
@@ -366,7 +358,7 @@ class Canvas(QWidget):
                 copy not in self.scene.blocks.values():
             block.block_id = copy.block_id
         else:
-            new_block_id = str(self.num_blocks) + block.node.name[0:2]
+            new_block_id = str(self.num_nodes) + block.node.name[0:2]
             block.block_id = new_block_id
 
         # Position the block
@@ -404,7 +396,7 @@ class Canvas(QWidget):
         block_actions["Parameters"].triggered.connect(lambda: self.show_parameters(block))
         block.set_context_menu(block_actions)
 
-        self.num_blocks += 1
+        self.num_nodes += 1
         self.update_scene()
 
         # Add block to Canvas, Scene and Network
@@ -449,21 +441,20 @@ class Canvas(QWidget):
         # The initial point of each block is translated of 20px in order not to
         # overlap them (always in the visible area)
         if pos is None:
-            point = QPoint(start_x + 20 * (self.num_blocks % 20) + 20,
-                           start_y + 20 * (self.num_blocks % 20) + 20)
+            point = QPoint(start_x + 20 * (self.num_nodes % 20) + 20,
+                           start_y + 20 * (self.num_nodes % 20) + 20)
         else:
             point = pos
         transparent = QColor(0, 0, 0, 0)
 
         # Create a new block or copy the given one
-        block = None
         if copy is not None:
             # If a graphic block is given, a new block is created copying
             # its data, in_dim, and type
             block = PropertyBlock("", copy.property)
         else:
             # If a node is passed, a new block is created
-            block = NodeBlock("", property)
+            block = PropertyBlock("", property)
 
         # Creation of the identifier which depends on the number of blocks
         # before and by the type
@@ -471,7 +462,7 @@ class Canvas(QWidget):
                 copy not in self.scene.blocks.values():
             block.block_id = copy.block_id
         else:
-            new_block_id = str(self.num_blocks) + block.node.name[0:2]
+            new_block_id = str(self.num_props) + "Pr"
             block.block_id = new_block_id
 
         # Position the block
@@ -509,12 +500,11 @@ class Canvas(QWidget):
         # block_actions["Parameters"].triggered.connect(lambda: self.show_parameters(block))
         # block.set_context_menu(block_actions)
 
-        self.num_blocks += 1
-        self.update_scene()
+        self.num_props += 1
 
         # Add block to Canvas, Scene and Network
         self.scene.blocks[rect] = block
-        # self.renderer.add_disconnected_block(block)
+        self.renderer.add_property_block(block)
 
         return block
 
@@ -707,7 +697,7 @@ class Canvas(QWidget):
         self.scene = NetworkScene(self)
         self.scene.selectionChanged.connect(lambda: self.update_scene())
         self.block_to_show = None
-        self.num_blocks = 0
+        self.num_nodes = 0
 
         # Set the canvas view
         self.view.setScene(self.scene)

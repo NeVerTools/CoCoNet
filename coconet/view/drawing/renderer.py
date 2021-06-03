@@ -3,8 +3,8 @@ import copy
 from PyQt5.QtCore import pyqtSignal
 
 from coconet.core.controller.nodewrapper import NodeOps
-from coconet.core.controller.pynevertemp.networks import NeuralNetwork, SequentialNetwork
-from coconet.view.drawing.element import NodeBlock
+from coconet.core.controller.pynevertemp.networks import SequentialNetwork
+from coconet.view.drawing.element import NodeBlock, PropertyBlock
 
 
 class SequentialNetworkRenderer:
@@ -15,11 +15,13 @@ class SequentialNetworkRenderer:
 
     Attributes
     ----------
-    NN: SequentialNetwork
+    NN : SequentialNetwork
         Internal representation of the network.
-    disconnected_network: dict
+    disconnected_network : dict
         Dictionary containing the network blocks.
-    available_blocks: dict
+    properties : dict
+        Dictionary containing the network properties.
+    available_blocks : dict
         Dictionary containing the set of the drawable blocks.
 
     Methods
@@ -57,6 +59,7 @@ class SequentialNetworkRenderer:
         self.NN = NN
         self.available_blocks = json_blocks
         self.disconnected_network = dict()
+        self.properties = dict()
 
     def is_nn_sequential(self) -> bool:
         """
@@ -120,6 +123,20 @@ class SequentialNetworkRenderer:
         """
 
         self.disconnected_network[block.block_id] = block
+
+    def add_property_block(self, block: PropertyBlock) -> None:
+        """
+        This method creates a new entry in the properties
+        dictionary with the given block.
+
+        Parameters
+        ----------
+        block: PropertyBlock
+            The block to add in the dictionary.
+
+        """
+
+        self.properties[block.block_id] = block
 
     def add_edge(self, origin_id: str, destination_id: str) -> bool:
         """

@@ -1,3 +1,4 @@
+import itertools
 from typing import Optional
 
 from PyQt5 import QtCore, QtWidgets, QtGui
@@ -110,8 +111,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         """
 
-        # NodeBlock buttons
-        for b in self.toolbar.b_buttons.values():
+        # Block buttons
+        for b in itertools.chain(self.toolbar.b_buttons.values(),
+                                 self.toolbar.p_buttons.values()):
             b.clicked.connect(self.create_from(b))
 
         # Draw line button
@@ -334,7 +336,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         """
 
-        if self.canvas.num_blocks > 0:
+        if self.canvas.num_nodes > 0:
             alert_dialog = ConfirmDialog("Clear workspace",
                                          "The network will be erased and your work will be lost.\n"
                                          "Do you wish to continue?")
