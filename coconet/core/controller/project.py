@@ -42,8 +42,6 @@ class Project(QObject):
     open()
         This method opens a file and create a thread to read and
         convert it.
-    read_input_dialog()
-        This method gets an input for the network by the user.
     save(bool)
         This method saves a file and create a thread to convert and save
         it.
@@ -93,29 +91,6 @@ class Project(QObject):
                 error_dialog.show()
             else:
                 self.opened_net.emit()
-
-    def read_input_dialog(self):
-        """
-        This method allows the user to define the input shape of the network
-        before opening.
-
-        """
-
-        dialog_text = "Please, give an input shape for the network."
-        if self.input_handler.input_exception is not None:
-            dialog_text += "\n" + str(self.input_handler.input_exception)
-
-        input_dialog = InputDialog(dialog_text)
-
-        # The cursor is restored to use the dialog
-        QApplication.restoreOverrideCursor()
-        input_dialog.exec()
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-
-        if input_dialog.input is not None:
-            # Pass input to input_handler and open
-            self.input_handler.network_input = input_dialog.input
-            # self.input_handler.convert_network(input_dialog.input)
 
     def save(self, _as: bool = True):
         """
@@ -178,6 +153,9 @@ class InputHandler:
     read_network(str)
         Procedure to read and convert the network in the
         internal representation.
+    read_input_dialog()
+        Procedure to open a dialog and get an input for
+        the network.
     set_input_shape(tuple)
         Procedure to apply an input shape.
 
@@ -240,8 +218,7 @@ class InputHandler:
                     self.strategy = ONNXConverter()
                     return self.strategy.to_neural_network(self.alt_repr)
                 else:
-                    # TODO DISPLAY DIALOG INPUT SHAPE
-                    self.network_input = ()
+                    self.network_input = self.read_input_dialog()
                     return self.set_input_shape(self.network_input)
 
             except Exception as e:
@@ -250,6 +227,33 @@ class InputHandler:
                 self.conversion_exception = e
         else:
             self.conversion_exception = Exception("Error in network reading.")
+
+    def read_input_dialog(self) -> tuple:
+        """
+        This method allows the user to define the input shape of the network
+        before opening.
+
+        Returns
+        ----------
+        tuple
+            The input shape given by the user.
+
+        """
+
+        dialog_text = "Please, give an input shape for the network."
+        if self.input_exception is not None:
+            dialog_text += "\n" + str(self.input_exception)
+
+        input_dialog = InputDialog(dialog_text)
+
+        # The cursor is restored to use the dialog
+        QApplication.restoreOverrideCursor()
+        input_dialog.exec()
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        if input_dialog.input is not None:
+            # Pass input to input_handler and open
+            return input_dialog.input
 
     def set_input_shape(self, input_shape: tuple) -> pynn.NeuralNetwork:
         """
