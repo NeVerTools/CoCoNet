@@ -122,10 +122,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.toolbar.f_buttons["insert_block"].clicked \
             .connect(lambda: self.change_draw_mode(DrawingMode.DRAW_BLOCK))
 
-        # Insert property button
-        self.toolbar.f_buttons["add_property"].clicked \
-            .connect(lambda: self.change_draw_mode(DrawingMode.DRAW_PROPERTY))
-
         # Parameters box appearing
         self.canvas.param_requested \
             .connect(lambda: self.parameters.display(self.canvas.block_to_show))
@@ -284,8 +280,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.status_bar_mode_label.setText("Line drawing")
         elif self.canvas.scene.mode == DrawingMode.DRAW_BLOCK:
             self.status_bar_mode_label.setText("Block insertion")
-        elif self.canvas.scene.mode == DrawingMode.DRAW_PROPERTY:
-            self.status_bar_mode_label.setText("Property insertion")
         else:
             self.status_bar_mode_label.setText("")
 
@@ -481,7 +475,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 # Return block graphic object
                 return self.canvas.scene.blocks[self.canvas.scene.selectedItems()[0]]
             elif type(self.canvas.scene.selectedItems()[0]) is Line:
-                msg_dialog = MessageDialog("Can't edit lines, please select a block instead.",
+                msg_dialog = MessageDialog("Can't edit edges, please select a block instead.",
                                            MessageType.ERROR)
                 msg_dialog.show()
         else:

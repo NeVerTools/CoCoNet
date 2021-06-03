@@ -237,7 +237,7 @@ class Line(QGraphicsLineItem):
         """
 
         self.scene.removeItem(self)
-        self.scene.lines.remove(self)
+        self.scene.edges.remove(self)
         self.scene.removeItem(self.dim_label)
         self.origin = None
         self.destination = None

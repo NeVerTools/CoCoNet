@@ -419,8 +419,8 @@ class BlocksToolbar(QToolBar):
         self.setStyleSheet(style.TOOLBAR_STYLE)
 
         self.setOrientation(Qt.Vertical)
-        self.setMovable(True)  # TODO MAKE FALSE?
-        self.setFloatable(True)
+        self.setMovable(False)
+        self.setFloatable(False)
 
     def __init_blocks(self):
         """
@@ -485,21 +485,12 @@ class BlocksToolbar(QToolBar):
         insert_block_button.setFixedSize(40, 40)
         insert_block_button.setToolTip("Insert block in edge")
 
-        # Insert property button
-        insert_property_button = QPushButton()
-        insert_property_button.setStyleSheet(style.BUTTON_STYLE)
-        insert_property_button.setIcon(QIcon("coconet/res/icons/property.png"))
-        insert_property_button.setFixedSize(40, 40)
-        insert_property_button.setToolTip("Insert new property")
-
         # Save in a dictionary button references and add the rows to the
         # toolbar
         row_1_layout.addWidget(draw_line_button)
         row_1_layout.addWidget(insert_block_button)
-        row_1_layout.addWidget(insert_property_button)
         self.f_buttons["draw_line"] = draw_line_button
         self.f_buttons["insert_block"] = insert_block_button
-        self.f_buttons["add_property"] = insert_property_button
         self.addWidget(row_1)
         self.addSeparator()
 

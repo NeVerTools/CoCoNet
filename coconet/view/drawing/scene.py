@@ -146,7 +146,7 @@ class Canvas(QWidget):
 
         """
 
-        result = self.scene.add_block()
+        result = self.scene.add_node()
         if result is not None:
             # Nodes
             prev_node = self.scene.blocks[result[0]]
@@ -154,16 +154,16 @@ class Canvas(QWidget):
 
             # Edges
             old_line = result[2]
-            line_1 = result[3]
-            line_2 = result[4]
+            l1 = result[3]
+            l2 = result[4]
 
             try:
                 # The logical network is modified
                 legal = self.renderer.insert_node(prev_node.block_id, middle_node.block_id)
             except Exception as e:
-                # In case of error, the new lines are deleted
-                line_1.remove_self()
-                line_2.remove_self()
+                # In case of error, the new edges are deleted
+                l1.remove_self()
+                l2.remove_self()
                 # a Message is displayed
                 dialog = MessageDialog(str(e), MessageType.ERROR)
                 dialog.exec()
@@ -173,8 +173,8 @@ class Canvas(QWidget):
                 if not legal:
                     # If the modification is not possible, the new edges are
                     # removed
-                    line_1.remove_self()
-                    line_2.remove_self()
+                    l1.remove_self()
+                    l2.remove_self()
                     dialog = MessageDialog("Sequential network : illegal operation.",
                                            MessageType.ERROR)
                     dialog.exec()
@@ -187,20 +187,20 @@ class Canvas(QWidget):
                     out_dim_2 = self.renderer.NN.nodes[middle_node.block_id].out_dim
 
                     # Dimension labels are updated
-                    line_1.update_dims(out_dim_1)
-                    line_2.update_dims(out_dim_2)
+                    l1.update_dims(out_dim_1)
+                    l2.update_dims(out_dim_2)
 
                     # Scene blocks are updated
-                    self.scene.blocks[line_2.origin].in_dim = out_dim_1
-                    self.scene.blocks[line_2.destination].in_dim = out_dim_2
+                    self.scene.blocks[l2.origin].in_dim = out_dim_1
+                    self.scene.blocks[l2.destination].in_dim = out_dim_2
 
-                    self.scene.blocks[line_2.origin].is_head = False
+                    self.scene.blocks[l2.origin].is_head = False
             except Exception as e:
-                next_node = self.scene.blocks[line_2.destination]
+                next_node = self.scene.blocks[l2.destination]
                 if prev_node.out_dim is not middle_node.in_dim:
-                    line_1.set_valid(False)
+                    l1.set_valid(False)
                 if middle_node.out_dim is not next_node.in_dim:
-                    line_2.set_valid(False)
+                    l2.set_valid(False)
 
                 dialog = MessageDialog(str(e) + "\nPlease check dimensions.",
                                        MessageType.ERROR)
@@ -208,7 +208,11 @@ class Canvas(QWidget):
 
     def insert_property(self):
         # TODO
-        pass
+        if self.scene.mode == DrawingMode.DRAW_PROPERTY and len(self.scene.selectedItems()) > 0:
+            self.scene.selected_item = self.scene.selectedItems().pop()
+
+            if isinstance(self.scene.selected_item, PropertyBlock):
+                self.scene.prev_item = self.scene.selected_item
 
     def draw_line_between_selected(self):
         """
@@ -589,7 +593,7 @@ class Canvas(QWidget):
             self.renderer.disconnected_network[edit_node_id].update_labels()
 
             # Update dimensions in edges & nodes
-            for line in self.scene.lines:
+            for line in self.scene.edges:
                 origin_id = self.scene.blocks[line.origin].block_id
                 new_dim = self.renderer.NN.nodes[origin_id].out_dim
                 line.update_dims(new_dim)
@@ -713,7 +717,7 @@ class Canvas(QWidget):
     def draw_network(self, network: NeuralNetwork):
         """
         This method draws in the canvas the given Neural Network,
-        associating nodes and edges with blocks and lines.
+        associating nodes and edges with blocks and edges.
 
         Parameters
         ----------
@@ -789,7 +793,7 @@ class NetworkScene(QGraphicsScene):
     ----------
     blocks: dict
         Dictionary that uses rects as keys connected to the related blocks.
-    lines: list
+    edges: list
         List of edges between blocks.
     mode: DrawingMode
         Current mode, that can be idle or in drawing.
@@ -833,7 +837,7 @@ class NetworkScene(QGraphicsScene):
         super(QGraphicsScene, self).__init__(widget)
 
         # List of edges and blocks
-        self.lines = list()
+        self.edges = list()
         self.blocks = dict()
 
         # Pre-selected rect
@@ -881,16 +885,16 @@ class NetworkScene(QGraphicsScene):
         """
 
         if self.is_dim_visible:
-            for line in self.lines:
+            for line in self.edges:
                 line.dim_label.setVisible(False)
             self.is_dim_visible = False
         else:
-            for line in self.lines:
+            for line in self.edges:
                 if line.is_valid:
                     line.dim_label.setVisible(True)
             self.is_dim_visible = True
 
-    def add_block(self) -> Optional[tuple]:
+    def add_node(self) -> Optional[tuple]:
         """
         This method inserts the block created by the interface in the
         NetworkScene. The block may be inserted alone or in an existing
@@ -925,7 +929,7 @@ class NetworkScene(QGraphicsScene):
                     if isinstance(self.prev_item, QGraphicsRectItem):  # If the previous item is a node, break line
                         prev_rect = self.selected_item.origin
                         new_connections = prev_rect, self.prev_item
-                    else:  # If both are lines, stop
+                    else:  # If both are edges, stop
                         new_connections = None
 
             # Check selection
@@ -936,25 +940,25 @@ class NetworkScene(QGraphicsScene):
                 next_rect = None
 
                 # Search components to edit
-                for line in self.lines:
+                for line in self.edges:
                     if new_connections[0] == line.origin:
                         old_line = line
                         next_rect = line.destination
                         break
 
                 # Draw new connections
-                line_1 = Line(new_connections[0], new_connections[1], self)
-                self.lines.append(line_1)
-                line_1.setFlag(QGraphicsItem.ItemIsSelectable, True)
-                line_1.setZValue(5)
-                line_2 = Line(new_connections[1], next_rect, self)
-                self.lines.append(line_2)
-                line_2.setFlag(QGraphicsItem.ItemIsSelectable, True)
-                line_2.setZValue(5)
+                l1 = Line(new_connections[0], new_connections[1], self)
+                self.edges.append(l1)
+                l1.setFlag(QGraphicsItem.ItemIsSelectable, True)
+                l1.setZValue(5)
+                l2 = Line(new_connections[1], next_rect, self)
+                self.edges.append(l2)
+                l2.setFlag(QGraphicsItem.ItemIsSelectable, True)
+                l2.setZValue(5)
 
-                # Add lines to scene
-                self.addItem(line_1)
-                self.addItem(line_2)
+                # Add edges to scene
+                self.addItem(l1)
+                self.addItem(l2)
 
                 # Restore IDLE mode
                 self.prev_item = None
@@ -963,7 +967,7 @@ class NetworkScene(QGraphicsScene):
                 # Return a tuple with the middle node and the following
                 # one, the old edge and the new edges to restore the scene
                 # in case of errors
-                return new_connections[0], new_connections[1], old_line, line_1, line_2
+                return new_connections[0], new_connections[1], old_line, l1, l2
 
     def add_line(self) -> Optional[tuple]:
         """
@@ -993,7 +997,7 @@ class NetworkScene(QGraphicsScene):
 
                         # Add line to scene
                         self.addItem(line)
-                        self.lines.append(line)
+                        self.edges.append(line)
                         line.setFlag(QGraphicsItem.ItemIsSelectable, True)
                         line.setZValue(5)
 
@@ -1028,7 +1032,7 @@ class NetworkScene(QGraphicsScene):
         if prev_rect_item != next_rect_item:
             line = Line(prev_rect_item, next_rect_item, self)
             # Add to list of edges
-            self.lines.append(line)
+            self.edges.append(line)
             line.setFlag(QGraphicsItem.ItemIsSelectable, True)
             line.setZValue(0)
 
@@ -1056,7 +1060,7 @@ class NetworkScene(QGraphicsScene):
             if type(item) is QGraphicsRectItem:
                 # If the item is a block, save the edges...
                 lines_to_del = list()
-                for line in self.lines:
+                for line in self.edges:
                     if line.origin == item or line.destination == item:
                         lines_to_del.append(line)
 
@@ -1088,7 +1092,7 @@ class NetworkScene(QGraphicsScene):
         if len(self.selectedItems()) > 0:
             item = self.selectedItems().pop()
             if type(item) is QGraphicsRectItem:
-                for line in self.lines:
+                for line in self.edges:
                     line.update_pos(item)
 
         super(NetworkScene, self).mouseReleaseEvent(event)
