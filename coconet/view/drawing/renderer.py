@@ -53,8 +53,6 @@ class SequentialNetworkRenderer:
 
     """
 
-    drawable_block = pyqtSignal()
-
     def __init__(self, NN: SequentialNetwork, json_blocks: dict):
         self.NN = NN
         self.available_blocks = json_blocks

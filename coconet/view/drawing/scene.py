@@ -441,8 +441,8 @@ class Canvas(QWidget):
         # The initial point of each block is translated of 20px in order not to
         # overlap them (always in the visible area)
         if pos is None:
-            point = QPoint(start_x + 20 * (self.num_nodes % 20) + 20,
-                           start_y + 20 * (self.num_nodes % 20) + 20)
+            point = QPoint(start_x + 20 * (self.num_props % 20) + 20,
+                           start_y + 20 * (self.num_props % 20) + 20)
         else:
             point = pos
         transparent = QColor(0, 0, 0, 0)
@@ -487,9 +487,9 @@ class Canvas(QWidget):
         # block.edited.connect(lambda: self.edit_node(block))
 
         # Set context menu actions
-        # block_actions = dict()
-        # block_actions["Copy"] = QAction("Copy", block)
-        # block_actions["Copy"].triggered.connect(lambda: self.copy_selected(block))
+        block_actions = dict()
+        block_actions["Copy"] = QAction("Copy", block)
+        block_actions["Copy"].triggered.connect(lambda: print("Copy"))
         # block_actions["Cut"] = QAction("Cut", block)
         # block_actions["Cut"].triggered.connect(lambda: self.cut_selected())
         # block_actions["Delete"] = QAction("Delete", block)
@@ -498,7 +498,7 @@ class Canvas(QWidget):
         # block_actions["Edit"].triggered.connect(lambda: self.scene.edit_block(block))
         # block_actions["Parameters"] = QAction("Parameters", block)
         # block_actions["Parameters"].triggered.connect(lambda: self.show_parameters(block))
-        # block.set_context_menu(block_actions)
+        block.set_context_menu(block_actions)
 
         self.num_props += 1
 
