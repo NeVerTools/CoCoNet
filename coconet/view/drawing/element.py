@@ -585,7 +585,6 @@ class PropertyBlock(GraphicBlock):
     def __init__(self, block_id: str, property: NetworkProperty):
         super().__init__(block_id)
         self.property = property
-        self.layout.addWidget(self.title_label)
         self.init_layout()
 
     def init_layout(self) -> None:
@@ -598,3 +597,4 @@ class PropertyBlock(GraphicBlock):
         # Override title label
         self.title_label.setText("Polyhedral Property")
         self.title_label.setStyleSheet(style.PROPERTY_TITLE_STYLE)
+        self.layout.addWidget(self.title_label)

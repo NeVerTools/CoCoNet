@@ -220,6 +220,16 @@ class Canvas(QWidget):
             origin = self.scene.blocks[conn_nodes[0]]
             destination = self.scene.blocks[conn_nodes[1]]
 
+            if isinstance(origin, NodeBlock) and isinstance(destination, PropertyBlock):
+                conn_nodes[2].remove_self()
+                dialog = MessageDialog("Illegal property connection.", MessageType.ERROR)
+                dialog.exec()
+                return
+
+            if isinstance(origin, PropertyBlock) and isinstance(destination, NodeBlock):
+                # TODO make connection and return
+                return
+
             try:
                 # Add the new node to the network
                 legal = self.renderer.add_edge(origin.block_id,
