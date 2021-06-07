@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QStatusBar, QAction, QLabel, QGraphicsRectItem, QPus
 
 import coconet.view.styles as style
 from coconet.core.controller.project import Project
-from coconet.view.drawing.element import Line, NodeBlock
+from coconet.view.drawing.element import GraphicLine, NodeBlock
 from coconet.view.drawing.scene import DrawingMode, Canvas
 from coconet.view.widget.dialog.dialogs import ConfirmDialog, MessageDialog, MessageType, HelpDialog
 from coconet.view.widget.toolbar import BlocksToolbar, NodeButton, PropertyButton
@@ -279,7 +279,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Show the canvas drawing mode
         if self.canvas.scene.mode == DrawingMode.DRAW_LINE:
-            self.status_bar_mode_label.setText("Line drawing")
+            self.status_bar_mode_label.setText("GraphicLine drawing")
         elif self.canvas.scene.mode == DrawingMode.DRAW_BLOCK:
             self.status_bar_mode_label.setText("Block insertion")
         else:
@@ -298,7 +298,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     # If the item is a rect, prev_node_id is written
                     selections += self.canvas.scene.blocks[item].block_id
                     selections += semicolons[counter]
-                elif type(item) is Line:
+                elif type(item) is GraphicLine:
                     # If the item is a line, origin and destination ids are written
                     origin = self.canvas.scene.blocks[item.origin].block_id
                     destination = self.canvas.scene.blocks[item.destination].block_id
@@ -476,7 +476,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if type(self.canvas.scene.selectedItems()[0]) is QGraphicsRectItem:
                 # Return block graphic object
                 return self.canvas.scene.blocks[self.canvas.scene.selectedItems()[0]]
-            elif type(self.canvas.scene.selectedItems()[0]) is Line:
+            elif type(self.canvas.scene.selectedItems()[0]) is GraphicLine:
                 msg_dialog = MessageDialog("Can't edit edges, please select a block instead.",
                                            MessageType.ERROR)
                 msg_dialog.show()
@@ -500,7 +500,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if type(self.canvas.scene.selectedItems()[0]) is QGraphicsRectItem:
                 # Return block graphic object
                 return self.canvas.scene.blocks[self.canvas.scene.selectedItems()[0]]
-            elif type(self.canvas.scene.selectedItems()[0]) is Line:
+            elif type(self.canvas.scene.selectedItems()[0]) is GraphicLine:
                 msg_dialog = MessageDialog("No parameters available for connections.", MessageType.ERROR)
                 msg_dialog.show()
         else:

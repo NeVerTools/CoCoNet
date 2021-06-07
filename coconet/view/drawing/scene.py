@@ -13,7 +13,7 @@ from coconet.core.controller.nodewrapper import NodeOps
 from coconet.core.controller.pynevertemp.networks import SequentialNetwork, NeuralNetwork
 from coconet.core.controller.pynevertemp.tensor import Tensor
 from coconet.core.model.network import NetworkNode, NetworkProperty
-from coconet.view.drawing.element import NodeBlock, Line, PropertyBlock
+from coconet.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock
 from coconet.view.drawing.renderer import SequentialNetworkRenderer
 from coconet.view.widget.dialog.dialogs import EditDialog, MessageDialog, MessageType
 
@@ -483,23 +483,6 @@ class Canvas(QWidget):
         block.set_proxy(proxy)
         block.set_rect_item(rect)
 
-        # If the block is edited, the network will be updated
-        # block.edited.connect(lambda: self.edit_node(block))
-
-        # Set context menu actions
-        block_actions = dict()
-        block_actions["Copy"] = QAction("Copy", block)
-        block_actions["Copy"].triggered.connect(lambda: print("Copy"))
-        # block_actions["Cut"] = QAction("Cut", block)
-        # block_actions["Cut"].triggered.connect(lambda: self.cut_selected())
-        # block_actions["Delete"] = QAction("Delete", block)
-        # block_actions["Delete"].triggered.connect(lambda: self.delete_selected())
-        # block_actions["Edit"] = QAction("Edit", block)
-        # block_actions["Edit"].triggered.connect(lambda: self.scene.edit_block(block))
-        # block_actions["Parameters"] = QAction("Parameters", block)
-        # block_actions["Parameters"].triggered.connect(lambda: self.show_parameters(block))
-        block.set_context_menu(block_actions)
-
         self.num_props += 1
 
         # Add block to Canvas, Scene and Network
@@ -525,7 +508,7 @@ class Canvas(QWidget):
             if len(self.scene.selectedItems()) > 0:
                 rect = self.scene.selectedItems().pop()
                 # Check it is not a line
-                while type(rect) == Line and len(self.scene.selectedItems()) > 0:
+                while type(rect) == GraphicLine and len(self.scene.selectedItems()) > 0:
                     rect = self.scene.selectedItems().pop()
 
                 block = self.scene.blocks[rect]
@@ -634,7 +617,7 @@ class Canvas(QWidget):
                     self.scene.removeItem(item)
                     self.scene.blocks.pop(item)
 
-                elif type(item) == Line:
+                elif type(item) == GraphicLine:
                     # Deleting an edge makes the network non sequential
                     block_before = self.scene.blocks[item.origin]
                     block_after = self.scene.blocks[item.destination]
@@ -907,12 +890,12 @@ class NetworkScene(QGraphicsScene):
                 if self.prev_item is None:  # No previous items
                     self.prev_item = self.selected_item
                 else:
-                    if isinstance(self.prev_item, Line):  # If the previous item is a line, break it
+                    if isinstance(self.prev_item, GraphicLine):  # If the previous item is a line, break it
                         prev_rect = self.prev_item.origin
                         new_connections = prev_rect, self.selected_item
                     else:  # No connections between nodes
                         new_connections = None
-            elif isinstance(self.selected_item, Line):
+            elif isinstance(self.selected_item, GraphicLine):
                 if self.prev_item is None:  # No previous items
                     self.prev_item = self.selected_item
                 else:
@@ -937,11 +920,11 @@ class NetworkScene(QGraphicsScene):
                         break
 
                 # Draw new connections
-                l1 = Line(new_connections[0], new_connections[1], self)
+                l1 = GraphicLine(new_connections[0], new_connections[1], self)
                 self.edges.append(l1)
                 l1.setFlag(QGraphicsItem.ItemIsSelectable, True)
                 l1.setZValue(5)
-                l2 = Line(new_connections[1], next_rect, self)
+                l2 = GraphicLine(new_connections[1], next_rect, self)
                 self.edges.append(l2)
                 l2.setFlag(QGraphicsItem.ItemIsSelectable, True)
                 l2.setZValue(5)
@@ -982,7 +965,7 @@ class NetworkScene(QGraphicsScene):
                 else:
                     next_rect_item = self.selectedItems().pop()
                     if self.prev_item != next_rect_item:
-                        line = Line(self.prev_item, next_rect_item, self)
+                        line = GraphicLine(self.prev_item, next_rect_item, self)
                         items_tuple = (self.prev_item, next_rect_item, line)
 
                         # Add line to scene
@@ -1001,7 +984,7 @@ class NetworkScene(QGraphicsScene):
         else:
             return None
 
-    def auto_add_line(self, prev_rect_item, next_rect_item) -> Optional[Line]:
+    def auto_add_line(self, prev_rect_item, next_rect_item) -> Optional[GraphicLine]:
         """
         This methods adds directly an edge between two given blocks.
 
@@ -1014,13 +997,13 @@ class NetworkScene(QGraphicsScene):
 
         Returns
         ----------
-        Line
+        GraphicLine
             The new line created, if the method succeeded.
 
         """
 
         if prev_rect_item != next_rect_item:
-            line = Line(prev_rect_item, next_rect_item, self)
+            line = GraphicLine(prev_rect_item, next_rect_item, self)
             # Add to list of edges
             self.edges.append(line)
             line.setFlag(QGraphicsItem.ItemIsSelectable, True)
@@ -1059,7 +1042,7 @@ class NetworkScene(QGraphicsScene):
                     line.remove_self()
 
             # Return the item in order to remove it from the network
-            # (if the item is a Line it is just deleted)
+            # (if the item is a GraphicLine it is just deleted)
             return item
         else:
             return None

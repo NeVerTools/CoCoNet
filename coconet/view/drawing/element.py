@@ -17,10 +17,10 @@ from coconet.core.model.network import NetworkProperty
 MAX_FLOAT_LABEL_LENGTH = 5
 
 
-class Line(QGraphicsLineItem):
+class GraphicLine(QGraphicsLineItem):
     """
-    This class is a graphic line with an arrow which connects two blocks of the
-    scene.
+    This class is a graphic line with an arrow which connects
+    two blocks in the scene.
 
     Attributes
     ----------
@@ -61,7 +61,7 @@ class Line(QGraphicsLineItem):
     """
 
     def __init__(self, origin: QGraphicsRectItem, destination: QGraphicsRectItem, scene):
-        super(Line, self).__init__()
+        super(GraphicLine, self).__init__()
         self.origin = origin
         self.destination = destination
         self.scene = scene
@@ -585,6 +585,8 @@ class PropertyBlock(GraphicBlock):
     def __init__(self, block_id: str, property: NetworkProperty):
         super().__init__(block_id)
         self.property = property
+        self.layout.addWidget(self.title_label)
+        self.init_layout()
 
     def init_layout(self) -> None:
         """
