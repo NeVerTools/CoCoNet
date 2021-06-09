@@ -12,6 +12,7 @@ from coconet.core.controller.pynevertemp.tensor import Tensor
 import coconet.view.styles as style
 import coconet.view.util.utility as u
 from coconet.core.model.network import NetworkNode
+from coconet.view.drawing.element import PropertyBlock
 from coconet.view.widget.loading import ProgressBar
 
 UNEDITABLE = ["weight", "bias", "in_features"]
@@ -374,6 +375,71 @@ class LoadingDialog(CoCoNetDialog):
         # Disable the dialog frame and close button
         self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
         self.setWindowFlags(Qt.FramelessWindowHint)
+
+
+class EditPropertyDialog(CoCoNetDialog):
+    """
+
+    Attributes
+    ----------
+    property : PropertyBlock
+        Current property to edit.
+    new_property : str
+        New SMT-LIB property string.
+    smt_box : QLineEdit
+        Input box.
+    has_edits : bool
+        Flag signaling if the property was edited.
+
+    Methods
+    ----------
+
+    """
+    def __init__(self, property: PropertyBlock):
+        super().__init__("", "Edit property")
+        self.property = property
+        self.new_property = self.property.smt_property.property_string
+        self.has_edits = False
+        self.layout = QGridLayout()
+
+        # Build layout
+        title_label = QLabel("Property")
+        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
+        title_label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(title_label, 0, 0, 1, 2)
+
+        # Input box
+        smt_label = QLabel("SMT-LIB property")
+        smt_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
+        smt_label.setAlignment(Qt.AlignRight)
+        self.layout.addWidget(smt_label, 1, 0)
+
+        self.smt_box = QLineEdit()
+        self.smt_box.setStyleSheet(style.VALUE_LABEL_STYLE)
+        self.smt_box.setText(self.new_property)
+        self.layout.addWidget(self.smt_box, 1, 1)
+
+        # "Apply" button which saves changes
+        apply_button = QPushButton("Apply")
+        apply_button.setStyleSheet(style.BUTTON_STYLE)
+        apply_button.clicked.connect(lambda: self.save_data())
+        self.layout.addWidget(apply_button, 2, 0)
+
+        # "Cancel" button which closes the dialog without saving
+        cancel_button = QPushButton("Cancel")
+        cancel_button.setStyleSheet(style.BUTTON_STYLE)
+        cancel_button.clicked.connect(lambda: self.close())
+        self.layout.addWidget(cancel_button, 2, 1)
+
+        self.layout.setColumnStretch(0, 1)
+        self.layout.setColumnStretch(1, 1)
+
+        self.render_layout()
+
+    def save_data(self):
+        self.has_edits = True
+        self.new_property = self.smt_box.text()
+        self.close()
 
 
 class EditDialog(CoCoNetDialog):

@@ -13,9 +13,9 @@ from coconet.core.controller.nodewrapper import NodeOps
 from coconet.core.controller.pynevertemp.networks import SequentialNetwork, NeuralNetwork
 from coconet.core.controller.pynevertemp.tensor import Tensor
 from coconet.core.model.network import NetworkNode, NetworkProperty
-from coconet.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock
+from coconet.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock, GraphicBlock
 from coconet.view.drawing.renderer import SequentialNetworkRenderer
-from coconet.view.widget.dialog.dialogs import EditDialog, MessageDialog, MessageType
+from coconet.view.widget.dialog.dialogs import EditDialog, MessageDialog, MessageType, EditPropertyDialog
 
 
 class DrawingMode(Enum):
@@ -227,7 +227,8 @@ class Canvas(QWidget):
                 return
 
             if isinstance(origin, PropertyBlock) and isinstance(destination, NodeBlock):
-                # TODO make connection and return
+                for name, par in destination.node.param.items():
+                    origin.variables.append(name)
                 return
 
             try:
@@ -461,7 +462,7 @@ class Canvas(QWidget):
         if copy is not None:
             # If a graphic block is given, a new block is created copying
             # its data, in_dim, and type
-            block = PropertyBlock("", copy.property)
+            block = PropertyBlock("", copy.smt_property)
         else:
             # If a node is passed, a new block is created
             block = PropertyBlock("", property)
@@ -493,6 +494,12 @@ class Canvas(QWidget):
         block.set_proxy(proxy)
         block.set_rect_item(rect)
 
+        # Set context menu actions
+        block_actions = dict()
+        block_actions["Define"] = QAction("Define...", block)
+        block_actions["Define"].triggered.connect(lambda: Canvas.define_property(block))
+        block.set_context_menu(block_actions)
+
         self.num_props += 1
 
         # Add block to Canvas, Scene and Network
@@ -500,6 +507,16 @@ class Canvas(QWidget):
         self.renderer.add_property_block(block)
 
         return block
+
+    @staticmethod
+    def define_property(item: PropertyBlock) -> None:
+        dialog = EditPropertyDialog(item)
+        dialog.exec()
+
+        # Catch new parameters
+        if dialog.has_edits:
+            item.smt_property.property_string = dialog.new_property
+        pass
 
     def show_parameters(self, block: NodeBlock = None):
         """
@@ -1080,7 +1097,7 @@ class NetworkScene(QGraphicsScene):
 
         super(NetworkScene, self).mouseReleaseEvent(event)
 
-    def edit_block(self, item: NodeBlock = None):
+    def edit_block(self, item: GraphicBlock = None):
         """
         This method displays a window in order to let the user edit
         the block parameters. Eventually, a signal is emitted to

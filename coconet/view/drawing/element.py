@@ -175,7 +175,7 @@ class GraphicLine(QGraphicsLineItem):
         
         Parameters
         ----------
-        valid: bool
+        valid : bool
             New value for the legality flag.
 
         """
@@ -199,7 +199,7 @@ class GraphicLine(QGraphicsLineItem):
         
         Parameters
         ----------
-        dims: tuple
+        dims : tuple
             The new dimensions to update.
 
         """
@@ -213,8 +213,13 @@ class GraphicLine(QGraphicsLineItem):
         """
         This method updates the line as it origin or its destination has
         changed location.
-        :param new_target: QRectF
+
+        Parameters
+        ----------
+        new_target : QRectF
+
         """
+
         if new_target == self.destination:
             self.destination = new_target
         elif new_target == self.origin:
@@ -251,15 +256,15 @@ class GraphicBlock(QtWidgets.QWidget):
 
     Attributes
     ----------
-    block_id: str
+    block_id : str
         String unique identifier for the block.
-    layout: QVBoxLayout
+    layout : QVBoxLayout
         Block layout, vertical by default.
-    rect: QGraphicsRectItem
+    rect : QGraphicsRectItem
         pyQt rectangle object associated to the block.
-    proxy_control: QGraphicsProxyWidget
+    proxy_control : QGraphicsProxyWidget
         pyQt proxy holding the widget inside the scene.
-    title_label: QLabel
+    title_label : QLabel
         pyQt label for the block head.
 
     Methods
@@ -311,7 +316,7 @@ class GraphicBlock(QtWidgets.QWidget):
 
         Parameters
         ----------
-        proxy: QGraphicsProxyWidget
+        proxy : QGraphicsProxyWidget
             The controller to set.
 
         """
@@ -325,7 +330,7 @@ class GraphicBlock(QtWidgets.QWidget):
 
         Parameters
         ----------
-        rect: QGraphicsRectItem
+        rect : QGraphicsRectItem
             The rectangle widget associated to the block.
 
         """
@@ -338,7 +343,7 @@ class GraphicBlock(QtWidgets.QWidget):
 
         Parameters
         ----------
-        actions: dict
+        actions : dict
             The menu actions to display.
 
         """
@@ -354,7 +359,7 @@ class GraphicBlock(QtWidgets.QWidget):
 
         Parameters
         ----------
-        evt: QResizeEvent
+        evt : QResizeEvent
             The resize event.
 
         """
@@ -522,7 +527,7 @@ class NodeBlock(GraphicBlock):
 
         Parameters
         ----------
-        text: str
+        text : str
             The dimension description string.
 
         Returns
@@ -577,14 +582,18 @@ class PropertyBlock(GraphicBlock):
 
     Attributes
     ----------
-    property: NetworkProperty
+    smt_property : NetworkProperty
         The property element for this block.
+    variables : list
+        The list of admissible variables
+        for the property.
 
     """
 
     def __init__(self, block_id: str, property: NetworkProperty):
         super().__init__(block_id)
-        self.property = property
+        self.smt_property = property
+        self.variables = []
         self.init_layout()
 
     def init_layout(self) -> None:
@@ -598,3 +607,12 @@ class PropertyBlock(GraphicBlock):
         self.title_label.setText("Polyhedral Property")
         self.title_label.setStyleSheet(style.PROPERTY_TITLE_STYLE)
         self.layout.addWidget(self.title_label)
+
+        grid = QWidget()
+        grid_layout = QGridLayout()
+        grid.setLayout(grid_layout)
+        self.layout.addWidget(grid)
+
+        formula_label = QLabel("SMT formula")
+        formula_label.setStyleSheet(style.PAR_NODE_STYLE)
+        grid_layout.addWidget(formula_label, 1, 0)

@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QToolBar, QToolButton
 import coconet.view.styles as style
 from coconet.core.controller.pynevertemp.strategies.verification import NeVerProperty
 from coconet.core.controller.pynevertemp.tensor import Tensor
-from coconet.core.model.network import NetworkNode, PolyhedralNetworkProperty, NetworkProperty
+from coconet.core.model.network import NetworkNode, NetworkProperty
 from coconet.view.drawing.element import NodeBlock
 
 
@@ -443,7 +443,7 @@ class BlocksToolbar(QToolBar):
     def __init_properties(self):
         # TODO UPDATE WITH JSON
         k = "Polyhedral"
-        self.properties[k] = PolyhedralNetworkProperty(NeVerProperty(Tensor([]), Tensor([]), [], []))
+        self.properties[k] = NetworkProperty("")
 
         button = PropertyButton(k, self.properties[k])
         button.setToolTip(k)

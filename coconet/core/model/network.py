@@ -44,25 +44,10 @@ class NetworkProperty:
 
     Attributes
     ----------
-    p: Property
-        A generic pyNeVer-supported property.
+    property_string : str
+        A generic SMT-LIB property.
 
     """
 
-    def __init__(self, p: Property):
-        self.p = p
-
-
-class PolyhedralNetworkProperty(NetworkProperty):
-    """
-    Concrete property supported by NeVer.
-
-    Attributes
-    ----------
-    p: NeVerProperty
-        The pyNeVer representation of the polyhedral property.
-
-    """
-
-    def __init__(self, p: NeVerProperty):
-        super().__init__(p)
+    def __init__(self, p: str):
+        self.property_string = p
