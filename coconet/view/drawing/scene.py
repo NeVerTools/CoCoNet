@@ -1105,7 +1105,7 @@ class NetworkScene(QGraphicsScene):
 
         Parameters
         ----------
-        item: NodeBlock
+        item : GraphicBlock
             The optional block to edit, if None look for selected.
 
         """
@@ -1117,13 +1117,15 @@ class NetworkScene(QGraphicsScene):
                 item_rect = self.selectedItems().pop()
                 item = self.blocks[item_rect]
 
-            dialog = EditDialog(item.node, item.block_data, item.in_dim, item.is_head)
-            dialog.exec()
+            if isinstance(item, NodeBlock):
+                dialog = EditDialog(item)
+                dialog.exec()
+                # Catch new parameters
+                if dialog.has_edits:
 
-            # Catch new parameters
-            if dialog.edited_data:
-                edited_data = dialog.has_edits
-
-                # The block emits a signal
-                item.edits = item.block_id, edited_data
-                item.edited.emit()
+                    # The block emits a signal
+                    item.edits = item.block_id, dialog.edited_data
+                    item.edited.emit()
+            else:
+                dialog = EditPropertyDialog(item)
+                dialog.exec()

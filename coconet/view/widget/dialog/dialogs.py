@@ -12,7 +12,7 @@ from coconet.core.controller.pynevertemp.tensor import Tensor
 import coconet.view.styles as style
 import coconet.view.util.utility as u
 from coconet.core.model.network import NetworkNode
-from coconet.view.drawing.element import PropertyBlock
+from coconet.view.drawing.element import PropertyBlock, NodeBlock
 from coconet.view.widget.loading import ProgressBar
 
 UNEDITABLE = ["weight", "bias", "in_features"]
@@ -382,7 +382,7 @@ class EditPropertyDialog(CoCoNetDialog):
 
     Attributes
     ----------
-    property : PropertyBlock
+    property_block : PropertyBlock
         Current property to edit.
     new_property : str
         New SMT-LIB property string.
@@ -395,10 +395,10 @@ class EditPropertyDialog(CoCoNetDialog):
     ----------
 
     """
-    def __init__(self, property: PropertyBlock):
+    def __init__(self, property_block: PropertyBlock):
         super().__init__("", "Edit property")
-        self.property = property
-        self.new_property = self.property.smt_property.property_string
+        self.property_block = property_block
+        self.new_property = self.property_block.smt_property.property_string
         self.has_edits = False
         self.layout = QGridLayout()
 
@@ -448,11 +448,9 @@ class EditDialog(CoCoNetDialog):
 
     Attributes
     ----------
-    node: NetworkNode
+    node_block: NetworkNode
         Current node to edit, which contains information about parameters to
         display and their types.
-    current_data: dict
-        Current node data.
     parameters: dict
         Dictionary which connects the name of each parameter to its editable
         field, which can be a QLineEdit or a QComboBox.
@@ -473,13 +471,13 @@ class EditDialog(CoCoNetDialog):
 
     clicked = QtCore.pyqtSignal()
 
-    def __init__(self, node: NetworkNode, current_data: dict, in_dim: Union[tuple, int], accept_edit: bool):
+    def __init__(self, node_block: NodeBlock):
         super().__init__("", "Edit parameters.")
-        self.setWindowTitle(node.name)
+        self.setWindowTitle(node_block.node.name)
         self.layout = QGridLayout()
 
         # Connect node
-        self.node = node
+        self.node = node_block
         self.parameters = dict()
         self.edited_data = dict()
         self.has_edits = False
@@ -498,18 +496,18 @@ class EditDialog(CoCoNetDialog):
 
         in_dim_box = QLineEdit()
         in_dim_box.setStyleSheet(style.VALUE_LABEL_STYLE)
-        in_dim_box.setText(','.join(map(str, in_dim)))
+        in_dim_box.setText(','.join(map(str, node_block.in_dim)))
         in_dim_box.setValidator(ArithmeticValidator.TENSOR)
 
         self.layout.addWidget(in_dim_box, 1, 1)
         self.parameters["in_dim"] = in_dim_box
 
-        if not accept_edit:
+        if not node_block.is_head:
             in_dim_box.setReadOnly(True)
 
         # Display parameters if present
-        if node.param:
-            counter = self.append_node_params(node, current_data)
+        if node_block.node.param:
+            counter = self.append_node_params(node_block.node, node_block.block_data)
 
             # "Apply" button which saves changes
             apply_button = QPushButton("Apply")
