@@ -309,6 +309,74 @@ class Canvas(QWidget):
                     dialog.exec()
                     return
 
+    def set_position(self, pos: QPoint, offset: int) -> QPoint:
+        """
+        This method computes the position for a new Graphic
+        Block to insert in the scene. A starting point can be
+        provided, along with the offset.
+
+        Parameters
+        ----------
+        pos : QPoint
+            The given position for the block.
+        offset : int
+            The offset to move the new computed point.
+
+        Returns
+        -------
+        QPoint
+            The new position for the block.
+
+        """
+
+        if pos is not None:
+            return pos
+
+        # Get the visible area of the scene
+        viewport_rect = QRect(0, 0, self.view.viewport().width(),
+                              self.view.viewport().height())
+        viewport = self.view.mapToScene(viewport_rect).boundingRect()
+        start_x = viewport.x()
+        start_y = viewport.y()
+
+        # The initial point of each block is translated of 20px in order not to
+        # overlap them (always in the visible area)
+        return QPoint(start_x + 20 * (offset % 20) + 20,
+                      start_y + 20 * (offset % 20) + 20)
+
+    def create_rect(self, block: GraphicBlock, pos: QPoint) -> None:
+        """
+        This method manages the pyQt operations to build
+        and add the rectangle item that represents the
+        given Graphic Block.
+
+        Parameters
+        ----------
+        block : GraphicBlock
+            The block to which the rectangle is associated.
+        pos : QPoint
+            The insertion point in the view.
+
+        """
+
+        proxy = self.scene.addWidget(block)
+
+        # Create the parent rect
+        rect = QRectF(pos.x() + 10, pos.y() + 10,
+                      block.width() - 20, block.height() - 20)
+
+        # Add rect
+        transparent = QColor(0, 0, 0, 0)
+        rect = self.scene.addRect(rect, QPen(transparent), QBrush(transparent))
+        rect.setFlag(QGraphicsItem.ItemIsMovable, True)
+        rect.setFlag(QGraphicsItem.ItemIsSelectable, True)
+        rect.setZValue(10)
+        proxy.setParentItem(rect)
+        proxy.setPos(pos.x(), pos.y())
+        block.set_proxy(proxy)
+        block.set_rect_item(rect)
+        self.scene.blocks[rect] = block
+
     def draw_node(self, block_type: NetworkNode = None, copy: NodeBlock = None,
                   pos: QPoint = None) -> NodeBlock:
         """
@@ -334,37 +402,17 @@ class Canvas(QWidget):
         assert block_type is None or copy is None, \
             "Improper use of method, only a block must be specified."
 
-        # Get the visible area of the scene
-        viewport_rect = QRect(0, 0, self.view.viewport().width(),
-                              self.view.viewport().height())
-        viewport = self.view.mapToScene(viewport_rect).boundingRect()
-        start_x = viewport.x()
-        start_y = viewport.y()
-
-        # The initial point of each block is translated of 20px in order not to
-        # overlap them (always in the visible area)
-        if pos is None:
-            point = QPoint(start_x + 20 * (self.num_nodes % 20) + 20,
-                           start_y + 20 * (self.num_nodes % 20) + 20)
-        else:
-            point = pos
-        transparent = QColor(0, 0, 0, 0)
-
         # Create a new block or copy the given one
         block = None
         if copy is not None:
-            # If a graphic block is given, a new block is created copying
-            # its data, in_dim, and type
             block = NodeBlock("", copy.node)
             block.block_data = copy.block_data
             block.in_dim = copy.in_dim
             block.update_labels()
         else:
-            # If a node is passed, a new block is created
             block = NodeBlock("", block_type)
 
-        # Creation of the identifier which depends on the number of blocks
-        # before and by the type
+        # Create the identifier
         if copy is not None and \
                 copy not in self.scene.blocks.values():
             block.block_id = copy.block_id
@@ -372,28 +420,11 @@ class Canvas(QWidget):
             new_block_id = str(self.num_nodes) + block.node.name[0:2]
             block.block_id = new_block_id
 
-        # Position the block
-        proxy = self.scene.addWidget(block)
+        # Create block in view
+        point = self.set_position(pos, self.num_nodes)
+        self.create_rect(block, point)
 
-        # Create the parent rect of the QWidget NodeBlock
-        # in order to move it in the QGraphicsScene
-        rect = QRectF(point.x() + 10, point.y() + 10,
-                      block.width() - 20, block.height() - 20)
-
-        # Add rect
-        rect = self.scene.addRect(rect, QPen(transparent), QBrush(transparent))
-        rect.setFlag(QGraphicsItem.ItemIsMovable, True)
-        rect.setFlag(QGraphicsItem.ItemIsSelectable, True)
-        rect.setZValue(10)
-        proxy.setParentItem(rect)
-        proxy.setPos(point.x(), point.y())
-        block.set_proxy(proxy)
-        block.set_rect_item(rect)
-
-        # If the block is edited, the network will be updated
-        block.edited.connect(lambda: self.edit_node(block))
-
-        # Set context menu actions
+        # Set context menu
         block_actions = dict()
         block_actions["Copy"] = QAction("Copy", block)
         block_actions["Copy"].triggered.connect(lambda: self.copy_selected(block))
@@ -406,12 +437,11 @@ class Canvas(QWidget):
         block_actions["Parameters"] = QAction("Parameters", block)
         block_actions["Parameters"].triggered.connect(lambda: self.show_parameters(block))
         block.set_context_menu(block_actions)
+        block.edited.connect(lambda: self.edit_node(block))
 
+        # Update scene
         self.num_nodes += 1
         self.update_scene()
-
-        # Add block to Canvas, Scene and Network
-        self.scene.blocks[rect] = block
         self.renderer.add_disconnected_block(block)
 
         return block
@@ -442,33 +472,13 @@ class Canvas(QWidget):
         assert property is None or copy is None, \
             "Improper use of method, only a block must be specified."
 
-        # Get the visible area of the scene
-        viewport_rect = QRect(0, 0, self.view.viewport().width(),
-                              self.view.viewport().height())
-        viewport = self.view.mapToScene(viewport_rect).boundingRect()
-        start_x = viewport.x()
-        start_y = viewport.y()
-
-        # The initial point of each block is translated of 20px in order not to
-        # overlap them (always in the visible area)
-        if pos is None:
-            point = QPoint(start_x + 20 * (self.num_props % 20) + 20,
-                           start_y + 20 * (self.num_props % 20) + 20)
-        else:
-            point = pos
-        transparent = QColor(0, 0, 0, 0)
-
         # Create a new block or copy the given one
         if copy is not None:
-            # If a graphic block is given, a new block is created copying
-            # its data, in_dim, and type
             block = PropertyBlock("", copy.smt_property)
         else:
-            # If a node is passed, a new block is created
             block = PropertyBlock("", property)
 
-        # Creation of the identifier which depends on the number of blocks
-        # before and by the type
+        # Create the identifier
         if copy is not None and \
                 copy not in self.scene.blocks.values():
             block.block_id = copy.block_id
@@ -476,34 +486,18 @@ class Canvas(QWidget):
             new_block_id = str(self.num_props) + "Pr"
             block.block_id = new_block_id
 
-        # Position the block
-        proxy = self.scene.addWidget(block)
+        # Create block in view
+        point = self.set_position(pos, self.num_props)
+        self.create_rect(block, point)
 
-        # Create the parent rect of the QWidget NodeBlock
-        # in order to move it in the QGraphicsScene
-        rect = QRectF(point.x() + 10, point.y() + 10,
-                      block.width() - 20, block.height() - 20)
-
-        # Add rect
-        rect = self.scene.addRect(rect, QPen(transparent), QBrush(transparent))
-        rect.setFlag(QGraphicsItem.ItemIsMovable, True)
-        rect.setFlag(QGraphicsItem.ItemIsSelectable, True)
-        rect.setZValue(10)
-        proxy.setParentItem(rect)
-        proxy.setPos(point.x(), point.y())
-        block.set_proxy(proxy)
-        block.set_rect_item(rect)
-
-        # Set context menu actions
+        # Set context menu
         block_actions = dict()
         block_actions["Define"] = QAction("Define...", block)
         block_actions["Define"].triggered.connect(lambda: Canvas.define_property(block))
         block.set_context_menu(block_actions)
 
+        # Update scene
         self.num_props += 1
-
-        # Add block to Canvas, Scene and Network
-        self.scene.blocks[rect] = block
         self.renderer.add_property_block(block)
 
         return block
@@ -1122,7 +1116,6 @@ class NetworkScene(QGraphicsScene):
                 dialog.exec()
                 # Catch new parameters
                 if dialog.has_edits:
-
                     # The block emits a signal
                     item.edits = item.block_id, dialog.edited_data
                     item.edited.emit()
