@@ -6,7 +6,7 @@ from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtCore import Qt, QPoint, QRectF, pyqtSignal, QRect
 from PyQt5.QtGui import QBrush, QColor, QPen, QPainter
 from PyQt5.QtWidgets import QGraphicsRectItem, QWidget, QGraphicsScene, QApplication, QGraphicsItem, \
-    QAction, QGraphicsSceneMouseEvent
+    QGraphicsSceneMouseEvent
 
 import coconet.view.styles as style
 from coconet.core.controller.nodewrapper import NodeOps
@@ -424,22 +424,20 @@ class Canvas(QWidget):
         point = self.set_position(pos, self.num_nodes)
         self.create_rect(block, point)
 
-        # Set context menu
-        block_actions = dict()
-        block_actions["Copy"] = QAction("Copy", block)
-        block_actions["Copy"].triggered.connect(lambda: self.copy_selected(block))
-        block_actions["Cut"] = QAction("Cut", block)
-        block_actions["Cut"].triggered.connect(lambda: self.cut_selected())
-        block_actions["Delete"] = QAction("Delete", block)
-        block_actions["Delete"].triggered.connect(lambda: self.delete_selected())
-        block_actions["Edit"] = QAction("Edit", block)
-        block_actions["Edit"].triggered.connect(lambda: self.scene.edit_block(block))
-        block_actions["Parameters"] = QAction("Parameters", block)
-        block_actions["Parameters"].triggered.connect(lambda: self.show_parameters(block))
-        block.set_context_menu(block_actions)
+        # Finalize block and update scene
+        block.context_actions["Copy"].triggered \
+            .connect(lambda: self.copy_selected(block))
+        block.context_actions["Cut"].triggered \
+            .connect(lambda: self.cut_selected())
+        block.context_actions["Delete"].triggered \
+            .connect(lambda: self.delete_selected())
+        block.context_actions["Edit"].triggered \
+            .connect(lambda: self.scene.edit_block(block))
+        block.context_actions["Parameters"].triggered \
+            .connect(lambda: self.show_parameters(block))
+
         block.edited.connect(lambda: self.edit_node(block))
 
-        # Update scene
         self.num_nodes += 1
         self.update_scene()
         self.renderer.add_disconnected_block(block)
@@ -490,13 +488,9 @@ class Canvas(QWidget):
         point = self.set_position(pos, self.num_props)
         self.create_rect(block, point)
 
-        # Set context menu
-        block_actions = dict()
-        block_actions["Define"] = QAction("Define...", block)
-        block_actions["Define"].triggered.connect(lambda: Canvas.define_property(block))
-        block.set_context_menu(block_actions)
-
-        # Update scene
+        # Finalize block and update scene
+        block.context_actions["Define"].triggered \
+            .connect(lambda: Canvas.define_property(block))
         self.num_props += 1
         self.renderer.add_property_block(block)
 

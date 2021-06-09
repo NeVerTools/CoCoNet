@@ -7,7 +7,7 @@ from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import Qt, QLineF, QRectF, QPointF, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QPen, QPolygonF
 from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPolygonItem, QLabel, \
-    QVBoxLayout, QWidget, QGridLayout, QGraphicsProxyWidget
+    QVBoxLayout, QWidget, QGridLayout, QGraphicsProxyWidget, QAction
 
 import coconet.view.styles as style
 import coconet.view.util.utility as u
@@ -266,6 +266,8 @@ class GraphicBlock(QtWidgets.QWidget):
         pyQt proxy holding the widget inside the scene.
     title_label : QLabel
         pyQt label for the block head.
+    context_actions : dict
+        Dictionary of context menu actions.
 
     Methods
     ----------
@@ -294,6 +296,7 @@ class GraphicBlock(QtWidgets.QWidget):
         self.rect = None
         self.proxy_control = None
         self.title_label = QLabel("Graphic block")
+        self.context_actions = dict()
 
         self.setLayout(self.layout)
 
@@ -337,7 +340,7 @@ class GraphicBlock(QtWidgets.QWidget):
 
         self.rect = rect
 
-    def set_context_menu(self, actions) -> None:
+    def set_context_menu(self, actions: dict) -> None:
         """
         This method builds a context menu with the given actions.
 
@@ -349,8 +352,9 @@ class GraphicBlock(QtWidgets.QWidget):
         """
 
         self.setContextMenuPolicy(Qt.ActionsContextMenu)
-        for action in actions.values():
-            self.addAction(action)
+        for k, v in actions.items():
+            self.context_actions[k] = v
+            self.addAction(v)
 
     def resizeEvent(self, evt: QtGui.QResizeEvent) -> None:
         """
@@ -451,6 +455,8 @@ class NodeBlock(GraphicBlock):
         else:
             self.title_label.setStyleSheet(style.EMPTY_NODE_TITLE)
 
+        self.init_context_menu()
+
     def init_layout(self) -> None:
         """
         This method sets up the the node block layout with
@@ -519,6 +525,21 @@ class NodeBlock(GraphicBlock):
 
         self.update_labels()
         self.edited.connect(lambda: self.update_labels())
+
+    def init_context_menu(self):
+        """
+        This method sets up the context menu actions that
+        are available for the block.
+
+        """
+
+        block_actions = dict()
+        block_actions["Copy"] = QAction("Copy", self)
+        block_actions["Cut"] = QAction("Cut", self)
+        block_actions["Delete"] = QAction("Delete", self)
+        block_actions["Edit"] = QAction("Edit", self)
+        block_actions["Parameters"] = QAction("Parameters", self)
+        self.set_context_menu(block_actions)
 
     def text_to_tuple(self, text: str) -> tuple:
         """
@@ -595,6 +616,7 @@ class PropertyBlock(GraphicBlock):
         self.smt_property = property
         self.variables = []
         self.init_layout()
+        self.init_context_menu()
 
     def init_layout(self) -> None:
         """
@@ -616,3 +638,14 @@ class PropertyBlock(GraphicBlock):
         formula_label = QLabel("SMT formula")
         formula_label.setStyleSheet(style.PAR_NODE_STYLE)
         grid_layout.addWidget(formula_label, 1, 0)
+
+    def init_context_menu(self):
+        """
+        This method sets up the context menu actions that
+        are available for the block.
+
+        """
+
+        block_actions = dict()
+        block_actions["Define"] = QAction("Define...", self)
+        self.set_context_menu(block_actions)
