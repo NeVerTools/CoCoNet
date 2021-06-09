@@ -506,23 +506,24 @@ class EditDialog(CoCoNetDialog):
             in_dim_box.setReadOnly(True)
 
         # Display parameters if present
+        counter = 2
         if node_block.node.param:
             counter = self.append_node_params(node_block.node, node_block.block_data)
 
-            # "Apply" button which saves changes
-            apply_button = QPushButton("Apply")
-            apply_button.setStyleSheet(style.BUTTON_STYLE)
-            apply_button.clicked.connect(lambda: self.save_data())
-            self.layout.addWidget(apply_button, counter, 0)
+        # "Apply" button which saves changes
+        apply_button = QPushButton("Apply")
+        apply_button.setStyleSheet(style.BUTTON_STYLE)
+        apply_button.clicked.connect(lambda: self.save_data())
+        self.layout.addWidget(apply_button, counter, 0)
 
-            # "Cancel" button which closes the dialog without saving
-            cancel_button = QPushButton("Cancel")
-            cancel_button.setStyleSheet(style.BUTTON_STYLE)
-            cancel_button.clicked.connect(lambda: self.close())
-            self.layout.addWidget(cancel_button, counter, 1)
+        # "Cancel" button which closes the dialog without saving
+        cancel_button = QPushButton("Cancel")
+        cancel_button.setStyleSheet(style.BUTTON_STYLE)
+        cancel_button.clicked.connect(lambda: self.close())
+        self.layout.addWidget(cancel_button, counter, 1)
 
-            self.layout.setColumnStretch(0, 1)
-            self.layout.setColumnStretch(1, 1)
+        self.layout.setColumnStretch(0, 1)
+        self.layout.setColumnStretch(1, 1)
 
         self.render_layout()
 
