@@ -7,8 +7,6 @@ from PyQt5.QtWidgets import QDockWidget, QScrollArea, QSizePolicy, QWidget, QVBo
 from PyQt5.QtWidgets import QToolBar, QToolButton
 
 import coconet.view.styles as style
-from coconet.core.controller.pynevertemp.strategies.verification import NeVerProperty
-from coconet.core.controller.pynevertemp.tensor import Tensor
 from coconet.core.model.network import NetworkNode, NetworkProperty
 from coconet.view.drawing.element import NodeBlock
 

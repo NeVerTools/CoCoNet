@@ -1,7 +1,5 @@
 import copy
 
-from PyQt5.QtCore import pyqtSignal
-
 from coconet.core.controller.nodewrapper import NodeOps
 from coconet.core.controller.pynevertemp.networks import SequentialNetwork
 from coconet.view.drawing.element import NodeBlock, PropertyBlock

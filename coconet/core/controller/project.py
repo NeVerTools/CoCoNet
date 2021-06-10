@@ -31,7 +31,7 @@ class Project(QObject):
     file_name : (str, str)
         The file name of the network, wrapped in a tuple (name, extension)
     network : NeuralNetwork
-        The current sequential network
+        The current sequential network.
     input_handler : InputHandler
         It is instantiated to open and convert a network from a file.
     output_handler : OutputHandler
@@ -40,11 +40,10 @@ class Project(QObject):
     Methods
     ----------
     open()
-        This method opens a file and create a thread to read and
-        convert it.
+        This method opens a file converting the network in the internal
+        representation.
     save(bool)
-        This method saves a file and create a thread to convert and save
-        it.
+        This method saves a file in the desired format.
 
     """
 
@@ -135,17 +134,17 @@ class InputHandler:
 
     Attributes
     ----------
-    extension: str
+    extension : str
         Format of the network.
-    alt_repr: AlternativeRepresentation
+    alt_repr : AlternativeRepresentation
         Network in original format.
-    network_input: tuple
+    network_input : tuple
         Optional input of the network.
-    strategy: ConversionStrategy
+    strategy : ConversionStrategy
         Converter from an alternative representation.
-    input_exception: Exception
+    input_exception : Exception
         Optional exception in the input stage.
-    conversion_exception: Exception
+    conversion_exception : Exception
         Optional exception in the conversion stage.
 
     Methods
@@ -355,6 +354,18 @@ class OutputHandler:
         """
         This method converts the internal representation into the chosen
         alternative representation, depending on the extension
+
+        Attributes
+        ----------
+        network : NeuralNetwork
+            The network to convert.
+        filename : str
+            The file name of the network.
+
+        Returns
+        ----------
+        AlternativeRepresentation
+            The converted network in the required extension.
 
         """
 

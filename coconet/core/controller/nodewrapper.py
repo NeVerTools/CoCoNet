@@ -14,13 +14,13 @@ class NodeOps:
 
         Parameters
         ----------
-        class_name: str
+        class_name : str
             The name of the node type.
-        node_id: str
+        node_id : str
             The unique identifier of the node.
-        data: dict
+        data : dict
             The dictionary containing the node data.
-        in_dim: tuple
+        in_dim : tuple
             The input of the node.
 
         Returns
@@ -119,9 +119,9 @@ class NodeOps:
 
         Parameters
         ----------
-        node: LayerNode
+        node : LayerNode
             The node to update.
-        in_dim: tuple
+        in_dim : tuple
             The input shape.
 
         Returns
@@ -145,9 +145,9 @@ class NodeOps:
 
         Parameters
         ----------
-        node: LayerNode
+        node : LayerNode
             The node to update.
-        data: dict
+        data : dict
             The new data to save.
 
         Returns
@@ -216,16 +216,18 @@ class NodeOps:
     @staticmethod
     def node2data(node: LayerNode) -> tuple:
         """
-        This method creates a tuple of dictionaries with the information
+        This method creates a tuple with the information
         to draw a new block.
 
         Parameters
         ----------
-        node: LayerNode
+        node : LayerNode
+            The node to get data from.
 
         Returns
         ----------
         tuple
+            The dictionary of the node data and the in_dim shape.
 
         """
 

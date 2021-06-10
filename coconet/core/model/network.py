@@ -1,6 +1,3 @@
-from coconet.core.controller.pynevertemp.strategies.verification import NeVerProperty, Property
-
-
 class NetworkNode:
     """
     This class describes a network node block available for the user, with inputs,
