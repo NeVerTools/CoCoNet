@@ -516,17 +516,22 @@ class Canvas(QWidget):
 
     @staticmethod
     def define_property(item: PropertyBlock) -> None:
-        dialog = None
         if item.property.type == "SMT":
             dialog = EditSmtPropertyDialog(item)
+            dialog.exec()
+
+            if dialog.has_edits:
+                item.property.property_string = dialog.new_property
+                item.update_label()
         elif item.property.type == "Polyhedral":
             dialog = EditPolyhedralPropertyDialog(item)
-        dialog.exec()
+            dialog.exec()
 
-        # Catch new parameters
-        if dialog.has_edits:
-            item.property.property_string = dialog.new_property
-            item.update_label()
+            if dialog.has_edits:
+                item.property.property_string = ""
+                for p in dialog.property_list:
+                    item.property.property_string += p + "\n"
+                item.update_label()
 
     def show_parameters(self, block: NodeBlock = None):
         """

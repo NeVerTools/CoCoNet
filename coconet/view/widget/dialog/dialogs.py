@@ -447,11 +447,24 @@ class EditSmtPropertyDialog(CoCoNetDialog):
 
 
 class EditPolyhedralPropertyDialog(CoCoNetDialog):
+    """
+    This dialog allows to define a polyhedral property
+    within a controlled environment.
+
+    Attributes
+    ----------
+
+    Methods
+    ----------
+
+    """
+
     def __init__(self, property_block: PropertyBlock):
         super().__init__("", "Edit property")
         self.property_block = property_block
         self.new_property = None
         self.has_edits = False
+        self.property_list = []
         self.layout = QGridLayout()
 
         # Build main_layout
@@ -476,27 +489,29 @@ class EditPolyhedralPropertyDialog(CoCoNetDialog):
         value_label.setAlignment(Qt.AlignLeft)
         self.layout.addWidget(value_label, 1, 2)
 
-        var_cb = QComboBox()
+        self.var_cb = QComboBox()
         for v in property_block.variables:
-            var_cb.addItem(v)
-        var_cb.setStyleSheet(style.VALUE_LABEL_STYLE)
-        self.layout.addWidget(var_cb, 2, 0)
+            self.var_cb.addItem(v)
+        self.var_cb.setStyleSheet(style.VALUE_LABEL_STYLE)
+        self.layout.addWidget(self.var_cb, 2, 0)
 
-        op_cb = QComboBox()
-        operators = ["<=", "<", ">", ">=", "="]
+        self.op_cb = QComboBox()
+        operators = ["<=", "<", ">", ">="]
         for o in operators:
-            op_cb.addItem(o)
-        op_cb.setStyleSheet(style.VALUE_LABEL_STYLE)
-        self.layout.addWidget(op_cb, 2, 1)
+            self.op_cb.addItem(o)
+        self.op_cb.setStyleSheet(style.VALUE_LABEL_STYLE)
+        self.layout.addWidget(self.op_cb, 2, 1)
 
-        val = QLineEdit()
-        val.setStyleSheet(style.VALUE_LABEL_STYLE)
-        self.layout.addWidget(val, 2, 2)
+        self.val = QLineEdit()
+        self.val.setStyleSheet(style.VALUE_LABEL_STYLE)
+        self.val.setValidator(ArithmeticValidator.FLOAT)
+        self.layout.addWidget(self.val, 2, 2)
 
         # "Add" button which adds the constraint
         add_button = QPushButton("Add")
         add_button.setStyleSheet(style.BUTTON_STYLE)
-        add_button.clicked.connect(lambda: self.add_entry())
+        add_button.clicked.connect(
+            lambda: self.add_entry(str(self.var_cb.currentText()), str(self.op_cb.currentText()), self.val.text()))
         self.layout.addWidget(add_button, 3, 0)
 
         # "Save" button which saves the state
@@ -517,11 +532,22 @@ class EditPolyhedralPropertyDialog(CoCoNetDialog):
 
         self.render_layout()
 
-    def add_entry(self):
-        pass
+    def add_entry(self, var: str, op: str, val: str):
+        constraint = "(assert ("
+        end = "))"
+        self.property_list.append(f"{constraint}{op} {var} {val}{end}")
+        self.var_cb.setCurrentIndex(0)
+        self.op_cb.setCurrentIndex(0)
+        self.val.setText("")
 
     def save_property(self):
-        pass
+        self.has_edits = True
+        self.add_entry(str(self.var_cb.currentText()),
+                       str(self.op_cb.currentText()),
+                       self.val.text())
+
+        print(self.property_list)
+        self.close()
 
 
 class EditNodeDialog(CoCoNetDialog):
