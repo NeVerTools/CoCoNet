@@ -469,8 +469,6 @@ class EditDialog(CoCoNetDialog):
 
     """
 
-    clicked = QtCore.pyqtSignal()
-
     def __init__(self, node_block: NodeBlock):
         super().__init__("", "Edit parameters.")
         self.setWindowTitle(node_block.node.name)
@@ -615,7 +613,6 @@ class EditDialog(CoCoNetDialog):
         self.has_edits = True
 
         for key, line in self.parameters.items():
-            # For QLineEdit, the type of data must be checked and validated
             try:
                 if type(line) == QLineEdit:
                     if line.isModified() and len(line.text()) != 0:

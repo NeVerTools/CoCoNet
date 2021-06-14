@@ -227,8 +227,16 @@ class Canvas(QWidget):
                 return
 
             if isinstance(origin, PropertyBlock) and isinstance(destination, NodeBlock):
-                for name, par in destination.node.param.items():
-                    origin.variables.append(name)
+                v_name = destination.block_id + "_Y_"
+                count = 0
+                # TODO HOW TO UNROLL TENSOR?
+                for r in destination.in_dim:
+                    for i in range(r):
+                        v = f"{v_name}{count}{i}"
+                        origin.variables.append(v)
+                    count += 1
+
+                print(origin.variables)
                 return
 
             try:

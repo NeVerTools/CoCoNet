@@ -451,13 +451,18 @@ class NodeBlock(GraphicBlock):
 
     def __init__(self, block_id, node):
         super().__init__(block_id)
-        self.in_dim = (1,)
         self.node = node
         self.block_data = dict()
+        self.in_dim = (1,)
 
         self.is_head = True
         self.edits = None
         self.dim_labels = dict()
+
+        # Override title label
+        self.title_label.setText(self.node.name)
+        self.title_label.setStyleSheet(style.NODE_TITLE_STYLE)
+        self.main_layout.addWidget(self.title_label)
 
         if self.node.param:
             self.init_layout()
@@ -472,10 +477,6 @@ class NodeBlock(GraphicBlock):
         attributes and values.
 
         """
-        # Override title label
-        self.title_label.setText(self.node.name)
-        self.title_label.setStyleSheet(style.NODE_TITLE_STYLE)
-        self.main_layout.addWidget(self.title_label)
 
         self.init_grid()
 

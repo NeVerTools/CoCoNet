@@ -366,10 +366,10 @@ class SequentialNetworkRenderer:
             True if the update has been done correctly, False otherwise.
 
         """
-
-        # Check if the node exists
-        if block_id not in self.NN.nodes.keys():
-            return False
+        in_dim = None
+        if "in_dim" in data.keys():
+            in_dim = data["in_dim"]
+            data.pop("in_dim")
 
         # Copy current data
         old_data = copy.deepcopy(self.disconnected_network[block_id].block_data)
@@ -380,16 +380,14 @@ class SequentialNetworkRenderer:
             self.disconnected_network[block_id].block_data[key] = value
         data = self.disconnected_network[block_id].block_data
 
-        in_dim = None
-        if "in_dim" in data.keys():
-            in_dim = data["in_dim"]
-            data.pop("in_dim")
         if in_dim is not None:
             self.disconnected_network[block_id].in_dim = in_dim
 
-        node = self.NN.nodes[block_id]
-
         try:
+            if block_id not in self.NN.nodes.keys():
+                return False
+
+            node = self.NN.nodes[block_id]
             NodeOps.update_node_data(node, data)
             if in_dim is not None:
                 NodeOps.update_node_input(node, in_dim)
