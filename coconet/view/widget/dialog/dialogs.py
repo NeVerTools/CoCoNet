@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Union
 
 import numpy as np
 from PyQt5 import QtWidgets, QtCore
@@ -7,10 +6,10 @@ from PyQt5.QtCore import QRegExp, Qt, QSize
 from PyQt5.QtGui import QIntValidator, QRegExpValidator, QDoubleValidator
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QWidget, QLineEdit, QGridLayout, QComboBox, \
     QTextEdit, QPlainTextEdit
-from coconet.core.controller.pynevertemp.tensor import Tensor
 
 import coconet.view.styles as style
 import coconet.view.util.utility as u
+from coconet.core.controller.pynevertemp.tensor import Tensor
 from coconet.core.model.network import NetworkNode
 from coconet.view.drawing.element import PropertyBlock, NodeBlock
 from coconet.view.widget.loading import ProgressBar
@@ -377,8 +376,10 @@ class LoadingDialog(CoCoNetDialog):
         self.setWindowFlags(Qt.FramelessWindowHint)
 
 
-class EditPropertyDialog(CoCoNetDialog):
+class EditSmtPropertyDialog(CoCoNetDialog):
     """
+    This dialog allows to define a generic SMT property
+    by writing directly in the SMT-LIB language.
 
     Attributes
     ----------
@@ -386,15 +387,18 @@ class EditPropertyDialog(CoCoNetDialog):
         Current property to edit.
     new_property : str
         New SMT-LIB property string.
-    smt_box : QLineEdit
+    smt_box : QPlainTextEdit
         Input box.
     has_edits : bool
         Flag signaling if the property was edited.
 
     Methods
     ----------
+    save_data()
+        Procedure to return the new property.
 
     """
+
     def __init__(self, property_block: PropertyBlock):
         super().__init__("", "Edit property")
         self.property_block = property_block
@@ -403,13 +407,13 @@ class EditPropertyDialog(CoCoNetDialog):
         self.layout = QGridLayout()
 
         # Build main_layout
-        title_label = QLabel("Property")
+        title_label = QLabel("SMT property")
         title_label.setStyleSheet(style.NODE_LABEL_STYLE)
         title_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(title_label, 0, 0, 1, 2)
 
         # Input box
-        smt_label = QLabel("SMT-LIB property")
+        smt_label = QLabel("SMT-LIB definition")
         smt_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
         smt_label.setAlignment(Qt.AlignRight)
         self.layout.addWidget(smt_label, 1, 0)
@@ -442,7 +446,85 @@ class EditPropertyDialog(CoCoNetDialog):
         self.close()
 
 
-class EditDialog(CoCoNetDialog):
+class EditPolyhedralPropertyDialog(CoCoNetDialog):
+    def __init__(self, property_block: PropertyBlock):
+        super().__init__("", "Edit property")
+        self.property_block = property_block
+        self.new_property = None
+        self.has_edits = False
+        self.layout = QGridLayout()
+
+        # Build main_layout
+        title_label = QLabel("Polyhedral property")
+        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
+        title_label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(title_label, 0, 0, 1, 3)
+
+        # Labels
+        var_label = QLabel("Variable")
+        var_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
+        var_label.setAlignment(Qt.AlignRight)
+        self.layout.addWidget(var_label, 1, 0)
+
+        relop_label = QLabel("Operator")
+        relop_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
+        relop_label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(relop_label, 1, 1)
+
+        value_label = QLabel("Value")
+        value_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
+        value_label.setAlignment(Qt.AlignLeft)
+        self.layout.addWidget(value_label, 1, 2)
+
+        var_cb = QComboBox()
+        for v in property_block.variables:
+            var_cb.addItem(v)
+        var_cb.setStyleSheet(style.VALUE_LABEL_STYLE)
+        self.layout.addWidget(var_cb, 2, 0)
+
+        op_cb = QComboBox()
+        operators = ["<=", "<", ">", ">=", "="]
+        for o in operators:
+            op_cb.addItem(o)
+        op_cb.setStyleSheet(style.VALUE_LABEL_STYLE)
+        self.layout.addWidget(op_cb, 2, 1)
+
+        val = QLineEdit()
+        val.setStyleSheet(style.VALUE_LABEL_STYLE)
+        self.layout.addWidget(val, 2, 2)
+
+        # "Add" button which adds the constraint
+        add_button = QPushButton("Add")
+        add_button.setStyleSheet(style.BUTTON_STYLE)
+        add_button.clicked.connect(lambda: self.add_entry())
+        self.layout.addWidget(add_button, 3, 0)
+
+        # "Save" button which saves the state
+        save_button = QPushButton("Save")
+        save_button.setStyleSheet(style.BUTTON_STYLE)
+        save_button.clicked.connect(lambda: self.save_property())
+        self.layout.addWidget(save_button, 3, 1)
+
+        # "Cancel" button which closes the dialog without saving
+        cancel_button = QPushButton("Cancel")
+        cancel_button.setStyleSheet(style.BUTTON_STYLE)
+        cancel_button.clicked.connect(lambda: self.close())
+        self.layout.addWidget(cancel_button, 3, 2)
+
+        self.layout.setColumnStretch(0, 1)
+        self.layout.setColumnStretch(1, 1)
+        self.layout.setColumnStretch(2, 1)
+
+        self.render_layout()
+
+    def add_entry(self):
+        pass
+
+    def save_property(self):
+        pass
+
+
+class EditNodeDialog(CoCoNetDialog):
     """
     This dialog allows to edit the selected node in the canvas.
 

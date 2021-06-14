@@ -15,7 +15,8 @@ from coconet.core.controller.pynevertemp.tensor import Tensor
 from coconet.core.model.network import NetworkNode, NetworkProperty
 from coconet.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock, GraphicBlock
 from coconet.view.drawing.renderer import SequentialNetworkRenderer
-from coconet.view.widget.dialog.dialogs import EditDialog, MessageDialog, MessageType, EditPropertyDialog
+from coconet.view.widget.dialog.dialogs import EditNodeDialog, MessageDialog, MessageType, EditSmtPropertyDialog, \
+    EditPolyhedralPropertyDialog
 
 
 class DrawingMode(Enum):
@@ -515,7 +516,11 @@ class Canvas(QWidget):
 
     @staticmethod
     def define_property(item: PropertyBlock) -> None:
-        dialog = EditPropertyDialog(item)
+        dialog = None
+        if item.property.type == "SMT":
+            dialog = EditSmtPropertyDialog(item)
+        elif item.property.type == "Polyhedral":
+            dialog = EditPolyhedralPropertyDialog(item)
         dialog.exec()
 
         # Catch new parameters
@@ -1123,7 +1128,7 @@ class NetworkScene(QGraphicsScene):
                 item = self.blocks[item_rect]
 
             if isinstance(item, NodeBlock):
-                dialog = EditDialog(item)
+                dialog = EditNodeDialog(item)
                 dialog.exec()
                 # Catch new parameters
                 if dialog.has_edits:
