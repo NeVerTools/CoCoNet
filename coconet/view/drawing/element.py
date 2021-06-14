@@ -258,8 +258,11 @@ class GraphicBlock(QtWidgets.QWidget):
     ----------
     block_id : str
         String unique identifier for the block.
-    layout : QVBoxLayout
+    main_layout : QVBoxLayout
         Block layout, vertical by default.
+    content_layout : QGridLayout
+        Block content layout, a grid with <param, value>
+        entries.
     rect : QGraphicsRectItem
         pyQt rectangle object associated to the block.
     proxy_control : QGraphicsProxyWidget
@@ -291,14 +294,15 @@ class GraphicBlock(QtWidgets.QWidget):
     def __init__(self, block_id: str):
         super(GraphicBlock, self).__init__()
         self.block_id = block_id
-        self.layout = QVBoxLayout()
-        self.layout.setSpacing(0)
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setSpacing(0)
+        self.title_label = QLabel("Graphic block")
+        self.content_layout = QGridLayout()
         self.rect = None
         self.proxy_control = None
-        self.title_label = QLabel("Graphic block")
         self.context_actions = dict()
 
-        self.setLayout(self.layout)
+        self.setLayout(self.main_layout)
 
         # Set style and transparent background for the rounded corners
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -311,6 +315,16 @@ class GraphicBlock(QtWidgets.QWidget):
 
         """
         pass
+
+    def init_grid(self):
+        """
+        This method builds a grid layout for displaying
+        the block parameters in an ordered way.
+
+        """
+        grid = QWidget()
+        grid.setLayout(self.content_layout)
+        self.main_layout.addWidget(grid)
 
     def set_proxy(self, proxy: QGraphicsProxyWidget) -> None:
         """
@@ -445,11 +459,6 @@ class NodeBlock(GraphicBlock):
         self.edits = None
         self.dim_labels = dict()
 
-        # Override title label
-        self.title_label.setText(node.name)
-        self.title_label.setStyleSheet(style.NODE_TITLE_STYLE)
-        self.layout.addWidget(self.title_label)
-
         if self.node.param:
             self.init_layout()
         else:
@@ -459,16 +468,16 @@ class NodeBlock(GraphicBlock):
 
     def init_layout(self) -> None:
         """
-        This method sets up the the node block layout with
+        This method sets up the the node block main_layout with
         attributes and values.
 
         """
+        # Override title label
+        self.title_label.setText(self.node.name)
+        self.title_label.setStyleSheet(style.NODE_TITLE_STYLE)
+        self.main_layout.addWidget(self.title_label)
 
-        # Create the grid for parameters
-        grid = QWidget()
-        grid_layout = QGridLayout()
-        grid.setLayout(grid_layout)
-        self.layout.addWidget(grid)
+        self.init_grid()
 
         # Iterate and display parameters, count rows
         par_labels = dict()
@@ -483,8 +492,8 @@ class NodeBlock(GraphicBlock):
             self.dim_labels[name].setAlignment(Qt.AlignCenter)
             self.dim_labels[name].setStyleSheet(style.DIM_NODE_STYLE)
 
-            grid_layout.addWidget(par_labels[name], count, 0)
-            grid_layout.addWidget(self.dim_labels[name], count, 1)
+            self.content_layout.addWidget(par_labels[name], count, 0)
+            self.content_layout.addWidget(self.dim_labels[name], count, 1)
             count += 1
 
             # Init block data with default values
@@ -603,8 +612,10 @@ class PropertyBlock(GraphicBlock):
 
     Attributes
     ----------
-    smt_property : NetworkProperty
+    property : NetworkProperty
         The property element for this block.
+    property_label : QLabel
+        The visible label of the property.
     variables : list
         The list of admissible variables
         for the property.
@@ -613,31 +624,31 @@ class PropertyBlock(GraphicBlock):
 
     def __init__(self, block_id: str, property: NetworkProperty):
         super().__init__(block_id)
-        self.smt_property = property
+        self.property = property
+        self.property_label = QLabel(property.property_string)
         self.variables = []
         self.init_layout()
         self.init_context_menu()
 
     def init_layout(self) -> None:
         """
-        This method sets up the the property block layout with
+        This method sets up the the property block main_layout with
         the property parameters.
 
         """
 
         # Override title label
-        self.title_label.setText("Polyhedral Property")
+        self.title_label.setText(f"{self.property.type} property")
         self.title_label.setStyleSheet(style.PROPERTY_TITLE_STYLE)
-        self.layout.addWidget(self.title_label)
+        self.main_layout.addWidget(self.title_label)
 
-        grid = QWidget()
-        grid_layout = QGridLayout()
-        grid.setLayout(grid_layout)
-        self.layout.addWidget(grid)
+        self.init_grid()
 
-        formula_label = QLabel("SMT formula")
+        formula_label = QLabel("Formula")
         formula_label.setStyleSheet(style.PAR_NODE_STYLE)
-        grid_layout.addWidget(formula_label, 1, 0)
+        self.property_label.setStyleSheet(style.DIM_NODE_STYLE)
+        self.content_layout.addWidget(formula_label, 1, 0)
+        self.content_layout.addWidget(self.property_label, 1, 1)
 
     def init_context_menu(self):
         """

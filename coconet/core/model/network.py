@@ -1,3 +1,7 @@
+from coconet.core.controller.pynevertemp.strategies.verification import NeVerProperty
+from coconet.core.controller.pynevertemp.tensor import Tensor
+
+
 class NetworkNode:
     """
     This class describes a network node block available for the user, with inputs,
@@ -41,10 +45,20 @@ class NetworkProperty:
 
     Attributes
     ----------
+    type : str
+        The property type.
     property_string : str
         A generic SMT-LIB property.
+    property_class : NeVerProperty
+        A structured property in the pyNever format.
 
     """
 
-    def __init__(self, p: str):
-        self.property_string = p
+    def __init__(self, p_type: str):
+        self.type = p_type
+        if p_type == "SMT":
+            self.property_string = "-"
+            self.property_class = None
+        elif p_type == "Polyhedral":
+            self.property_string = "Ax - b <= 0"
+            self.property_class = NeVerProperty(Tensor([]), Tensor([]), [], [])

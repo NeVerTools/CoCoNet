@@ -81,7 +81,7 @@ class BlockInspector(QWidget):
     Attributes
     ----------
     layout : QVBoxLayout
-        Vertical layout of the widget.
+        Vertical main_layout of the widget.
     title_label : QLabel
         Title of the widget.
     description_label : QLabel
@@ -91,19 +91,19 @@ class BlockInspector(QWidget):
     parameters_label : QLabel
         Label of parameters.
     parameters_layout : QVBoxLayout
-        Vertical layout of parameters.
+        Vertical main_layout of parameters.
     inputs : QWidget
         Container of inputs.
     inputs_label : QLabel
         Label of inputs.
     inputs_layout : QVBoxLayout
-        Vertical layout of inputs.
+        Vertical main_layout of inputs.
     outputs : QWidget
         Container of outputs.
     outputs_label : QLabel
         Label of outputs.
     outputs_layout : QVBoxLayout
-        Vertical layout of outputs.
+        Vertical main_layout of outputs.
 
     """
 
@@ -197,12 +197,12 @@ class DropDownLabel(QWidget):
     Attributes
     ----------
     layout : QVBoxLayout
-        Vertical layout of the widget.
+        Vertical main_layout of the widget.
     top : QWidget
         First part of the widget with name, type and default value of the
         parameter.
     top_layout : QHBoxLayout
-        Horizontal layout of the top of the widget.
+        Horizontal main_layout of the top of the widget.
     name_label : QLabel
         Id and type of the object.
     type_label : QLabel
@@ -440,18 +440,19 @@ class BlocksToolbar(QToolBar):
 
     def __init_properties(self):
         # TODO UPDATE WITH JSON
-        k = "Polyhedral"
-        self.properties[k] = NetworkProperty("")
+        props = ("SMT", "Polyhedral")
 
-        button = PropertyButton(k, self.properties[k])
-        button.setToolTip(k)
-        button.setStyleSheet(style.BUTTON_STYLE)
-        self.p_buttons[k] = button
+        for k in props:
+            self.properties[k] = NetworkProperty(k)
+            button = PropertyButton(k, self.properties[k])
+            button.setToolTip(k)
+            button.setStyleSheet(style.BUTTON_STYLE)
+            self.p_buttons[k] = button
 
     def __display_tools(self):
         """
         This method adds to the toolbar all buttons related to available tools,
-        displaying them in rows in order to have a flexible layout in every
+        displaying them in rows in order to have a flexible main_layout in every
         position of the toolbar.
 
         """
@@ -461,7 +462,7 @@ class BlocksToolbar(QToolBar):
         self.toolbar_tools_label.setAlignment(Qt.AlignCenter)
         self.toolbar_tools_label.setStyleSheet(style.NODE_LABEL_STYLE)
 
-        # Setting the first row with horizontal layout
+        # Setting the first row with horizontal main_layout
         row_1 = QWidget()
         row_1_layout = QHBoxLayout()
         row_1_layout.setSpacing(0)
@@ -494,7 +495,7 @@ class BlocksToolbar(QToolBar):
 
     def __display_blocks(self):
         """
-        Graphical blocks are displayed in a vertical layout, which is put in
+        Graphical blocks are displayed in a vertical main_layout, which is put in
         a movable toolbar of fixed size.
 
         """
@@ -510,7 +511,7 @@ class BlocksToolbar(QToolBar):
 
     def __display_properties(self):
         """
-        Graphical properties are displayed in a vertical layout, which is put in
+        Graphical properties are displayed in a vertical main_layout, which is put in
         a movable toolbar of fixed size.
 
         """

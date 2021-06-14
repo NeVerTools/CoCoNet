@@ -54,13 +54,13 @@ class MessageType(Enum):
 class CoCoNetDialog(QtWidgets.QDialog):
     """
     Base class for grouping common elements of the dialogs.
-    Each dialog share a layout (vertical by default), a title
+    Each dialog share a main_layout (vertical by default), a title
     and a string content.
 
     Attributes
     ----------
     layout : QVBoxLayout
-        The main layout of the dialog.
+        The main main_layout of the dialog.
     title : str
         The dialog title.
     content : str
@@ -69,7 +69,7 @@ class CoCoNetDialog(QtWidgets.QDialog):
     Methods
     ----------
     render_layout()
-        Procedure to update the layout.
+        Procedure to update the main_layout.
 
     """
 
@@ -111,7 +111,7 @@ class CoCoNetDialog(QtWidgets.QDialog):
 
     def render_layout(self) -> None:
         """
-        This method updates the layout with the changes done
+        This method updates the main_layout with the changes done
         in the child class(es).
 
         """
@@ -402,7 +402,7 @@ class EditPropertyDialog(CoCoNetDialog):
         self.has_edits = False
         self.layout = QGridLayout()
 
-        # Build layout
+        # Build main_layout
         title_label = QLabel("Property")
         title_label.setStyleSheet(style.NODE_LABEL_STYLE)
         title_label.setAlignment(Qt.AlignCenter)
@@ -482,7 +482,7 @@ class EditDialog(CoCoNetDialog):
         self.edited_data = dict()
         self.has_edits = False
 
-        # Build layout
+        # Build main_layout
         title_label = QLabel("Edit parameters")
         title_label.setStyleSheet(style.NODE_LABEL_STYLE)
         title_label.setAlignment(Qt.AlignCenter)
@@ -531,7 +531,7 @@ class EditDialog(CoCoNetDialog):
         """
 
         This method adds to the dialog layer the editable parameters of
-        the node, and returns the last row counter for the grid layout.
+        the node, and returns the last row counter for the grid main_layout.
 
         Attributes
         ----------

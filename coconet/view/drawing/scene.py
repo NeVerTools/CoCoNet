@@ -472,7 +472,7 @@ class Canvas(QWidget):
 
         # Create a new block or copy the given one
         if copy is not None:
-            block = PropertyBlock("", copy.smt_property)
+            block = PropertyBlock("", copy.property)
         else:
             block = PropertyBlock("", property)
 
