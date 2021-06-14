@@ -660,3 +660,6 @@ class PropertyBlock(GraphicBlock):
         block_actions = dict()
         block_actions["Define"] = QAction("Define...", self)
         self.set_context_menu(block_actions)
+
+    def update_label(self):
+        self.property_label.setText(self.property.property_string)

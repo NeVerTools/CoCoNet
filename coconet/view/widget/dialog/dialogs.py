@@ -398,7 +398,7 @@ class EditPropertyDialog(CoCoNetDialog):
     def __init__(self, property_block: PropertyBlock):
         super().__init__("", "Edit property")
         self.property_block = property_block
-        self.new_property = self.property_block.smt_property.property_string
+        self.new_property = self.property_block.property.property_string
         self.has_edits = False
         self.layout = QGridLayout()
 

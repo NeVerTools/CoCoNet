@@ -503,8 +503,8 @@ class Canvas(QWidget):
 
         # Catch new parameters
         if dialog.has_edits:
-            item.smt_property.property_string = dialog.new_property
-        pass
+            item.property.property_string = dialog.new_property
+            item.update_label()
 
     def show_parameters(self, block: NodeBlock = None):
         """
@@ -1114,5 +1114,4 @@ class NetworkScene(QGraphicsScene):
                     item.edits = item.block_id, dialog.edited_data
                     item.edited.emit()
             else:
-                dialog = EditPropertyDialog(item)
-                dialog.exec()
+                Canvas.define_property(item)
