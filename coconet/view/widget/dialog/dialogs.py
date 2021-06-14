@@ -453,16 +453,25 @@ class EditPolyhedralPropertyDialog(CoCoNetDialog):
 
     Attributes
     ----------
+    property_block : PropertyBlock
+        Current property to edit.
+    property_list : list
+        List of given properties.
+    has_edits : bool
+        Flag signaling if the property was edited.
 
     Methods
     ----------
+    add_entry(str, str, str)
+        Procedure to append the current constraint to the property list.
+    save_property()
+        Procedure to return the defined property.
 
     """
 
     def __init__(self, property_block: PropertyBlock):
         super().__init__("", "Edit property")
         self.property_block = property_block
-        self.new_property = None
         self.has_edits = False
         self.property_list = []
         self.layout = QGridLayout()
@@ -532,7 +541,7 @@ class EditPolyhedralPropertyDialog(CoCoNetDialog):
 
         self.render_layout()
 
-    def add_entry(self, var: str, op: str, val: str):
+    def add_entry(self, var: str, op: str, val: str) -> None:
         constraint = "(assert ("
         end = "))"
         self.property_list.append(f"{constraint}{op} {var} {val}{end}")
@@ -540,13 +549,11 @@ class EditPolyhedralPropertyDialog(CoCoNetDialog):
         self.op_cb.setCurrentIndex(0)
         self.val.setText("")
 
-    def save_property(self):
+    def save_property(self) -> None:
         self.has_edits = True
         self.add_entry(str(self.var_cb.currentText()),
                        str(self.op_cb.currentText()),
                        self.val.text())
-
-        print(self.property_list)
         self.close()
 
 
