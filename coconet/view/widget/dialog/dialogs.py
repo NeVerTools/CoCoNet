@@ -6,7 +6,7 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import QRegExp, Qt, QSize
 from PyQt5.QtGui import QIntValidator, QRegExpValidator, QDoubleValidator
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QWidget, QLineEdit, QGridLayout, QComboBox, \
-    QTextEdit
+    QTextEdit, QPlainTextEdit
 from coconet.core.controller.pynevertemp.tensor import Tensor
 
 import coconet.view.styles as style
@@ -414,9 +414,9 @@ class EditPropertyDialog(CoCoNetDialog):
         smt_label.setAlignment(Qt.AlignRight)
         self.layout.addWidget(smt_label, 1, 0)
 
-        self.smt_box = QLineEdit()
+        self.smt_box = QPlainTextEdit()
         self.smt_box.setStyleSheet(style.VALUE_LABEL_STYLE)
-        self.smt_box.setText(self.new_property)
+        self.smt_box.insertPlainText(self.new_property)
         self.layout.addWidget(self.smt_box, 1, 1)
 
         # "Apply" button which saves changes
@@ -438,7 +438,7 @@ class EditPropertyDialog(CoCoNetDialog):
 
     def save_data(self):
         self.has_edits = True
-        self.new_property = self.smt_box.text()
+        self.new_property = self.smt_box.toPlainText()
         self.close()
 
 
