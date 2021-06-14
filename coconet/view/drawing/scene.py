@@ -245,7 +245,7 @@ class Canvas(QWidget):
 
                 for p in temp_list:
                     origin.variables.append(f"{v_name}{p}")
-                print(origin.variables)
+
                 return
 
             try:
@@ -599,11 +599,11 @@ class Canvas(QWidget):
 
             # Update dimensions in edges & nodes
             for line in self.scene.edges:
-                origin_id = self.scene.blocks[line.origin].block_id
-                new_dim = self.renderer.NN.nodes[origin_id].out_dim
-                line.update_dims(new_dim)
-
-                self.scene.blocks[line.destination].in_dim = new_dim
+                if isinstance(self.scene.blocks[line.origin], NodeBlock):
+                    origin_id = self.scene.blocks[line.origin].block_id
+                    new_dim = self.renderer.NN.nodes[origin_id].out_dim
+                    line.update_dims(new_dim)
+                    self.scene.blocks[line.destination].in_dim = new_dim
 
             # Empty changes buffer
             block.edits = None

@@ -32,6 +32,8 @@ class Project(QObject):
         The file name of the network, wrapped in a tuple (name, extension)
     network : NeuralNetwork
         The current sequential network.
+    properties : dict
+        Dictionary mapping properties to nodes.
     input_handler : InputHandler
         It is instantiated to open and convert a network from a file.
     output_handler : OutputHandler
@@ -55,6 +57,7 @@ class Project(QObject):
         self.file_name = ("", "")
 
         self.network = pynn.SequentialNetwork("")
+        self.properties = dict()
 
         self.input_handler = None
         self.output_handler = None

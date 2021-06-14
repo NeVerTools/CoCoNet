@@ -383,11 +383,12 @@ class SequentialNetworkRenderer:
         if in_dim is not None:
             self.disconnected_network[block_id].in_dim = in_dim
 
-        try:
-            if block_id not in self.NN.nodes.keys():
-                return False
+        if block_id not in self.NN.nodes.keys():
+            return False
 
-            node = self.NN.nodes[block_id]
+        node = self.NN.nodes[block_id]
+
+        try:
             NodeOps.update_node_data(node, data)
             if in_dim is not None:
                 NodeOps.update_node_input(node, in_dim)
