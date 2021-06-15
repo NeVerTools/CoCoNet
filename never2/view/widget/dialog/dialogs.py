@@ -53,7 +53,7 @@ class MessageType(Enum):
 class NeVerDialog(QtWidgets.QDialog):
     """
     Base class for grouping common elements of the dialogs.
-    Each dialog share a main_layout (vertical by default), a title
+    Each dialog shares a main_layout (vertical by default), a title
     and a string content.
 
     Attributes

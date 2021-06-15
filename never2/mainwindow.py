@@ -151,6 +151,10 @@ class MainWindow(QtWidgets.QMainWindow):
         menu_edit.setStyleSheet(style.MENU_BAR_STYLE)
         menu_view = self.nav_menu_bar.addMenu("View")
         menu_view.setStyleSheet(style.MENU_BAR_STYLE)
+        menu_learn = self.nav_menu_bar.addMenu("Learning")
+        menu_learn.setStyleSheet(style.MENU_BAR_STYLE)
+        menu_verify = self.nav_menu_bar.addMenu("Verification")
+        menu_verify.setStyleSheet(style.MENU_BAR_STYLE)
 
         # File actions
         new_action = QAction("New...", self)
@@ -215,6 +219,18 @@ class MainWindow(QtWidgets.QMainWindow):
         details_action.setShortcut("Ctrl+P")
         details_action.triggered.connect(lambda: self.canvas.show_parameters(self.parameters_action_validation()))
 
+        # Learning actions
+        train_action = QAction("Train...", self)
+        train_action.triggered.connect(lambda: print("TBA"))
+        prune_action = QAction("Pruning...", self)
+        prune_action.triggered.connect(lambda: print("TBA"))
+
+        # Verification actions
+        verify_action = QAction("Verify...", self)
+        verify_action.triggered.connect(lambda: print("TBA"))
+        repair_action = QAction("Repair...", self)
+        repair_action.triggered.connect(lambda: print("TBA"))
+
         # Build File menu
         menu_file.addAction(new_action)
         menu_file.addAction(open_action)
@@ -246,6 +262,14 @@ class MainWindow(QtWidgets.QMainWindow):
         toolbars_menu.addAction(dims_action)
         menu_view.addSeparator()
         menu_view.addAction(details_action)
+
+        # Build learning menu
+        menu_learn.addAction(train_action)
+        menu_learn.addAction(prune_action)
+
+        # Build verification menu
+        menu_verify.addAction(verify_action)
+        menu_verify.addAction(repair_action)
 
         # Help menu
         self.nav_menu_bar.addAction("Help", self.show_help)
