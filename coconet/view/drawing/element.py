@@ -431,6 +431,10 @@ class NodeBlock(GraphicBlock):
     block_data : dict
         Dictionary holding the node parameters, with string
         keys and numerical values.
+    in_dim : tuple
+        Copy of node input for visualization.
+    out_dim : tuple
+        Copy of node output for visualization.
     dim_labels : dict
         Dictionary with parameter dimension labels.
     is_head : bool
@@ -454,6 +458,7 @@ class NodeBlock(GraphicBlock):
         self.node = node
         self.block_data = dict()
         self.in_dim = (1,)
+        self.out_dim = (1,)
 
         self.is_head = True
         self.edits = None

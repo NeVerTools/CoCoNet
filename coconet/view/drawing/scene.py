@@ -190,6 +190,7 @@ class Canvas(QWidget):
                     # Dimension labels are updated
                     l1.update_dims(out_dim_1)
                     l2.update_dims(out_dim_2)
+                    self.scene.blocks[result[0]].out_dim = out_dim_1
 
                     # Scene blocks are updated
                     self.scene.blocks[l2.origin].in_dim = out_dim_1
@@ -232,7 +233,7 @@ class Canvas(QWidget):
                 temp_list = []
                 ped_list = []
 
-                for k in destination.in_dim:
+                for k in destination.out_dim:
                     if len(temp_list) == 0:
                         for i in range(k):
                             temp_list.append(str(i))
@@ -246,7 +247,7 @@ class Canvas(QWidget):
 
                 for p in temp_list:
                     origin.variables.append(f"{v_name}{p}")
-
+                print(origin.variables)
                 return
 
             try:
@@ -254,11 +255,12 @@ class Canvas(QWidget):
                 legal = self.renderer.add_edge(origin.block_id,
                                                destination.block_id)
                 if legal:
-                    if self.renderer.NN.get_first_node().identifier in origin.block_id:
+                    if self.renderer.NN.get_first_node().identifier == origin.block_id:
                         origin.is_head = True
 
                     # Draw dimensions
                     in_dim = self.renderer.NN.nodes[destination.block_id].in_dim
+                    self.scene.blocks[conn_nodes[0]].out_dim = in_dim
                     destination.in_dim = in_dim
                     destination.is_head = False
 
@@ -317,6 +319,7 @@ class Canvas(QWidget):
                         self.scene.blocks[origin_item].block_id].out_dim
                     line.update_dims(out_dim)
 
+                    self.scene.blocks[origin_item].out_dim = out_dim
                     self.scene.blocks[destination_item].in_dim = out_dim
                     return
 
@@ -613,6 +616,7 @@ class Canvas(QWidget):
                     origin_id = self.scene.blocks[line.origin].block_id
                     new_dim = self.renderer.NN.nodes[origin_id].out_dim
                     line.update_dims(new_dim)
+                    self.scene.blocks[line.origin].out_dim = new_dim
                     self.scene.blocks[line.destination].in_dim = new_dim
 
             # Empty changes buffer
