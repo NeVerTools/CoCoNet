@@ -10,7 +10,7 @@ from never2.core.controller.project import Project
 from never2.view.drawing.element import GraphicLine, NodeBlock
 from never2.view.drawing.scene import DrawingMode, Canvas
 from never2.view.widget.dialog.dialogs import ConfirmDialog, MessageDialog, MessageType, HelpDialog
-from never2.view.widget.dialog.windows import NeVerWindow
+from never2.view.widget.dialog.windows import NeVerWindow, TrainingWindow
 from never2.view.widget.toolbar import BlocksToolbar, NodeButton, PropertyButton
 from never2.view.widget.toolbar import ParamToolbar
 
@@ -275,9 +275,10 @@ class MainWindow(QtWidgets.QMainWindow):
         # Help menu
         self.nav_menu_bar.addAction("Help", self.show_help)
 
-    def temp_window(self):
-        window = NeVerWindow()
-        window.show()
+    @staticmethod
+    def temp_window():
+        window = TrainingWindow()
+        window.exec()
 
     def create_from(self, button: QPushButton):
         """
