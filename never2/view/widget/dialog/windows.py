@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLayout, QLineEdit
+from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLayout, QLineEdit, QPushButton
 
 import never2.view.styles as style
 
@@ -81,25 +81,29 @@ class TrainingWindow(NeVerWindow):
 
         self.params["Optimizer"] = QComboBox()
         self.params["Optimizer"].addItem("Adam")
+        self.params["Optimizer"].setCurrentIndex(-1)
         self.params["Optimizer"].activated.connect(
-            lambda: self.details_layout.update_self("Optimizer:" + self.params["Optimizer"].currentText()))
+            lambda: self.details_layout.update_view("Optimizer:" + self.params["Optimizer"].currentText()))
 
         self.params["Scheduler"] = QComboBox()
         self.params["Scheduler"].addItem("ReduceLROnPlateau")
+        self.params["Scheduler"].setCurrentIndex(-1)
         self.params["Scheduler"].activated.connect(
-            lambda: self.details_layout.update_self("Scheduler:" + self.params["Scheduler"].currentText()))
+            lambda: self.details_layout.update_view("Scheduler:" + self.params["Scheduler"].currentText()))
 
         self.params["Loss Function"] = QComboBox()
         self.params["Loss Function"].addItems(["Cross Entropy",
                                                "MSE Loss"])
+        self.params["Loss Function"].setCurrentIndex(-1)
         self.params["Loss Function"].activated.connect(
-            lambda: self.details_layout.update_self("Loss Function:" + self.params["Loss Function"].currentText()))
+            lambda: self.details_layout.update_view("Loss Function:" + self.params["Loss Function"].currentText()))
 
         self.params["Metrics"] = QComboBox()
         self.params["Metrics"].addItems(["Inaccuracy",
                                          "MSE Loss"])
+        self.params["Metrics"].setCurrentIndex(-1)
         self.params["Metrics"].activated.connect(
-            lambda: self.details_layout.update_self("Metrics:" + self.params["Metrics"].currentText()))
+            lambda: self.details_layout.update_view("Metrics:" + self.params["Metrics"].currentText()))
 
         params_layout.addWidget(QLabel("Optimizer:"), 1, 0)
         params_layout.addWidget(self.params["Optimizer"], 1, 1)
@@ -115,6 +119,20 @@ class TrainingWindow(NeVerWindow):
         self.details_layout.setAlignment(Qt.AlignTop)
         body_layout.addLayout(self.details_layout)
         self.layout.addLayout(body_layout)
+
+        # Separator
+        sep_label = QLabel("***")
+        sep_label.setAlignment(Qt.AlignCenter)
+        sep_label.setStyleSheet(style.NODE_LABEL_STYLE)
+        self.layout.addWidget(sep_label)
+
+        # Buttons
+        btn_layout = QHBoxLayout()
+        train_btn = QPushButton("Train network")
+        cancel_btn = QPushButton("Cancel")
+        btn_layout.addWidget(train_btn)
+        btn_layout.addWidget(cancel_btn)
+        self.layout.addLayout(btn_layout)
 
         self.render_layout()
 
@@ -138,20 +156,22 @@ class GUIParamLayout(QVBoxLayout):
 
         self.grid_dict = dict()
         self.grid_layout = QGridLayout()
+
         # Default init
-        self.params = {"Learning rate": 1e-3,
-                       "Betas": (0.9, 0.999),
-                       "Epsilon": 1e-8,
-                       "Weight_decay": 0,
-                       "AMSGrad": False}
-        self.show_layout("Optimizer:Adam", self.params)
+        self.params = dict()
         self.addLayout(self.grid_layout)
 
     def clear_grid(self) -> None:
+        """
+        This method clears the grid view of the layout,
+        in order to display fresh new infos.
+
+        """
+
         for i in reversed(range(self.grid_layout.count())):
             self.grid_layout.itemAt(i).widget().deleteLater()
 
-    def update_self(self, caller: str) -> None:
+    def update_view(self, caller: str) -> None:
         """
         This method updates the grid view of the layout,
         displaying the corresponding parameters to the
@@ -166,46 +186,44 @@ class GUIParamLayout(QVBoxLayout):
 
         self.clear_grid()
 
-        if caller == "Optimizer:Adam":
-            self.params = {"Learning rate": 1e-3,
-                           "Betas": (0.9, 0.999),
-                           "Epsilon": 1e-8,
-                           "Weight decay": 0,
-                           "AMSGrad": False}
-        elif caller == "Scheduler:ReduceLROnPlateau":
-            self.params = {"Mode": "min",
-                           "Factor": 0.1,
-                           "Patience": 10,
-                           "Threshold": 1e-4,
-                           "Threshold_mode": "rel",
-                           "Cooldown": 0,
-                           "Min LR": 0,
-                           "Eps": 1e-8,
-                           "Verbose": False}
-        elif caller == "Loss Function:Cross Entropy":
-            self.params = {"Weight": (),
-                           "Size average": True,
-                           "Ignore index": -100,
-                           "Reduce": True,
-                           "Reduction": "mean"}
-        elif caller == "Loss Function:MSE Loss":
-            self.params = {"Size average": True,
-                           "Reduce": True,
-                           "Reduction": "mean"}
-        elif caller == "Metrics:Inaccuracy":
-            self.params = {}
-        elif caller == "Metrics:MSE Loss":
-            self.params = {"Size average": True,
-                           "Reduce": True,
-                           "Reduction": "mean"}
-        elif caller == "Transform:pil_to_tensor":
-            self.params = {}
+        if caller == "Optimizer:Adam" and caller not in self.params:
+            self.params[caller] = {"Learning rate": 1e-3,
+                                   "Betas": (0.9, 0.999),
+                                   "Epsilon": 1e-8,
+                                   "Weight decay": 0,
+                                   "AMSGrad": ["False", "True"]}
+        elif caller == "Scheduler:ReduceLROnPlateau" and caller not in self.params:
+            self.params[caller] = {"Mode": ["min", "max"],
+                                   "Factor": 0.1,
+                                   "Patience": 10,
+                                   "Threshold": 1e-4,
+                                   "Threshold_mode": ["rel", "abs"],
+                                   "Cooldown": 0,
+                                   "Min LR": 0,
+                                   "Eps": 1e-8,
+                                   "Verbose": ["False", "True"]}
+        elif caller == "Loss Function:Cross Entropy" and caller not in self.params:
+            self.params[caller] = {"Weight": (),
+                                   "Size average": ["True", "False"],
+                                   "Ignore index": -100,
+                                   "Reduce": ["True", "False"],
+                                   "Reduction": ["mean", "sum", "none"]}
+        elif caller == "Loss Function:MSE Loss" and caller not in self.params:
+            self.params[caller] = {"Size average": ["True", "False"],
+                                   "Reduce": ["True", "False"],
+                                   "Reduction": ["mean", "sum", "none"]}
+        elif caller == "Metrics:Inaccuracy" and caller not in self.params:
+            self.params[caller] = {}
+        elif caller == "Metrics:MSE Loss" and caller not in self.params:
+            self.params[caller] = {"Size average": ["True", "False"],
+                                   "Reduce": ["True", "False"],
+                                   "Reduction": ["mean", "sum", "none"]}
 
-        self.show_layout(caller, self.params)
+        self.show_layout(caller)
 
-    def show_layout(self, name: str, gui_params: dict) -> None:
+    def show_layout(self, name: str) -> None:
         """
-        This method displays a grid layout initialized by a
+        This method displays a grid layout initialized by the
         dictionary of parameters and default values.
 
         Parameters
@@ -213,10 +231,6 @@ class GUIParamLayout(QVBoxLayout):
         name : str
             The name of the main parameter to which
             the dictionary is related.
-        gui_params : dict
-            A dictionary structured as follows: k (string) is
-            the parameter name and v (Any) is the
-            parameter default value.
 
         """
 
@@ -225,14 +239,46 @@ class GUIParamLayout(QVBoxLayout):
         self.grid_layout.addWidget(title, 0, 0, 1, 2)
 
         count = 1
-        for k, v in gui_params.items():
-            if type(v) == bool:
+        for k, v in self.params[name].items():
+            if type(v) == list:
                 cb = QComboBox()
-                cb.addItems([str(v), str(not v)])
+                cb.addItems(v)
                 self.grid_dict[k] = (QLabel(k), cb)
+                self.grid_dict[k][1].activated.connect(
+                    lambda: self.update_dict_value(name, k, self.grid_dict[k][1].currentText()))
             else:
                 self.grid_dict[k] = (QLabel(k), QLineEdit(str(v)))
+                self.grid_dict[k][1].textChanged.connect(
+                    lambda: self.update_dict_value(name, k, self.grid_dict[k][1].text()))
 
             self.grid_layout.addWidget(self.grid_dict[k][0], count, 0)
             self.grid_layout.addWidget(self.grid_dict[k][1], count, 1)
             count += 1
+
+    def update_dict_value(self, name: str, key: str, value: str) -> None:
+        """
+        This method updates the correct parameter based
+        on the selection in the GUI. It provides the details
+        to access the parameter and the new value to register.
+
+        Parameters
+        ----------
+        name : str
+            The learning parameter name, which is
+            the key of the main dict.
+        key : str
+            The name of the parameter detail,
+            which is the key of the second-level dict.
+        value : str
+            The new value for parameter[name][k].
+
+        """
+
+        param = self.params[name][key]
+
+        # Update list putting the selected value at index 0
+        if type(param) == list:
+            param.remove(value)
+            self.params[name][key] = [value] + param
+        else:
+            self.params[name][key] = value
