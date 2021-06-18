@@ -4,9 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLayout, QLineEdit, QPushButton
 
 import never2.view.styles as style
-from never2.core.controller import pynevertemp
 from never2.core.controller.pynevertemp.networks import NeuralNetwork
-from never2.core.controller.pynevertemp.strategies.training import PytorchTraining
 
 
 class NeVerWindow(QtWidgets.QDialog):
@@ -21,7 +19,7 @@ class NeVerWindow(QtWidgets.QDialog):
         super().__init__(parent)
         self.layout = QVBoxLayout()
         self.title = title
-        self.params = dict()
+        self.widgets = dict()
 
         self.setWindowTitle(self.title)
         self.setModal(True)
@@ -64,7 +62,7 @@ class TrainingWindow(NeVerWindow):
         # Dataset
         dataset_layout = QHBoxLayout()
         dataset_picker = QComboBox()
-        dataset_picker.addItems(["James", "MNIST", "fMNIST", "..."])
+        dataset_picker.addItems(["MNIST", "Fashion MNIST", "James", "..."])
         dataset_layout.addWidget(QLabel("Dataset"))
         dataset_layout.addWidget(dataset_picker)
         self.layout.addLayout(dataset_layout)
@@ -84,46 +82,62 @@ class TrainingWindow(NeVerWindow):
         title.setAlignment(Qt.AlignCenter)
         params_layout.addWidget(title, 0, 0, 1, 2)
 
-        self.params["Optimizer"] = QComboBox()
-        self.params["Optimizer"].addItem("Adam")
-        self.params["Optimizer"].setCurrentIndex(-1)
-        self.params["Optimizer"].activated.connect(
-            lambda: self.details_layout.update_view("Optimizer:" + self.params["Optimizer"].currentText()))
+        self.widgets["Optimizer"] = QComboBox()
+        self.widgets["Optimizer"].addItem("Adam")
+        self.widgets["Optimizer"].setCurrentIndex(-1)
+        self.widgets["Optimizer"].activated.connect(
+            lambda: self.details_layout.update_view("Optimizer:" + self.widgets["Optimizer"].currentText()))
 
-        self.params["Scheduler"] = QComboBox()
-        self.params["Scheduler"].addItem("ReduceLROnPlateau")
-        self.params["Scheduler"].setCurrentIndex(-1)
-        self.params["Scheduler"].activated.connect(
-            lambda: self.details_layout.update_view("Scheduler:" + self.params["Scheduler"].currentText()))
+        self.widgets["Scheduler"] = QComboBox()
+        self.widgets["Scheduler"].addItem("ReduceLROnPlateau")
+        self.widgets["Scheduler"].setCurrentIndex(-1)
+        self.widgets["Scheduler"].activated.connect(
+            lambda: self.details_layout.update_view("Scheduler:" + self.widgets["Scheduler"].currentText()))
 
-        self.params["Loss Function"] = QComboBox()
-        self.params["Loss Function"].addItems(["Cross Entropy",
+        self.widgets["Loss Function"] = QComboBox()
+        self.widgets["Loss Function"].addItems(["Cross Entropy",
                                                "MSE Loss"])
-        self.params["Loss Function"].setCurrentIndex(-1)
-        self.params["Loss Function"].activated.connect(
-            lambda: self.details_layout.update_view("Loss Function:" + self.params["Loss Function"].currentText()))
+        self.widgets["Loss Function"].setCurrentIndex(-1)
+        self.widgets["Loss Function"].activated.connect(
+            lambda: self.details_layout.update_view("Loss Function:" + self.widgets["Loss Function"].currentText()))
 
-        self.params["Metrics"] = QComboBox()
-        self.params["Metrics"].addItems(["Inaccuracy",
+        self.widgets["Metrics"] = QComboBox()
+        self.widgets["Metrics"].addItems(["Inaccuracy",
                                          "MSE Loss"])
-        self.params["Metrics"].setCurrentIndex(-1)
-        self.params["Metrics"].activated.connect(
-            lambda: self.details_layout.update_view("Metrics:" + self.params["Metrics"].currentText()))
+        self.widgets["Metrics"].setCurrentIndex(-1)
+        self.widgets["Metrics"].activated.connect(
+            lambda: self.details_layout.update_view("Metrics:" + self.widgets["Metrics"].currentText()))
 
         params_layout.addWidget(QLabel("Optimizer:"), 1, 0)
-        params_layout.addWidget(self.params["Optimizer"], 1, 1)
+        params_layout.addWidget(self.widgets["Optimizer"], 1, 1)
         params_layout.addWidget(QLabel("Scheduler:"), 2, 0)
-        params_layout.addWidget(self.params["Scheduler"], 2, 1)
+        params_layout.addWidget(self.widgets["Scheduler"], 2, 1)
         params_layout.addWidget(QLabel("Loss Function:"), 3, 0)
-        params_layout.addWidget(self.params["Loss Function"], 3, 1)
+        params_layout.addWidget(self.widgets["Loss Function"], 3, 1)
         params_layout.addWidget(QLabel("Metrics:"), 4, 0)
-        params_layout.addWidget(self.params["Metrics"], 4, 1)
+        params_layout.addWidget(self.widgets["Metrics"], 4, 1)
         body_layout.addLayout(params_layout)
 
         self.details_layout = GUIParamLayout()
         self.details_layout.setAlignment(Qt.AlignTop)
         body_layout.addLayout(self.details_layout)
         self.layout.addLayout(body_layout)
+
+        # Extra parameters
+        self.widgets["Epochs"] = QLineEdit()
+        self.widgets["Validation percentage"] = QLineEdit()
+        self.widgets["Batch size - Training"] = QLineEdit()
+        self.widgets["Batch size - Validation"] = QLineEdit()
+        extra_layout = QGridLayout()
+        extra_layout.addWidget(QLabel("Epochs"), 1, 0)
+        extra_layout.addWidget(self.widgets["Epochs"], 1, 1)
+        extra_layout.addWidget(QLabel("Validation percentage"), 2, 0)
+        extra_layout.addWidget(self.widgets["Validation percentage"], 2, 1)
+        extra_layout.addWidget(QLabel("Batch size - Training"), 1, 2)
+        extra_layout.addWidget(self.widgets["Batch size - Training"], 1, 3)
+        extra_layout.addWidget(QLabel("Batch size - Validation"), 2, 2)
+        extra_layout.addWidget(self.widgets["Batch size - Validation"], 2, 3)
+        self.layout.addLayout(extra_layout)
 
         # Separator
         sep_label = QLabel("***")
@@ -141,7 +155,7 @@ class TrainingWindow(NeVerWindow):
 
         self.render_layout()
 
-    # def train_dataset(self, dataset):
+    # def train_dataset(self, dataset: Dataset):
     #     train = PytorchTraining(self.optimizer, self.details_layout.params["Optimizer:Adam"],
     #                             self.scheduler, self.details_layout.params["Scheduler:ReduceLROnPlateau"],
     #                             self.loss_function, self.details_layout.params["Loss Function:MSE Loss"],
