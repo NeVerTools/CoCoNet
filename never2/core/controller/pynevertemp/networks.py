@@ -1,5 +1,5 @@
 import abc
-import pynever.nodes as nodes
+import never2.core.controller.pynevertemp.nodes as nodes
 
 
 class NeuralNetwork(abc.ABC):

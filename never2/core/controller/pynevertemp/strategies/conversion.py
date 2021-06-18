@@ -1,12 +1,14 @@
-import copy
 import abc
-import pynever.networks as networks
-import pynever.nodes as nodes
-import torch
+import copy
+
+import numpy as np
 import onnx
 import onnx.numpy_helper
-import numpy as np
-import pynever.pytorch_layers as pyt_l
+import torch
+
+import never2.core.controller.pynevertemp.networks as networks
+import never2.core.controller.pynevertemp.nodes as nodes
+import never2.core.controller.pynevertemp.pytorch_layers as pyt_l
 
 
 class AlternativeRepresentation(abc.ABC):
@@ -22,6 +24,7 @@ class AlternativeRepresentation(abc.ABC):
         to the internal representation of the network (optional: True).
 
     """
+
     def __init__(self, identifier: str, up_to_date: bool = True):
         self.identifier = identifier
         self.up_to_date = up_to_date
@@ -63,6 +66,7 @@ class PyTorchNetwork(AlternativeRepresentation):
         to the internal representation of the network (optional: True).
 
     """
+
     def __init__(self, identifier: str, pytorch_network: torch.nn.Module, up_to_date: bool = True):
         super().__init__(identifier, up_to_date)
         self.pytorch_network = copy.deepcopy(pytorch_network)
@@ -81,6 +85,7 @@ class TensorflowNetwork(AlternativeRepresentation):
         to the internal representation of the network (optional: True).
 
     """
+
     def __init__(self, identifier: str, up_to_date: bool = True):
         super().__init__(identifier, up_to_date)
 

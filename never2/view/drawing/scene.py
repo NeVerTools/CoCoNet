@@ -720,7 +720,7 @@ class Canvas(QWidget):
         """
 
         self.renderer.disconnected_network = {}
-        self.renderer.NN = SequentialNetwork("")
+        self.renderer.NN = SequentialNetwork("", "")
 
         # Recreate the scene
         self.scene = NetworkScene(self)

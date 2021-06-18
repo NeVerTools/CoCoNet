@@ -1,7 +1,7 @@
-import pynever.strategies.conversion as cv
-import pynever.nodes as nodes
-import pynever.networks as networks
-import pynever.datasets as datasets
+import never2.core.controller.pynevertemp.strategies.conversion as cv
+import never2.core.controller.pynevertemp.nodes as nodes
+import never2.core.controller.pynevertemp.networks as networks
+import never2.core.controller.pynevertemp.datasets as datasets
 import torch
 import math
 import torch.nn.functional as funct

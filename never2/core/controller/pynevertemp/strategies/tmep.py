@@ -1,11 +1,11 @@
 import numpy as np
 
-import pynever.datasets as dt
+import never2.core.controller.pynevertemp.datasets as dt
 import torch.utils.data as torch_data
 import torchvision.transforms as transforms
-import pynever.networks as networks
-import pynever.nodes as nodes
-import pynever.strategies.training as training
+import never2.core.controller.pynevertemp.networks as networks
+import never2.core.controller.pynevertemp.nodes as nodes
+import never2.core.controller.pynevertemp.strategies.training as training
 import torch.optim as opt
 import torch.optim.lr_scheduler as schedulers
 import torch.nn as nn

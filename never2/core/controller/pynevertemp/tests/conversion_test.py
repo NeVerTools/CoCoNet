@@ -1,6 +1,6 @@
-import pynever.nodes as nodes
-import pynever.networks as network
-import pynever.strategies.conversion as conversion
+import never2.core.controller.pynevertemp.nodes as nodes
+import never2.core.controller.pynevertemp.networks as network
+import never2.core.controller.pynevertemp.strategies.conversion as conversion
 import math
 
 float_tolerance = 1e-5
