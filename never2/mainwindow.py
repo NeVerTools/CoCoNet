@@ -275,9 +275,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # Help menu
         self.nav_menu_bar.addAction("Help", self.show_help)
 
-    @staticmethod
-    def temp_window():
-        window = TrainingWindow()
+    def temp_window(self):
+        window = TrainingWindow(self.project.network)
         window.exec()
 
     def create_from(self, button: QPushButton):

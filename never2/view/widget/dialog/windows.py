@@ -1,8 +1,12 @@
+import torch.optim
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLayout, QLineEdit, QPushButton
 
 import never2.view.styles as style
+from never2.core.controller import pynevertemp
+from never2.core.controller.pynevertemp.networks import NeuralNetwork
+from never2.core.controller.pynevertemp.strategies.training import PytorchTraining
 
 
 class NeVerWindow(QtWidgets.QDialog):
@@ -19,7 +23,7 @@ class NeVerWindow(QtWidgets.QDialog):
         self.title = title
         self.params = dict()
 
-        self.setWindowTitle("\u26a0")
+        self.setWindowTitle(self.title)
         self.setModal(True)
         self.setStyleSheet("background-color: " + style.GREY_1 + ";")
 
@@ -47,14 +51,15 @@ class TrainingWindow(NeVerWindow):
 
     """
 
-    def __init__(self):
+    def __init__(self, nn: NeuralNetwork):
         super().__init__("Train Network")
 
-        # Title
-        title_label = QLabel(self.title)
-        title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
-        self.layout.addWidget(title_label)
+        # Training elements
+        self.nn = nn
+        self.optimizer = torch.optim.Adam
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
+        self.loss_function = None
+        self.metrics = None
 
         # Dataset
         dataset_layout = QHBoxLayout()
@@ -136,29 +141,52 @@ class TrainingWindow(NeVerWindow):
 
         self.render_layout()
 
+    # def train_dataset(self, dataset):
+    #     train = PytorchTraining(self.optimizer, self.details_layout.params["Optimizer:Adam"],
+    #                             self.scheduler, self.details_layout.params["Scheduler:ReduceLROnPlateau"],
+    #                             self.loss_function, self.details_layout.params["Loss Function:MSE Loss"],
+    #                             self.metrics, self.details_layout.params["Metrics:MSE Loss"],
+    #                             10, 30, 5, 5)
+    #     train.train(self.nn, dataset)
+
 
 class GUIParamLayout(QVBoxLayout):
     """
     This class is a layout for showing the possible parameters
     of the selected training element. It features a grid with
-    pairs <label, QLineEdit> for reading parameters.
+    pairs <QLabel, QWidget> for reading parameters.
 
     Attributes
     ----------
+    params : dict
+        Dictionary of training parameters.
+        Structured as: {<training_par>: <gui_params>}
+        where <gui_params> = {<param>: <default_value>}.
+    grid_dict : dict
+        Dictionary of graphical pairs (QLabel, QWidget)
+        for displaying and editing the training parameters.
+    grid_layout : QGridLayout
+        Layout containing the second-level parameters.
 
     Methods
     ----------
+    clear_grid()
+        Procedure to clear the grid layout.
+    update_view(str)
+        Procedure to update the grid layout.
+    show_layout(str)
+        Procedure to display the grid layout.
+    update_dict_value(str, str, str)
+        Procedure to update the parameters.
 
     """
 
     def __init__(self):
         super().__init__()
 
+        self.params = dict()
         self.grid_dict = dict()
         self.grid_layout = QGridLayout()
-
-        # Default init
-        self.params = dict()
         self.addLayout(self.grid_layout)
 
     def clear_grid(self) -> None:
