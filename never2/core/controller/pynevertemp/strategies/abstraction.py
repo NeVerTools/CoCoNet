@@ -1,5 +1,5 @@
 import abc
-import never2.core.controller.pynevertemp.nodes as nodes
+import pynever.nodes as nodes
 import uuid
 import numpy as np
 import multiprocessing
@@ -10,7 +10,7 @@ import scipy.stats as sts
 import scipy.spatial.distance as dist
 import time
 
-from never2.core.controller.pynevertemp.tensor import Tensor
+from pynever.tensor import Tensor
 from ortools.linear_solver import pywraplp
 
 
@@ -163,7 +163,7 @@ class Star:
 
         if self.lbs[i] is None or self.ubs[i] is None or self.is_empty is None:
 
-            #print("Computing bounds")
+            # print("Computing bounds")
             start_time = time.perf_counter()
 
             solver, alphas, constraints = self.__get_predicate_lp_solver()
@@ -593,7 +593,7 @@ def mixed_single_relu_forward(star: Star, heuristic: str, params: List) -> Set[S
 
     temp_abs_input = {star}
     if star.check_if_empty():
-        return [], set()
+        return set()
     else:
 
         if heuristic == "best_n_neurons":
@@ -926,7 +926,7 @@ class AbsReLUNode(AbsLayerNode):
         Identifier of the LayerNode.
 
     ref_node : ReLUNode
-        LayerNode di riferimento per l'abstract transformer.
+        Reference LayerNode for the abstract transformer.
 
     heuristic : str
         Heuristic used to decide the refinement level of the abstraction.
@@ -935,9 +935,9 @@ class AbsReLUNode(AbsLayerNode):
         - best_n_neurons: for each star the n best neuron to refine are selected based on the loss of precision
           the abstraction would incur using the coarse over_approximation.
 
-    params : List
+    params : Dict
         Parameters for the heuristic of interest.
-        If the heuristic is given_flags then params is a list whose first element is the list of refinement flags.
+        If the heuristic is given_flags then params is a Dict whose first element is the list of refinement flags.
         If the heuristic is best_n_neurons then params is a list whose first element is the number of neurons to refine.
 
     Methods
@@ -1136,9 +1136,9 @@ class AbsSigmoidNode(AbsLayerNode):
         super().__init__(identifier, ref_node)
 
         if approx_levels is None:
-            approx_levels = [0 for i in range(ref_node.num_features)]
+            approx_levels = [0 for i in range(ref_node.in_dim[-1])]
         elif isinstance(approx_levels, int):
-            approx_levels = [approx_levels for i in range(ref_node.num_features)]
+            approx_levels = [approx_levels for i in range(ref_node.in_dim[-1])]
 
         self.approx_levels = approx_levels
 
@@ -1195,7 +1195,7 @@ class AbsSigmoidNode(AbsLayerNode):
 class AbsNeuralNetwork(abc.ABC):
     """
     An abstract class used for our internal representation of a generic NeuralNetwork for Abstract Interpretation.
-    It consists of a graph of AbsLayerNodes. The parameters of the computational graph are specialized in the
+    It consists of a graph of AbsLayerNodes. The properties of the computational graph are specialized in the
     concrete classes. The method forward and backward calls the corresponding methods in the AbsLayerNodes following the
     correct order to compute the output AbsElement.
 

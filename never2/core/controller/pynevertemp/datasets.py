@@ -1,347 +1,171 @@
 import abc
 import numpy as np
-from never2.core.controller.pynevertemp.tensor import Tensor
+from pynever.tensor import Tensor
 import torchvision as tv
-import torch
+import torch.utils.data as tdata
+from typing import Callable, Optional, Tuple, Any
 
 
 class Dataset(abc.ABC):
     """
-    An abstract class used to represent a Dataset.
-
-    Methods
-    ----------
-    get_training_set()
-        Return the part of the dataset used as the Training set as a tuple of Tensors (Data and Targets).
-        It must be implemented in the concrete classes.
-    get_test_set()
-        Return the part of the dataset used as the Test set as a tuple of Tensors (Data and Targets).
-        It must be implemented in the concrete classes.
-    add_training_sample((Tensor, Tensor))
-        Add a new sample to the training set.
-        It must be implemented in the concrete classes.
-    add_test_sample((Tensor, Tensor))
-        Add a new sample to the test set.
-        It must be implemented in the concrete classes.
+    An abstract class used to represent a Dataset. The concrete descendant must implement the methods __getitem__ and
+    __len__.
 
     """
 
     @abc.abstractmethod
-    def get_training_set(self) -> (Tensor, Tensor):
+    def __getitem__(self, index: int):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_test_set(self) -> (Tensor, Tensor):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def add_training_sample(self, sample: (Tensor, Tensor)):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def add_test_sample(self, sample: (Tensor, Tensor)):
+    def __len__(self):
         raise NotImplementedError
 
 
-class MNISTDataset(Dataset):
+class TorchMNIST(Dataset, tv.datasets.MNIST):
     """
-    A concrete class used to represent the MNIST Dataset.
+    A concrete class used to represent the MNIST Dataset. It leverage the torch dataset MNIST.
 
     Attributes
     ----------
-    training_set : (Tensor, Tensor)
-        Tuple of Tensors containing the data and the target of the part of the dataset forming the training set.
-    test_set : (Tensor, Tensor)
-        Tuple of Tensors containing the data and the target of the part of the dataset forming the test set.
+    data_path : str
+        Path to the folder in which the dataset will be saved.
+    train : bool
+        If True then the training set is loaded otherwise the test set is loaded.
+    transform : Callable, Optional
+        Transformation to apply to the data.
+    target_transform : Callable, Optional
+        Transformation to apply to the targets.
+    download : bool
+        True if the dataset must be downloaded, False otherwise.
 
-    Methods
-    ----------
-    get_training_set()
-        Return the part of the dataset used as the Training set as a tuple of Tensors (Data and Targets).
-    get_test_set()
-        Return the part of the dataset used as the Test set as a tuple of Tensors (Data and Targets).
-    add_training_sample((Tensor, Tensor))
-        Add a new sample to the training set.
-        It must be implemented in the concrete classes.
-    add_test_sample((Tensor, Tensor))
-        Add a new sample to the test set.
-        It must be implemented in the concrete classes.
     """
 
-    def __init__(self):
+    def __init__(self, data_path: str, train: bool, transform: Optional[Callable] = None,
+                 target_transform: Optional[Callable] = None, download: bool = True):
 
-        datapath = 'data/'
+        Dataset.__init__(self)
+        tv.datasets.MNIST.__init__(self, data_path, train, transform, target_transform, download)
 
-        transform = tv.transforms.Compose([
-            tv.transforms.ToTensor(),
-            tv.transforms.Normalize((0.5,), (0.5,)),
-        ])
+    def __getitem__(self, index: int):
+        return tv.datasets.MNIST.__getitem__(self, index)
 
-        train_loader = torch.utils.data.DataLoader(
-            tv.datasets.MNIST(datapath, train=True, download=True, transform=transform), batch_size=1,
-            shuffle=True)
-
-        test_loader = torch.utils.data.DataLoader(
-            tv.datasets.MNIST(datapath, train=False, transform=transform), batch_size=1, shuffle=True)
-
-        data_list = []
-        target_list = []
-        for data, target in train_loader:
-            data_np = data[0][0].view(-1).numpy()
-            target_np = target.numpy()
-            data_list.append(data_np)
-            target_list.append(target_np)
-
-        self.training_set = (np.array(data_list), np.array(target_list).reshape(-1))
-
-        data_list = []
-        target_list = []
-        for data, target in test_loader:
-            data_np = data[0][0].view(-1).numpy()
-            target_np = target.numpy()
-            data_list.append(data_np)
-            target_list.append(target_np)
-
-        self.test_set = (np.array(data_list), np.array(target_list).reshape(-1))
-
-    def get_training_set(self) -> (Tensor, Tensor):
-        """
-        Procedure which returns the Training Set of the MNIST dataset: such set contains 60000 grayscale images.
-
-        Returns
-        -------
-        (Tensor, Tensor)
-            The training set as a tuple of Tensor.
-        """
-        return self.training_set
-
-    def get_test_set(self) -> (Tensor, Tensor):
-        """
-        Procedure which returns the Test Set of the MNIST dataset: such set contains 10000 grayscale images.
-
-        Returns
-        -------
-        (Tensor, Tensor)
-            The test set as a tuple of Tensor.
-        """
-        return self.test_set
-
-    def add_training_sample(self, sample: (Tensor, Tensor)):
-        """
-        Procedure which adds a new sample to the Training Set of the MNIST dataset.
-
-        Parameters
-        ----------
-        sample : (Tensor, Tensor)
-            The sample we wish to add to the set. The first element is the data and the second is the target.
-
-        """
-        self.training_set = (np.append(self.training_set[0], sample[0], axis=0),
-                             np.append(self.training_set[1], sample[1]))
-
-    def add_test_sample(self, sample: (Tensor, Tensor)):
-        """
-        Procedure which adds a new sample to the Training Set of the MNIST dataset.
-
-        Parameters
-        ----------
-        sample : (Tensor, Tensor)
-            The sample we wish to add to the set. The first element is the data and the second is the target.
-
-        """
-        self.test_set = (np.append(self.test_set[0], sample[0], axis=0),
-                         np.append(self.test_set[1], sample[1]))
+    def __len__(self):
+        return tv.datasets.MNIST.__len__(self)
 
 
-class FMNISTDataset(Dataset):
+class TorchFMNIST(Dataset, tv.datasets.FashionMNIST):
     """
-    A concrete class used to represent the FMNIST Dataset.
+    A concrete class used to represent the FMNIST Dataset. It leverage the torch dataset FMNIST.
 
     Attributes
     ----------
-    training_set : (Tensor, Tensor)
-        Tuple of Tensors containing the data and the target of the part of the dataset forming the training set.
-    test_set : (Tensor, Tensor)
-        Tuple of Tensors containing the data and the target of the part of the dataset forming the test set.
+    data_path : str
+        Path to the folder in which the dataset will be saved.
+    train : bool
+        If True then the training set is loaded otherwise the test set is loaded.
+    transform : Callable, Optional
+        Transformation to apply to the data.
+    target_transform : Callable, Optional
+        Transformation to apply to the targets.
+    download : bool
+        True if the dataset must be downloaded, False otherwise.
 
-    Methods
-    ----------
-    get_training_set()
-        Return the part of the dataset used as the Training set as a tuple of Tensors (Data and Targets).
-    get_test_set()
-        Return the part of the dataset used as the Test set as a tuple of Tensors (Data and Targets).
-    add_training_sample((Tensor, Tensor))
-        Add a new sample to the training set.
-        It must be implemented in the concrete classes.
-    add_test_sample((Tensor, Tensor))
-        Add a new sample to the test set.
-        It must be implemented in the concrete classes.
     """
 
-    def __init__(self):
+    def __init__(self, data_path: str, train: bool, transform: Optional[Callable] = None,
+                 target_transform: Optional[Callable] = None, download: bool = True):
+        Dataset.__init__(self)
+        tv.datasets.FashionMNIST.__init__(self, data_path, train, transform, target_transform, download)
 
-        datapath = 'data/'
+    def __getitem__(self, index: int):
+        return tv.datasets.FashionMNIST.__getitem__(self, index)
 
-        transform = tv.transforms.Compose([
-            tv.transforms.ToTensor(),
-            tv.transforms.Normalize((0.5,), (0.5,)),
-        ])
-
-        train_loader = torch.utils.data.DataLoader(
-            tv.datasets.FashionMNIST(datapath, train=True, download=True, transform=transform), batch_size=1,
-            shuffle=True)
-
-        test_loader = torch.utils.data.DataLoader(
-            tv.datasets.FashionMNIST(datapath, train=False, transform=transform), batch_size=1, shuffle=True)
-
-        data_list = []
-        target_list = []
-        for data, target in train_loader:
-            data_np = data[0][0].view(-1).numpy()
-            target_np = target.numpy()
-            data_list.append(data_np)
-            target_list.append(target_np)
-
-        self.training_set = (np.array(data_list), np.array(target_list).reshape(-1))
-
-        data_list = []
-        target_list = []
-        for data, target in test_loader:
-            data_np = data[0][0].view(-1).numpy()
-            target_np = target.numpy()
-            data_list.append(data_np)
-            target_list.append(target_np)
-
-        self.test_set = (np.array(data_list), np.array(target_list).reshape(-1))
-
-    def get_training_set(self) -> (Tensor, Tensor):
-        """
-        Procedure which returns the Training Set of the MNIST dataset: such set contains 60000 grayscale images.
-
-        Returns
-        -------
-        (Tensor, Tensor)
-            The training set as a tuple of Tensor.
-        """
-        return self.training_set
-
-    def get_test_set(self) -> (Tensor, Tensor):
-        """
-        Procedure which returns the Test Set of the MNIST dataset: such set contains 10000 grayscale images.
-
-        Returns
-        -------
-        (Tensor, Tensor)
-            The test set as a tuple of Tensor.
-        """
-        return self.test_set
-
-    def add_training_sample(self, sample: (Tensor, Tensor)):
-        """
-        Procedure which adds a new sample to the Training Set of the MNIST dataset.
-
-        Parameters
-        ----------
-        sample : (Tensor, Tensor)
-            The sample we wish to add to the set. The first element is the data and the second is the target.
-
-        """
-        self.training_set = (np.append(self.training_set[0], sample[0], axis=0),
-                             np.append(self.training_set[1], sample[1]))
-
-    def add_test_sample(self, sample: (Tensor, Tensor)):
-        """
-        Procedure which adds a new sample to the Training Set of the MNIST dataset.
-
-        Parameters
-        ----------
-        sample : (Tensor, Tensor)
-            The sample we wish to add to the set. The first element is the data and the second is the target.
-
-        """
-        self.test_set = (np.append(self.test_set[0], sample[0], axis=0),
-                         np.append(self.test_set[1], sample[1]))
+    def __len__(self):
+        return tv.datasets.FashionMNIST.__len__(self)
 
 
-class DynamicsJamesPos(Dataset):
+class GenericFileDataset(Dataset, tdata.Dataset):
+    """
+    A concrete class used to represent a generic dataset memorized as a txt file. It loads the values using numpy
+    loadtxt function. It assumes each line of the file is a separated datapoint.
+    For each line we assume that the first n values are the input and the following are the target. The index of the
+    first element of the target is identified by the target_index attribute.
+
+    Attributes
+    ----------
+    filepath : str
+        Path to the file containing the dataset.
+        N.B.: the names of the dataset are supposed to be jame_pos_*.txt where * can be test or train.
+    target_index : int
+        Index of the first element of the outputs.
+    dtype : type, Optional
+        Data type of the values of the datapoints. Refer to numpy.loadtxt for more details.
+    delimiter : str, Optional
+        Delimiter between the different values of the datapoints. Refer to numpy.loadtxt for more details.
+    transform : Callable, Optional
+        Transformation to apply to the data.
+    target_transform : Callable, Optional
+        Transformation to apply to the targets.
+
+    """
+
+    def __init__(self, filepath: str, target_index: int, dtype: type = float, delimiter: str = ",",
+                 transform: Callable = None, target_transform: Callable = None):
+
+        self.filepath = filepath
+        self.target_index = target_index
+        self.dtype = dtype
+        self.delimiter = delimiter
+        self.transform = transform
+        self.target_transform = target_transform
+
+        dataset = np.loadtxt(filepath, dtype=self.dtype, delimiter=self.delimiter)
+
+        self.__data, self.__targets = (dataset[:, 0:self.target_index], dataset[:, self.target_index:])
+
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+
+        data, target = self.__data[index], self.__targets[index]
+        if self.transform is not None:
+            data = self.transform(data)
+        if self.target_transform is not None:
+            target = self.target_transform(target)
+
+        return data, target
+
+    def __len__(self):
+        return len(self.__data)
+
+
+class DynamicsJamesPos(GenericFileDataset, tdata.Dataset):
     """
     A concrete class used to represent the Dynamic James Dataset presented in the paper
     "Challenging SMT solvers to verify neural networks" by Pulina and Tacchella (2012).
+    Automatic download is at present not supported, therefore the dataset must be downloaded manually.
 
     Attributes
     ----------
-    training_set : (Tensor, Tensor)
-        Tuple of Tensors containing the data and the target of the part of the dataset forming the training set.
-    test_set : (Tensor, Tensor)
-        Tuple of Tensors containing the data and the target of the part of the dataset forming the test set.
+    data_path : str
+        Path to the folder containing the training set and the test set.
+        N.B.: the names of the dataset are supposed to be james_pos_*.txt where * can be test or train.
+    train : bool
+        If True then the training set is loaded otherwise the test set is loaded.
+    transform : Callable, Optional
+        Transformation to apply to the data.
+    target_transform : Callable, Optional
+        Transformation to apply to the targets.
 
-    Methods
-    ----------
-    get_training_set()
-        Return the part of the dataset used as the Training set as a tuple of Tensors (Data and Targets).
-    get_test_set()
-        Return the part of the dataset used as the Test set as a tuple of Tensors (Data and Targets).
-    add_training_sample((Tensor, Tensor))
-        Add a new sample to the training set.
-        It must be implemented in the concrete classes.
-    add_test_sample((Tensor, Tensor))
-        Add a new sample to the test set.
-        It must be implemented in the concrete classes.
     """
 
-    def __init__(self, training_set_path: str, test_set_path: str):
+    def __init__(self, data_path: str, train: bool, transform: Optional[Callable] = None,
+                 target_transform: Optional[Callable] = None):
 
-        train_set = np.loadtxt(training_set_path, delimiter=",")
-        t_set = np.loadtxt(test_set_path, delimiter=",")
-        training_set = (train_set[:, 0:8], train_set[:, 8:])
-        test_set = (t_set[:, 0:8], t_set[:, 8:])
-        self.training_set = training_set
-        self.test_set = test_set
+        tdata.Dataset.__init__(self)
 
-    def get_training_set(self) -> (Tensor, Tensor):
-        """
-        Procedure which returns the Training Set of the MNIST dataset: such set contains 60000 grayscale images.
+        if train:
+            dataset_path = data_path + "james_pos_train.txt"
+        else:
+            dataset_path = data_path + "james_pos_test.txt"
 
-        Returns
-        -------
-        (Tensor, Tensor)
-            The training set as a tuple of Tensor.
-        """
-        return self.training_set
-
-    def get_test_set(self) -> (Tensor, Tensor):
-        """
-        Procedure which returns the Test Set of the MNIST dataset: such set contains 10000 grayscale images.
-
-        Returns
-        -------
-        (Tensor, Tensor)
-            The test set as a tuple of Tensor.
-        """
-        return self.test_set
-
-    def add_training_sample(self, sample: (Tensor, Tensor)):
-        """
-        Procedure which adds a new sample to the Training Set of the MNIST dataset.
-
-        Parameters
-        ----------
-        sample : (Tensor, Tensor)
-            The sample we wish to add to the set. The first element is the data and the second is the target.
-
-        """
-        self.training_set = (np.append(self.training_set[0], sample[0], axis=0),
-                             np.append(self.training_set[1], sample[1]))
-
-    def add_test_sample(self, sample: (Tensor, Tensor)):
-        """
-        Procedure which adds a new sample to the Training Set of the MNIST dataset.
-
-        Parameters
-        ----------
-        sample : (Tensor, Tensor)
-            The sample we wish to add to the set. The first element is the data and the second is the target.
-
-        """
-        self.test_set = (np.append(self.test_set[0], sample[0], axis=0),
-                         np.append(self.test_set[1], sample[1]))
+        GenericFileDataset.__init__(self, dataset_path, 8, transform=transform, target_transform=target_transform)

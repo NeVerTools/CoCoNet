@@ -1,15 +1,18 @@
 import abc
-import never2.core.controller.pynevertemp.networks as networks
-import never2.core.controller.pynevertemp.datasets as datasets
-import never2.core.controller.pynevertemp.strategies.conversion as cv
+import pynever.networks as networks
+import pynever.datasets as datasets
+import pynever.strategies.conversion as cv
 import os
 import shutil
 import torch
+import torch.optim as opt
+import torch.optim.lr_scheduler as schedulers
+import torch.utils.data as tdt
 import math
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as funct
-import never2.core.controller.pynevertemp.utilities as utilities
+from typing import Callable, Dict, Union, Optional, Sequence, Collection
 
 
 class TrainingStrategy(abc.ABC):
@@ -26,7 +29,7 @@ class TrainingStrategy(abc.ABC):
     @abc.abstractmethod
     def train(self, network: networks.NeuralNetwork, dataset: datasets.Dataset) -> networks.NeuralNetwork:
         """
-        Train the neural network of interest using a pruning strategy determined in the concrete children.
+        Train the neural network of interest using a testing strategy determined in the concrete children.
 
         Parameters
         ----------
@@ -45,93 +48,145 @@ class TrainingStrategy(abc.ABC):
         pass
 
 
-class AdamTraining(TrainingStrategy):
+class TestingStrategy(abc.ABC):
     """
-    A concrete class used to represent the Adam training strategy.
-    This kind of training is based on an Adam optimizer.
-    We refer to https://arxiv.org/abs/1412.6980 for theoretical details on the optimization algorithm.
-
-    Attributes
-    ----------
-    n_epochs : int
-        Number of epochs for the training procedure.
-    train_batch_size : int
-        Dimension for the train batch size for the training procedure
-    test_batch_size : int
-        Dimension for the test batch size for the training procedure
-    learning_rate : float
-        Learning rate parameter for the fine tuning procedure.
-    betas : Tuple (float, float), optional
-        Coefficients used for computing running averages of gradient and its square (default: (0.9, 0.999)).
-    eps : float, optional
-        Term added to the denominator to improve numerical stability (default: 1e-8).
-    weight_decay : float, optional
-        Coefficient of the L2 norm regularizer of the Adam optimizer (default: 0).
-    cuda : bool, optional
-        Whether to use the cuda library for the procedure (default: False).
-    train_patience : int, optional
-        The number of epochs in which the loss may not decrease before the
-        training procedure is interrupted (default: 10).
-    scheduler_patience : int, optional
-        The number of epochs in which the loss may not decrease before the
-        scheduler decrease the learning rate (default: 3).
-    batchnorm_decay : float, optional
-        It is the coefficient of the L1 norm regularizer applied only to the weights of the batch
-        normalization layers. It is a preparatory parameter for pruning strategies which leverages
-        the coefficients of the batch normalization layers. It should be selected considering the
-        sparsity rate of the related pruning procedure (default: 0).
-    l1_decay: float, optional
-        Coefficient of the L1 norm regularizer. It should not be used with the weight_decay regularizer.
-        It is also a preparatory parameter for pruning strategies which leverages the near-to-zero value of
-        the weights (default: 0).
-    fine_tuning : bool, optional
-        Whether the training procedure should use the fine tuning routine (i.e., the weight with value = 0 are
-        not updated by the optimizer (default: False).
+    An abstract class used to represent a Testing Strategy.
 
     Methods
     ----------
-    train(NeuralNetwork, Dataset)
-        Train the neural network of interest using the training strategy Adam Training and the dataset passed as an
-        argument.
+    test(NeuralNetwork, Dataset)
+        Test the neural network of interest using a testing strategy determined in the concrete children.
 
     """
 
-    def __init__(self, n_epochs: int, train_batch_size: int, test_batch_size: int, learning_rate: float,
-                 betas: (float, float) = (0.9, 0.999), eps: float = 1e-8, weight_decay: float = 0, cuda: bool = False,
-                 train_patience: int = 10, scheduler_patience: int = 3, batchnorm_decay: float = 0,
-                 l1_decay: float = 0, fine_tuning: bool = False):
-
-        self.n_epochs = n_epochs
-        self.train_batch_size = train_batch_size
-        self.test_batch_size = test_batch_size
-        self.learning_rate = learning_rate
-        self.betas = betas
-        self.eps = eps
-        self.weight_decay = weight_decay
-        self.cuda = cuda
-        self.train_patience = train_patience
-        self.scheduler_patience = scheduler_patience
-        self.batchnorm_decay = batchnorm_decay
-        self.l1_decay = l1_decay
-        self.fine_tuning = fine_tuning
-
-    def train(self, network: networks.NeuralNetwork, dataset: datasets.Dataset) -> networks.NeuralNetwork:
+    @abc.abstractmethod
+    def test(self, network: networks.NeuralNetwork, dataset: datasets.Dataset) -> float:
         """
-        Train the neural network of interest using the training strategy SGD Training.
+        Test the neural network of interest using a testing strategy determined in the concrete children.
 
         Parameters
         ----------
         network : NeuralNetwork
-            The neural network to train.
+            The neural network to test.
         dataset : Dataset
-            The dataset to use for the training of the network.
+            The dataset to use to test the neural network.
 
         Returns
         ----------
-        NeuralNetwork
-            The Neural Network resulting from the application of the training strategy to the original network.
+        float
+            A measure of the correctness of the networks dependant on the concrete children
 
         """
+        pass
+
+
+class PytorchTraining(TrainingStrategy):
+    """
+    Class used to represent the training strategy based on the Pytorch learning framework.
+    It supports different optimization algorithm, schedulers, loss function and others based on
+    the attributes provided at instantiation time.
+
+    Attributes
+    ----------
+    optimizer_con : type
+        Reference to the class constructor for the Optimizer of choice for the training strategy.
+
+    opt_params : Dict
+        Dictionary of the parameters to pass to the constructor of the optimizer excluding the first which is always
+        assumed to be the parameters to optimize
+
+    scheduler_con : type
+        Reference to the class constructor for the Scheduler for the learning rate of choice for the training strategy
+
+    sch_params : Dict
+        Dictionary of the parameters to pass to the constructor of the scheduler excluding the first which is always
+        assumed to be the optimizer whose learning rate must be updated.
+
+    loss_function : Callable
+        Loss function for the training strategy. We assume it to be a function taking as parameters two pytorch Tensor
+        corresponding to the output of the network and the target plus whatever other parameters passed in loss_param.
+
+    loss_params : Dict
+        Dictionary of the parameters to pass to the loss funtion other than the output of the network and the target.
+
+    precision_metric : Callable
+        Function for measuring the precision of the neural network. It is used to choose the best model and to control
+        the Plateau Scheduler and the early stopping. It is assumed that it produce a float value and such value
+        decrease for increasing correctness of the network (as the traditional loss value).
+
+    metric_params : Dict
+        Supplementary parameters for the metric other than the output and the target (which should always be the first
+        two parameters of the metric.
+
+    n_epochs : int
+        Number of epochs for the training procedure.
+
+    validation_percentage : float
+        Percentage of the dataset to use as the validation set
+
+    train_batch_size : int
+        Dimension for the train batch size for the training procedure
+
+    validation_batch_size : int
+        Dimension for the validation batch size for the training procedure
+
+    network_transform : Callable, Optional
+        We provide the possibility to define a function which will be applied to the network after
+        the computation of backward and before the optimizer step. In practice we use it for the manipulation
+        needed to the pruning oriented training. (default: None)
+
+    transform_params : Dict, Optional
+        The arguments of the network_transform other than the network itself
+
+    cuda : bool, Optional
+        Whether to use the cuda library for the procedure (default: False).
+
+    train_patience : int, Optional
+        The number of epochs in which the loss may not decrease before the
+        training procedure is interrupted with early stopping (default: None).
+
+    checkpoints_root : str, Optional
+        Where to store the checkpoints of the training strategy. (default: '')
+
+    verbose_rate : int, Optional
+        After how many batch the strategy prints information about how the training is going.
+
+
+    """
+
+    def __init__(self, optimizer_con: type, opt_params: Dict, scheduler_con: type, sch_params: Dict,
+                 loss_function: Callable, loss_params: Dict, precision_metric: Callable, metric_params: Dict,
+                 n_epochs: int, validation_percentage: float, train_batch_size: int, validation_batch_size: int,
+                 network_transform: Callable = None, transform_params: Dict = None, cuda: bool = False,
+                 train_patience: int = None, checkpoints_root: str = '', verbose_rate: int = 30):
+
+        TrainingStrategy.__init__(self)
+
+        self.optimizer_con = optimizer_con
+        self.opt_params = opt_params
+        self.scheduler_con = scheduler_con
+        self.sch_params = sch_params
+        self.loss_function = loss_function
+        self.loss_params = loss_params
+        self.precision_metric = precision_metric
+        self.metric_params = metric_params
+
+        self.n_epochs = n_epochs
+        self.validation_percentage = validation_percentage
+        self.train_batch_size = train_batch_size
+        self.validation_batch_size = validation_batch_size
+        self.network_transform = network_transform
+        self.transform_params = transform_params
+        self.cuda = cuda
+
+        if train_patience is None:
+            train_patience = n_epochs + 1
+
+        self.train_patience = train_patience
+        self.checkpoints_root = checkpoints_root
+        self.verbose_rate = verbose_rate
+
+    def train(self, network: networks.NeuralNetwork, dataset: datasets.Dataset) -> networks.NeuralNetwork:
 
         pytorch_converter = cv.PyTorchConverter()
         py_net = pytorch_converter.from_neural_network(network)
@@ -169,438 +224,256 @@ class AdamTraining(TrainingStrategy):
         else:
             net.pytorch_network.cpu()
 
-        net.pytorch_network.train()
-        net.pytorch_network.float()
-
-        # We define the optimizer and the scheduler with the correct parameters.
-        optimizer = torch.optim.Adam(params=net.pytorch_network.parameters(), lr=self.learning_rate, betas=self.betas,
-                                     eps=self.eps, weight_decay=self.weight_decay)
-
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=self.scheduler_patience)
-
-        start_epoch = 0
-        training_set = dataset.get_training_set()
-
-        # If a checkpoint exist, we load the checkpoint of interest
-        # checkpoints_path = 'checkpoints/' + net.identifier + '.pth.tar'
-        # best_model_path = 'checkpoints/' + net.identifier + '_best.pth.tar'
-
-        checkpoints_path = net.identifier + '.pth.tar'
-        best_model_path = net.identifier + '_best.pth.tar'
-
-        if os.path.isfile(checkpoints_path):
-
-            print("=> loading checkpoint '{}'".format(checkpoints_path))
-            checkpoint = torch.load(checkpoints_path)
-            start_epoch = checkpoint['epoch']
-            best_prec1 = checkpoint['best_prec1']
-            net.pytorch_network.load_state_dict(checkpoint['state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer'])
-            best_val_loss = checkpoint['best_val_loss']
-            epochs_without_decrease = checkpoint['no_dec_epochs']
-            print("=> loaded checkpoint '{}' (epoch {}) Prec1: {:f}"
-                  .format(checkpoints_path, checkpoint['epoch'], best_prec1))
-
-        else:
-            print("=> no checkpoint found at '{}'".format(checkpoints_path))
-            best_val_loss = 999
-            epochs_without_decrease = 0
-
-        history_score = np.zeros((self.n_epochs - start_epoch + 1, 3))
-
-        # TRAINING
-
-        best_prec1 = 0
-        for epoch in range(start_epoch, self.n_epochs):
-
-            if epochs_without_decrease > self.train_patience:
-                break
-
-            # EPOCH TRAINING
-
-            net.pytorch_network.train()
-            avg_loss = 0
-            train_acc = 0
-            batch_idx = 0
-            data_idx = 0
-
-            while data_idx < len(training_set[0]):
-
-                if data_idx + self.train_batch_size >= len(training_set[0]):
-                    last_data_idx = len(training_set[0])
-                else:
-                    last_data_idx = data_idx + self.train_batch_size
-
-                data = torch.from_numpy(training_set[0][data_idx:last_data_idx, :])
-                target = torch.from_numpy(training_set[1][data_idx:last_data_idx])
-
-                if self.cuda:
-                    data, target = data.cuda(), target.cuda()
-
-                data, target = torch.autograd.Variable(data), torch.autograd.Variable(target)
-                optimizer.zero_grad()
-                output = net.pytorch_network(data)
-                loss = funct.cross_entropy(output, target)
-                avg_loss += loss.data.item()
-                pred = output.data.max(1, keepdim=True)[1]
-                train_acc += pred.eq(target.data.view_as(pred)).cpu().sum()
-                loss.backward()
-
-                # Pruning oriented training: it regularizes the batch norm coef values in order to identify unimportant
-                # channels.
-                for m in net.pytorch_network.modules():
-                    if isinstance(m, nn.BatchNorm1d):
-                        m.weight.grad.data.add_(self.batchnorm_decay * torch.sign(m.weight.data))
-
-                # Pruning oriented training: it regularizes the weights in order to identify the unimportant ones.
-                for m in net.pytorch_network.modules():
-
-                    if isinstance(m, nn.Linear):
-                        m.weight.grad.data.add_(self.l1_decay * torch.sign(m.weight.data))
-
-                # If the fine_tuning flag is set then we assume that the training is used as fine tuning for a
-                # weight pruning procedure, therefore the weight with value = 0 are not updated.
-                if self.fine_tuning:
-
-                    for m in net.pytorch_network.modules():
-
-                        if isinstance(m, nn.Linear):
-                            weight_copy = m.weight.data.abs().clone()
-                            if self.cuda:
-                                mask = weight_copy.gt(0).float().cuda()
-                            else:
-                                mask = weight_copy.gt(0).float()
-                            m.weight.grad.data.mul_(mask)
-
-                optimizer.step()
-                if batch_idx % 100 == 0:
-                    print('Train Epoch: {} [{}/{} ({:.1f}%)]\tLoss: {:.6f}'.format(
-                        epoch, batch_idx * len(data), len(training_set[0]),
-                               100. * batch_idx / math.floor(len(training_set[0]) / self.train_batch_size),
-                        loss.data.item()))
-
-                data_idx += self.train_batch_size
-                batch_idx += 1
-
-            history_score[epoch - start_epoch][0] = avg_loss / float(math.floor(len(training_set[0]) /
-                                                                                self.train_batch_size))
-            history_score[epoch - start_epoch][1] = train_acc / float(math.floor(len(training_set[0]) /
-                                                                                 self.train_batch_size))
-
-            # EPOCH TEST
-
-            prec1, test_loss = utilities.testing(net, dataset, self.test_batch_size, self.cuda)
-
-            if test_loss < best_val_loss:
-                epochs_without_decrease = 0
-                best_val_loss = test_loss
-            else:
-                epochs_without_decrease += 1
-
-            if scheduler is not None:
-                scheduler.step(test_loss)
-
-            # CHECKPOINT
-
-            history_score[epoch - start_epoch][2] = prec1
-            is_best = prec1 > best_prec1
-            best_prec1 = max(prec1, best_prec1)
-
-            state = {
-                'epoch': epoch + 1,
-                'state_dict': net.pytorch_network.state_dict(),
-                'best_prec1': best_prec1,
-                'optimizer': optimizer.state_dict(),
-                'best_val_loss': best_val_loss,
-                'no_dec_epochs': epochs_without_decrease,
-            }
-            torch.save(state, checkpoints_path)
-            if is_best:
-                shutil.copyfile(checkpoints_path, best_model_path)
-
-        print("Best accuracy: " + str(best_prec1))
-        history_score[-1][0] = best_prec1
-
-        if os.path.isfile(checkpoints_path):
-            os.remove(checkpoints_path)
-
-        if os.path.isfile(best_model_path):
-            os.remove(best_model_path)
-
-        return net
-
-
-class AdamTrainingRegression(TrainingStrategy):
-    """
-    A concrete class used to represent the Adam training strategy for regression.
-    This kind of training is based on an Adam optimizer.
-    We refer to https://arxiv.org/abs/1412.6980 for theoretical details on the optimization algorithm.
-
-    Attributes
-    ----------
-    n_epochs : int
-        Number of epochs for the training procedure.
-    train_batch_size : int
-        Dimension for the train batch size for the training procedure
-    test_batch_size : int
-        Dimension for the test batch size for the training procedure
-    learning_rate : float
-        Learning rate parameter for the fine tuning procedure.
-    betas : Tuple (float, float), optional
-        Coefficients used for computing running averages of gradient and its square (default: (0.9, 0.999)).
-    eps : float, optional
-        Term added to the denominator to improve numerical stability (default: 1e-8).
-    weight_decay : float, optional
-        Coefficient of the L2 norm regularizer of the Adam optimizer (default: 0).
-    cuda : bool, optional
-        Whether to use the cuda library for the procedure (default: False).
-    train_patience : int, optional
-        The number of epochs in which the loss may not decrease before the
-        training procedure is interrupted (default: 10).
-    scheduler_patience : int, optional
-        The number of epochs in which the loss may not decrease before the
-        scheduler decrease the learning rate (default: 3).
-
-    Methods
-    ----------
-    train(NeuralNetwork, Dataset)
-        Train the neural network of interest using the training strategy Adam Training and the dataset passed as an
-        argument.
-
-    """
-
-    def __init__(self, n_epochs: int, train_batch_size: int, test_batch_size: int, learning_rate: float,
-                 betas: (float, float) = (0.9, 0.999), eps: float = 1e-8, weight_decay: float = 0, cuda: bool = False,
-                 train_patience: int = 10, scheduler_patience: int = 3):
-
-        self.n_epochs = n_epochs
-        self.train_batch_size = train_batch_size
-        self.test_batch_size = test_batch_size
-        self.learning_rate = learning_rate
-        self.betas = betas
-        self.eps = eps
-        self.weight_decay = weight_decay
-        self.cuda = cuda
-        self.train_patience = train_patience
-        self.scheduler_patience = scheduler_patience
-
-    def train(self, network: networks.NeuralNetwork, dataset: datasets.Dataset) -> networks.NeuralNetwork:
-        """
-        Train the neural network of interest using the training strategy SGD Training.
-
-        Parameters
-        ----------
-        network : NeuralNetwork
-            The neural network to train.
-        dataset : Dataset
-            The dataset to use for the training of the network.
-
-        Returns
-        ----------
-        NeuralNetwork
-            The Neural Network resulting from the application of the training strategy to the original network.
-
-        """
-
-        pytorch_converter = cv.PyTorchConverter()
-        py_net = pytorch_converter.from_neural_network(network)
-
-        py_net = self.__training(py_net, dataset)
-
-        network.alt_rep_cache.clear()
-        network.alt_rep_cache.append(py_net)
-        network.up_to_date = False
-
-        return network
-
-    def __training(self, net: cv.PyTorchNetwork, dataset: datasets.Dataset) -> cv.PyTorchNetwork:
-
-        """
-        Training procedure for the PyTorchNetwork.
-
-        Parameters
-        ----------
-        net : PyTorchNetwork
-            The PyTorchNetwork to train.
-        dataset : Dataset
-            The dataset to use for the training of the PyTorchNetwork
-
-        Returns
-        ----------
-        PyTorchNetwork
-            The trained PyTorchNetwork.
-
-        """
-
-        # If the training should be done with the GPU we set the model to cuda.
-        if self.cuda:
-            net.pytorch_network.cuda()
-        else:
-            net.pytorch_network.cpu()
-
-        net.pytorch_network.train()
+        # We set all the values of the network to double.
         net.pytorch_network.double()
 
-        # We define the optimizer and the scheduler with the correct parameters.
-        optimizer = torch.optim.Adam(params=net.pytorch_network.parameters(), lr=self.learning_rate, betas=self.betas,
-                                     eps=self.eps, weight_decay=self.weight_decay)
+        # We build the optimizer and the scheduler
+        optimizer = self.optimizer_con(net.pytorch_network.parameters(), **self.opt_params)
+        scheduler = self.scheduler_con(optimizer, **self.sch_params)
 
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=self.scheduler_patience)
+        # We split the dataset in training set and validation set.
+        validation_len = int(dataset.__len__() * self.validation_percentage)
+        training_len = dataset.__len__() - validation_len
+        training_set, validation_set = tdt.random_split(dataset, (training_len, validation_len))
 
-        start_epoch = 0
-        training_set = dataset.get_training_set()
+        # We instantiate the data loaders
+        train_loader = tdt.DataLoader(training_set, self.train_batch_size)
+        validation_loader = tdt.DataLoader(validation_set, self.validation_batch_size)
 
         # If a checkpoint exist, we load the checkpoint of interest
-        # checkpoints_path = 'checkpoints/' + net.identifier + '.pth.tar'
-        # best_model_path = 'checkpoints/' + net.identifier + '_best.pth.tar'
-
-        checkpoints_path = net.identifier + '.pth.tar'
-        best_model_path = net.identifier + '_best.pth.tar'
+        checkpoints_path = self.checkpoints_root + net.identifier + '.pth.tar'
+        best_model_path = self.checkpoints_root + net.identifier + '_best.pth.tar'
 
         if os.path.isfile(checkpoints_path):
 
-            print("=> loading checkpoint '{}'".format(checkpoints_path))
+            print(f"Loading Checkpoint: '{checkpoints_path}'")
             checkpoint = torch.load(checkpoints_path)
             start_epoch = checkpoint['epoch']
-            best_prec1 = checkpoint['best_prec1']
-            net.pytorch_network.load_state_dict(checkpoint['state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer'])
-            best_val_loss = checkpoint['best_val_loss']
-            epochs_without_decrease = checkpoint['no_dec_epochs']
-            print("=> loaded checkpoint '{}' (epoch {}) Prec1: {:f}"
-                  .format(checkpoints_path, checkpoint['epoch'], best_prec1))
+            net.pytorch_network.load_state_dict(checkpoint['network_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            best_loss_score = checkpoint['best_loss_score']
+            epochs_without_decrease = checkpoint['epochs_without_decrease']
+            print(f"Loaded Checkpoint: '{checkpoints_path}'")
+            print(f"Epoch: {start_epoch}, Best Loss Score: {best_loss_score}")
 
         else:
-            print("=> no checkpoint found at '{}'".format(checkpoints_path))
-            best_val_loss = 999
+            # Otherwise we initialize the values of interest
+            print(f"No Checkpoint was found at '{checkpoints_path}'")
+            # TODO: add comment on numbers
+            best_loss_score = 999999
             epochs_without_decrease = 0
+            start_epoch = 0
 
-        history_score = np.zeros((self.n_epochs - start_epoch + 1, 3))
+        # history_score is used to keep track of the evolution of training loss and validation loss
+        history_score = np.zeros((self.n_epochs - start_epoch + 1, 2))
 
-        # TRAINING
-
-        best_prec1 = 999
+        # We begin the real and proper training of the network. In the outer cycle we consider the epochs and for each
+        # epochs until termination we consider all the batches
         for epoch in range(start_epoch, self.n_epochs):
 
             if epochs_without_decrease > self.train_patience:
                 break
 
-            # EPOCH TRAINING
-
+            # We set the network to train mode.
             net.pytorch_network.train()
             avg_loss = 0
-            train_acc = 0
-            batch_idx = 0
-            data_idx = 0
 
-            while data_idx < len(training_set[0]):
-
-                if data_idx + self.train_batch_size >= len(training_set[0]):
-                    last_data_idx = len(training_set[0])
-                else:
-                    last_data_idx = data_idx + self.train_batch_size
-
-                data = torch.from_numpy(training_set[0][data_idx:last_data_idx, :])
-                target = torch.from_numpy(training_set[1][data_idx:last_data_idx])
+            # For each batch we compute one learning step
+            for batch_idx, (data, target) in enumerate(train_loader):
 
                 if self.cuda:
                     data, target = data.cuda(), target.cuda()
 
                 data, target = torch.autograd.Variable(data), torch.autograd.Variable(target)
+                if target.dtype == torch.float:
+                    target = target.double()
                 data = data.double()
-                target = target.double()
                 optimizer.zero_grad()
                 output = net.pytorch_network(data)
-                loss = funct.mse_loss(output, target)
+                loss = self.loss_function(output, target, **self.loss_params)
                 avg_loss += loss.data.item()
                 loss.backward()
 
+                if self.network_transform is not None:
+                    self.network_transform(net, self.transform_params)
+
                 optimizer.step()
-                if batch_idx % 100 == 0:
+
+                if batch_idx % self.verbose_rate == 0:
                     print('Train Epoch: {} [{}/{} ({:.1f}%)]\tLoss: {:.6f}'.format(
-                        epoch, batch_idx * len(data), len(training_set[0]),
-                               100. * batch_idx / math.floor(len(training_set[0]) / self.train_batch_size),
+                        epoch, batch_idx * len(data), len(training_set),
+                        100. * batch_idx / math.floor(len(training_set) / self.train_batch_size),
                         loss.data.item()))
 
-                data_idx += self.train_batch_size
-                batch_idx += 1
-
-            history_score[epoch - start_epoch][0] = avg_loss / float(math.floor(len(training_set[0]) /
-                                                                                self.train_batch_size))
-            history_score[epoch - start_epoch][1] = train_acc / float(math.floor(len(training_set[0]) /
-                                                                                 self.train_batch_size))
+            # avg_loss = avg_loss / float(math.floor(len(training_set) / self.train_batch_size))
+            avg_loss = avg_loss / batch_idx
+            history_score[epoch - start_epoch][0] = avg_loss
 
             # EPOCH TEST
-
-            test_set = dataset.get_test_set()
 
             net.pytorch_network.eval()
             net.pytorch_network.double()
-            test_loss = 0
+            validation_loss = 0
             with torch.no_grad():
 
-                batch_idx = 0
-                data_idx = 0
-
-                while data_idx < len(test_set[0]):
-
-                    if data_idx + self.test_batch_size >= len(test_set[0]):
-                        last_data_idx = len(test_set[0])
-                    else:
-                        last_data_idx = data_idx + self.test_batch_size
-
-                    data = torch.from_numpy(test_set[0][data_idx:last_data_idx, :])
-                    target = torch.from_numpy(test_set[1][data_idx:last_data_idx])
+                for batch_idx, (data, target) in enumerate(validation_loader):
 
                     if self.cuda:
                         data, target = data.cuda(), target.cuda()
 
                     data, target = torch.autograd.Variable(data), torch.autograd.Variable(target)
+                    if target.dtype == torch.float:
+                        target = target.double()
                     data = data.double()
-                    target = target.double()
                     output = net.pytorch_network(data)
-                    test_loss += funct.mse_loss(output, target).data.item()  # sum up batch loss
-                    batch_idx += 1
-                    data_idx += self.test_batch_size
+                    loss = self.precision_metric(output, target, **self.metric_params)
+                    validation_loss += loss.data.item()
 
-            test_loss /= float(math.floor(len(test_set[0]) / self.test_batch_size))
-            print('\nTest set: Average loss: {:.4f}\n'.format(test_loss))
+            # validation_loss = validation_loss / float(math.floor(len(validation_set) / self.validation_batch_size))
+            validation_loss = validation_loss / batch_idx
+            print('\nValidation Set Average loss: {:.4f}\n'.format(validation_loss))
 
-            if test_loss < best_val_loss:
+            if validation_loss < best_loss_score:
                 epochs_without_decrease = 0
-                best_val_loss = test_loss
+                best_loss_score = validation_loss
             else:
                 epochs_without_decrease += 1
 
-            if scheduler is not None:
-                scheduler.step(test_loss)
+            # We need to distinguish among different scheduler because not all the pytorch scheduler present the same
+            # interface.
+            if isinstance(scheduler, schedulers.ReduceLROnPlateau):
+                scheduler.step(validation_loss)
+            elif scheduler is not None:
+                scheduler.step()
 
             # CHECKPOINT
 
-            history_score[epoch - start_epoch][2] = test_loss
-            is_best = test_loss < best_prec1
-            best_prec1 = min(test_loss, best_prec1)
+            history_score[epoch - start_epoch][1] = validation_loss
+            is_best = validation_loss < best_loss_score
 
             state = {
                 'epoch': epoch + 1,
-                'state_dict': net.pytorch_network.state_dict(),
-                'best_prec1': best_prec1,
-                'optimizer': optimizer.state_dict(),
-                'best_val_loss': best_val_loss,
-                'no_dec_epochs': epochs_without_decrease,
+                'network_state_dict': net.pytorch_network.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'best_loss_score': best_loss_score,
+                'epochs_without_decrease': epochs_without_decrease
             }
 
             torch.save(state, checkpoints_path)
             if is_best:
                 shutil.copyfile(checkpoints_path, best_model_path)
 
-        print("Best Loss: " + str(best_prec1))
-        history_score[-1][0] = best_prec1
-
-        if os.path.isfile(checkpoints_path):
-            os.remove(checkpoints_path)
-
         if os.path.isfile(best_model_path):
-            os.remove(best_model_path)
+            best_checkpoint = torch.load(best_model_path)
+            net.pytorch_network.load_state_dict(best_checkpoint['network_state_dict'])
+
+        print(f"Best Loss Score: {best_loss_score}")
 
         return net
+
+
+class PytorchTesting(TestingStrategy):
+    """
+    Class used to represent the testing strategy based on the Pytorch learning framework.
+    It supports different metrics measure for the correctness of the neural network.
+
+    Attributes
+    ----------
+
+    metric : Callable
+        Function for measuring the precision/correctness of the neural network.
+
+    metric_params : Dict
+        Supplementary parameters for the metric other than the output and the target (which should always be the first
+        two parameters of the metric. It is assumed that it produce a float value and such value
+        decrease for increasing correctness of the network (as the traditional loss value).
+
+    test_batch_size : int
+        Dimension for the test batch size for the testing procedure
+
+    cuda : bool, Optional
+        Whether to use the cuda library for the procedure (default: False).
+
+    """
+
+    def __init__(self, metric: Callable, metric_params: Dict, test_batch_size: int, cuda: bool = False):
+
+        TestingStrategy.__init__(self)
+        self.metric = metric
+        self.metric_params = metric_params
+        self.test_batch_size = test_batch_size
+        self.cuda = cuda
+
+    def test(self, network: networks.NeuralNetwork, dataset: datasets.Dataset) -> float:
+
+        pytorch_converter = cv.PyTorchConverter()
+        py_net = pytorch_converter.from_neural_network(network)
+
+        measure = self.__testing(py_net, dataset)
+
+        return measure
+
+    def __testing(self, net: cv.PyTorchNetwork, dataset: datasets.Dataset) -> float:
+
+        if self.cuda:
+            net.pytorch_network.cuda()
+        else:
+            net.pytorch_network.cpu()
+
+        # We set all the values of the network to double.
+        net.pytorch_network.double()
+
+        # We instantiate the data loader
+        test_loader = tdt.DataLoader(dataset, self.test_batch_size)
+
+        net.pytorch_network.eval()
+        test_loss = 0
+        with torch.no_grad():
+
+            for batch_idx, (data, target) in enumerate(test_loader):
+
+                if self.cuda:
+                    data, target = data.cuda(), target.cuda()
+
+                data, target = torch.autograd.Variable(data), torch.autograd.Variable(target)
+                if target.dtype == torch.float:
+                    target = target.double()
+                data = data.double()
+                output = net.pytorch_network(data)
+                loss = self.metric(output, target, **self.metric_params)
+                test_loss += loss.data.item()
+
+        # test_loss = test_loss / float(math.floor(len(dataset)) / self.test_batch_size)
+        test_loss = test_loss / batch_idx
+
+        return test_loss
+
+
+class PytorchMetrics:
+
+    @staticmethod
+    def inaccuracy(output: torch.Tensor, target: torch.Tensor) -> float:
+        """
+        Function to compute the inaccuracy of a prediction. It assumes that the task is classification, the output is
+        a Tensor of shape (n, d) where d is the number of possible classes. The target is a Tensor of shape (n, 1) of
+        int whose elements correspond to the correct class for the n-th sample. The index of the output element with
+        the greater value (considering the n-th Tensor) correspond to the class predicted. We consider the inaccuracy
+        metric instead than the accuracy because our metric functions must follow the rule: "lower value equals to
+        better network" like the loss functions.
+
+        Parameters
+        ----------
+        output : torch.Tensor
+            Output predicted by the network. It should be a Tensor of shape (n, d)
+        target : torch.Tensor
+            Correct class for the prediction. It should be a Tensor of shape (n, 1)
+
+        Returns
+        -------
+        float
+            Number of correct prediction / number of sample analyzed
+        """
+
+        pred = output.data.max(1, keepdim=True)[1]
+        acc = pred.eq(target.data.view_as(pred)).cpu().sum() / len(target)
+        return 1 - acc

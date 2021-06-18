@@ -1,11 +1,10 @@
 import abc
-import copy
 import math
+
+from pynever.tensor import Tensor
 from typing import Tuple
-
 import numpy as np
-
-from never2.core.controller.pynevertemp.tensor import Tensor
+import copy
 
 
 class LayerNode(abc.ABC):
@@ -25,6 +24,7 @@ class LayerNode(abc.ABC):
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, out_dim: Tuple):
+
         self.identifier = identifier
         self.in_dim = in_dim
         self.out_dim = out_dim
@@ -36,10 +36,6 @@ class LayerNode(abc.ABC):
 
     def __str__(self):
         return self.__repr__()
-
-    @abc.abstractmethod
-    def update_input(self, in_dim: Tuple):
-        pass
 
 
 class ReLUNode(LayerNode):
@@ -58,9 +54,6 @@ class ReLUNode(LayerNode):
         out_dim = copy.deepcopy(in_dim)
         super().__init__(identifier, in_dim, out_dim)
 
-    def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim)
-
 
 class SigmoidNode(LayerNode):
     """
@@ -77,9 +70,6 @@ class SigmoidNode(LayerNode):
 
         out_dim = copy.deepcopy(in_dim)
         super().__init__(identifier, in_dim, out_dim)
-
-    def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim)
 
 
 class FullyConnectedNode(LayerNode):
@@ -101,22 +91,23 @@ class FullyConnectedNode(LayerNode):
 
     """
 
-    def __init__(self, identifier: str, in_dim: Tuple, in_features: int, out_features: int,
+    def __init__(self, identifier: str, in_dim: Tuple, out_features: int,
                  weight: Tensor = None, bias: Tensor = None, has_bias: bool = True):
 
         if not len(in_dim) >= 1:
             raise Exception("FullyConnectedNode: in_dim cannot be empty")
 
-        in_dim_error = f"Wrong value for in_features ({in_features}): " \
+        """in_dim_error = f"Wrong value for in_features ({in_features}): " \
                        f"should be equal to the last element of in_dim ({in_dim[-1]})."
         if not in_dim[-1] == in_features:
-            raise Exception(in_dim_error)
+            raise Exception(in_dim_error)"""
 
         temp = list(in_dim)
         temp[-1] = out_features
         out_dim = tuple(temp)
         super().__init__(identifier, in_dim, out_dim)
 
+        in_features = in_dim[-1]
         self.in_features = in_features
         self.out_features = out_features
 
@@ -145,14 +136,6 @@ class FullyConnectedNode(LayerNode):
         self.has_bias = has_bias
         self.bias = bias
 
-    def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim, self.in_features, self.out_features,
-                      self.weight, self.bias, self.has_bias)
-
-    def update_data(self, in_features: int, out_features: int,
-                    weight: Tensor = None, bias: Tensor = None, has_bias: bool = True):
-        self.__init__(self.identifier, self.in_dim, in_features, out_features, weight, bias, has_bias)
-
 
 class BatchNormNode(LayerNode):
     """
@@ -167,6 +150,7 @@ class BatchNormNode(LayerNode):
 
     Attributes
     ----------
+
     num_features : int
         Number of input and output feature of the Batch Normalization Layer.
     weight : Tensor, optional
@@ -206,9 +190,20 @@ class BatchNormNode(LayerNode):
 
         self.num_features = num_features
 
-        if track_running_stats and running_mean is None and running_var is None:
-            running_mean = np.ones(num_features)
-            running_var = np.zeros(num_features)
+        if track_running_stats:
+            if running_mean is None:
+                running_mean = np.ones(num_features)
+            if running_var is None:
+                running_var = np.zeros(num_features)
+
+            if not running_var.shape[0] == num_features:
+                raise Exception("The dimension of the running_var should be equal to num_features")
+            if not running_mean.shape[0] == num_features:
+                raise Exception("The dimension of the running_mean should be equal to num_features")
+
+        else:
+            running_mean = None
+            running_var = None
 
         if weight is None:
             weight = np.ones(num_features)
@@ -231,17 +226,6 @@ class BatchNormNode(LayerNode):
         self.momentum = momentum
         self.affine = affine
         self.track_running_stats = track_running_stats
-
-    def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim, self.num_features,
-                      self.weight, self.bias, self.running_mean, self.running_var,
-                      self.eps, self.momentum, self.affine, self.track_running_stats)
-
-    def update_data(self, num_features: int, weight: Tensor = None, bias: Tensor = None,
-                    running_mean: Tensor = None, running_var: Tensor = None, eps: float = 1e-5,
-                    momentum: float = 0.1, affine: bool = True, track_running_stats: bool = True):
-        self.__init__(self.identifier, self.in_dim, num_features, weight, bias,
-                      running_mean, running_var, eps, momentum, affine, track_running_stats)
 
 
 class ConvNode(LayerNode):
@@ -281,7 +265,6 @@ class ConvNode(LayerNode):
         Tensor containing the bias parameter of the Conv Layer (default: None)
     weight : Tensor, optional
         Tensor containing the weight parameters of the Conv layer (default: None)
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, in_channels: int, out_channels: int,
@@ -312,6 +295,7 @@ class ConvNode(LayerNode):
 
         temp_out_dim = [out_channels]
         for i in range(1, len(in_dim)):
+
             aux = ((in_dim[i] + padding[i - 1] + padding[i + len(in_dim) - 2] -
                     dilation[i - 1] * (kernel_size[i - 1] - 1) - 1) / stride[i - 1]) + 1
 
@@ -356,16 +340,6 @@ class ConvNode(LayerNode):
         self.bias = bias
         self.weight = weight
 
-    def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim, self.in_channels, self.out_channels,
-                      self.kernel_size, self.stride, self.padding, self.dilation, self.groups,
-                      self.has_bias, self.bias, self.weight)
-
-    def update_data(self, in_channels: int, out_channels: int, kernel_size: Tuple, stride: Tuple, padding: Tuple,
-                    dilation: Tuple, groups: int, has_bias: bool = False, bias: Tensor = None, weight: Tensor = None):
-        self.__init__(self.identifier, self.in_dim, in_channels, out_channels, kernel_size, stride, padding,
-                      dilation, groups, has_bias, bias, weight)
-
 
 class AveragePoolNode(LayerNode):
     """
@@ -394,7 +368,6 @@ class AveragePoolNode(LayerNode):
         In order to use ceil mode. (default: False)
     count_include_pad: bool, optional
         Whether include pad pixels when calculating values for the edges (default: False)
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, kernel_size: Tuple, stride: Tuple,
@@ -433,14 +406,6 @@ class AveragePoolNode(LayerNode):
         self.ceil_mode = ceil_mode
         self.count_include_pad = count_include_pad
 
-    def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim, self.kernel_size, self.stride,
-                      self.padding, self.ceil_mode, self.count_include_pad)
-
-    def update_data(self, kernel_size: Tuple, stride: Tuple, padding: Tuple, ceil_mode: bool = False,
-                    count_include_pad: bool = False):
-        self.__init__(self.identifier, self.in_dim, kernel_size, stride, padding, ceil_mode, count_include_pad)
-
 
 class MaxPoolNode(LayerNode):
     """
@@ -471,7 +436,6 @@ class MaxPoolNode(LayerNode):
         In order to use ceil mode. (default: False)
     return_indices: bool
         If True it will return the max indices along with the outputs (default: False)
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, kernel_size: Tuple, stride: Tuple,
@@ -516,14 +480,6 @@ class MaxPoolNode(LayerNode):
         self.return_indices = return_indices
         self.dilation = dilation
 
-    def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim, self.kernel_size, self.stride,
-                      self.padding, self.dilation, self.ceil_mode, self.return_indices)
-
-    def update_data(self, kernel_size: Tuple, stride: Tuple, padding: Tuple, dilation: Tuple, ceil_mode: bool = False,
-                    return_indices: bool = False):
-        self.__init__(self.identifier, self.in_dim, kernel_size, stride, padding, dilation, ceil_mode, return_indices)
-
 
 class LRNNode(LayerNode):
     """
@@ -539,11 +495,11 @@ class LRNNode(LayerNode):
         Exponent. (default: 0.75)
     k : float, optional
         Additive factor (default: 1.0)
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, size: int, alpha: float = 0.0001, beta: float = 0.75,
                  k: float = 1.0):
+
         if not (len(in_dim) >= 2):
             raise Exception("The input dimension must be at least 2 (one for the channel and one for the rest)")
 
@@ -554,12 +510,6 @@ class LRNNode(LayerNode):
         self.beta = beta
         self.k = k
 
-    def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim, self.size, self.alpha, self.beta, self.k)
-
-    def update_data(self, size: int, alpha: float = 0.0001, beta: float = 0.75, k: float = 1.0):
-        self.__init__(self.identifier, self.in_dim, size, alpha, beta, k)
-
 
 class SoftMaxNode(LayerNode):
     """
@@ -569,7 +519,6 @@ class SoftMaxNode(LayerNode):
     ----------
     axis : int, optional
         A dimension along which Softmax will be computed (so every slice along dim will sum to 1)
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, axis: int = -1):
@@ -584,23 +533,15 @@ class SoftMaxNode(LayerNode):
         super().__init__(identifier, in_dim, out_dim)
         self.axis = axis
 
-    def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim, self.axis)
-
-    def update_data(self, axis: int = -1):
-        self.__init__(self.identifier, self.in_dim, axis)
-
 
 class UnsqueezeNode(LayerNode):
     """
     A class used for our internal representation of a Unsqueeze Layer.
     We follow the ONNX operator convention for attributes and definitions.
-
     Attributes
     ----------
     axes : Tuple
         List of indices at which to insert the singleton dimension.
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, axes: Tuple):
@@ -623,6 +564,7 @@ class UnsqueezeNode(LayerNode):
             raise Exception(f"Every axes element must be in [{- (len(in_dim) + len(axes))}, "
                             f"{(len(in_dim) + len(axes) - 1)}]")
 
+        # We add the singleton dimensions to the out_dim
         out_dim = copy.deepcopy(in_dim)
         out_dim = list(out_dim)
         temp_axes = list(axes)
@@ -635,18 +577,11 @@ class UnsqueezeNode(LayerNode):
 
         self.axes = axes
 
-    def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim, self.axes)
-
-    def update_data(self, axes: Tuple):
-        self.__init__(self.identifier, self.in_dim, axes)
-
 
 class ReshapeNode(LayerNode):
     """
     A class used for our internal representation of a Reshape layer of a Neural Network.
     We follow the ONNX operator convention for attributes and definitions.
-
     Attributes
     ----------
     shape : Tuple
@@ -686,18 +621,11 @@ class ReshapeNode(LayerNode):
         self.shape = shape
         self.allow_zero = allow_zero
 
-    def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim, self.shape, self.allow_zero)
-
-    def update_data(self, shape: Tuple, allow_zero: bool = False):
-        self.__init__(self.identifier, self.in_dim, shape, allow_zero)
-
 
 class FlattenNode(LayerNode):
     """
     A class used for our internal representation of a Flatten layer of a Neural Network. We follow the ONNX operator
     convention for attributes and definitions.
-
     Attributes
     ----------
     axis : int, optional
@@ -710,6 +638,7 @@ class FlattenNode(LayerNode):
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, axis: int = 0):
+
         if not (-len(in_dim) <= axis <= len(in_dim)):
             raise Exception(f"Axis must be in [{-len(in_dim)}, {len(in_dim)}]")
 
@@ -725,34 +654,21 @@ class FlattenNode(LayerNode):
         super().__init__(identifier, in_dim, out_dim)
         self.axis = axis
 
-    def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim, self.axis)
-
-    def update_data(self, axis: int = 0):
-        self.__init__(self.identifier, self.in_dim, axis)
-
 
 class DropoutNode(LayerNode):
     """
     A class used for our internal representation of a Dropout Layer of a Neural Network.
     The inplace parameter of pytorch and the seed attribute and training_mode of onnx are not supported.
-
     Attributes
     ----------
     p : float, optional
         Probability of an element to be zeroed (default: 0.5)
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, p: float = 0.5):
+
         out_dim = copy.deepcopy(in_dim)
         super().__init__(identifier, in_dim, out_dim)
         if not (0 <= p <= 1):
             raise Exception("The p parameter must be between [0, 1]")
         self.p = p
-
-    def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim, self.p)
-
-    def update_data(self, p: float = 0.5):
-        self.__init__(self.identifier, self.in_dim, p)

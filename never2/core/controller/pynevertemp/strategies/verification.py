@@ -2,11 +2,11 @@ import abc
 import time
 from typing import List, Optional
 
-import never2.core.controller.pynevertemp.networks as networks
-import never2.core.controller.pynevertemp.nodes as nodes
-import never2.core.controller.pynevertemp.strategies.abstraction as abst
-import never2.core.controller.pynevertemp.utilities as util
-from never2.core.controller.pynevertemp.tensor import Tensor
+import pynever.networks as networks
+import pynever.nodes as nodes
+import pynever.strategies.abstraction as abst
+import pynever.utilities as util
+from pynever.tensor import Tensor
 
 
 class Property(abc.ABC):

@@ -2,7 +2,7 @@ import numpy as np
 from pysmt.smtlib.parser import SmtLibParser
 
 import processing as proc
-from never2.core.controller.pynevertemp.tensor import Tensor
+from pynever.tensor import Tensor
 from verification import SMTLIBProperty, NeVerProperty
 
 
