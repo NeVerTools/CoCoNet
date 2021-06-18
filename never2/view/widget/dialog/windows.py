@@ -101,12 +101,6 @@ class TrainingWindow(NeVerWindow):
         self.params["Metrics"].activated.connect(
             lambda: self.details_layout.update_self("Metrics:" + self.params["Metrics"].currentText()))
 
-        self.params["Transform"] = QComboBox()
-        self.params["Transform"].addItems(["pil_to_tensor",
-                                           "Normalize"])
-        self.params["Transform"].activated.connect(
-            lambda: self.details_layout.update_self("Transform:" + self.params["Transform"].currentText()))
-
         params_layout.addWidget(QLabel("Optimizer:"), 1, 0)
         params_layout.addWidget(self.params["Optimizer"], 1, 1)
         params_layout.addWidget(QLabel("Scheduler:"), 2, 0)
@@ -115,8 +109,6 @@ class TrainingWindow(NeVerWindow):
         params_layout.addWidget(self.params["Loss Function"], 3, 1)
         params_layout.addWidget(QLabel("Metrics:"), 4, 0)
         params_layout.addWidget(self.params["Metrics"], 4, 1)
-        params_layout.addWidget(QLabel("Transform:"), 5, 0)
-        params_layout.addWidget(self.params["Transform"], 5, 1)
         body_layout.addLayout(params_layout)
 
         self.details_layout = GUIParamLayout()
@@ -208,10 +200,6 @@ class GUIParamLayout(QVBoxLayout):
                            "Reduction": "mean"}
         elif caller == "Transform:pil_to_tensor":
             self.params = {}
-        elif caller == "Transform:Normalize":
-            self.params = {"Mean": "-",
-                           "Std": "-",
-                           "In place": False}
 
         self.show_layout(caller, self.params)
 
