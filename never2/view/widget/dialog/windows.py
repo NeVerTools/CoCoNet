@@ -1,10 +1,12 @@
-import torch.optim
+import json
+
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLayout, QLineEdit, QPushButton
 
 import never2.view.styles as style
 from never2.core.controller.pynevertemp.networks import NeuralNetwork
+from never2.view.util.utility import allow_list_in_dict
 
 
 class NeVerWindow(QtWidgets.QDialog):
@@ -54,10 +56,12 @@ class TrainingWindow(NeVerWindow):
 
         # Training elements
         self.nn = nn
-        self.optimizer = torch.optim.Adam
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau
-        self.loss_function = None
-        self.metrics = None
+        self.widgets = dict()
+        self.train_params = dict()
+        with open('never2/res/json/training.json') as json_file:
+            # Init dict with default values
+            self.train_params = json.loads(json_file.read())
+            self.train_params = allow_list_in_dict(self.train_params)
 
         # Dataset
         dataset_layout = QHBoxLayout()
@@ -82,62 +86,36 @@ class TrainingWindow(NeVerWindow):
         title.setAlignment(Qt.AlignCenter)
         params_layout.addWidget(title, 0, 0, 1, 2)
 
-        self.widgets["Optimizer"] = QComboBox()
-        self.widgets["Optimizer"].addItem("Adam")
-        self.widgets["Optimizer"].setCurrentIndex(-1)
+        # Widgets builder
+        counter = 1
+        for first_level in self.train_params.keys():
+            if type(self.train_params[first_level]) == dict:
+                self.widgets[first_level] = QComboBox()
+                for second_level in self.train_params[first_level].keys():
+                    self.widgets[first_level].addItem(second_level)
+                self.widgets[first_level].setCurrentIndex(-1)
+            else:
+                self.widgets[str(first_level)] = QLineEdit()
+
+            params_layout.addWidget(QLabel(first_level), counter, 0)
+            params_layout.addWidget(self.widgets[first_level], counter, 1)
+            counter += 1
+
         self.widgets["Optimizer"].activated.connect(
             lambda: self.details_layout.update_view("Optimizer:" + self.widgets["Optimizer"].currentText()))
-
-        self.widgets["Scheduler"] = QComboBox()
-        self.widgets["Scheduler"].addItem("ReduceLROnPlateau")
-        self.widgets["Scheduler"].setCurrentIndex(-1)
         self.widgets["Scheduler"].activated.connect(
             lambda: self.details_layout.update_view("Scheduler:" + self.widgets["Scheduler"].currentText()))
-
-        self.widgets["Loss Function"] = QComboBox()
-        self.widgets["Loss Function"].addItems(["Cross Entropy",
-                                               "MSE Loss"])
-        self.widgets["Loss Function"].setCurrentIndex(-1)
         self.widgets["Loss Function"].activated.connect(
             lambda: self.details_layout.update_view("Loss Function:" + self.widgets["Loss Function"].currentText()))
-
-        self.widgets["Metrics"] = QComboBox()
-        self.widgets["Metrics"].addItems(["Inaccuracy",
-                                         "MSE Loss"])
-        self.widgets["Metrics"].setCurrentIndex(-1)
         self.widgets["Metrics"].activated.connect(
             lambda: self.details_layout.update_view("Metrics:" + self.widgets["Metrics"].currentText()))
 
-        params_layout.addWidget(QLabel("Optimizer:"), 1, 0)
-        params_layout.addWidget(self.widgets["Optimizer"], 1, 1)
-        params_layout.addWidget(QLabel("Scheduler:"), 2, 0)
-        params_layout.addWidget(self.widgets["Scheduler"], 2, 1)
-        params_layout.addWidget(QLabel("Loss Function:"), 3, 0)
-        params_layout.addWidget(self.widgets["Loss Function"], 3, 1)
-        params_layout.addWidget(QLabel("Metrics:"), 4, 0)
-        params_layout.addWidget(self.widgets["Metrics"], 4, 1)
         body_layout.addLayout(params_layout)
 
-        self.details_layout = GUIParamLayout()
+        self.details_layout = GUIParamLayout(self.train_params)
         self.details_layout.setAlignment(Qt.AlignTop)
         body_layout.addLayout(self.details_layout)
         self.layout.addLayout(body_layout)
-
-        # Extra parameters
-        self.widgets["Epochs"] = QLineEdit()
-        self.widgets["Validation percentage"] = QLineEdit()
-        self.widgets["Batch size - Training"] = QLineEdit()
-        self.widgets["Batch size - Validation"] = QLineEdit()
-        extra_layout = QGridLayout()
-        extra_layout.addWidget(QLabel("Epochs"), 1, 0)
-        extra_layout.addWidget(self.widgets["Epochs"], 1, 1)
-        extra_layout.addWidget(QLabel("Validation percentage"), 2, 0)
-        extra_layout.addWidget(self.widgets["Validation percentage"], 2, 1)
-        extra_layout.addWidget(QLabel("Batch size - Training"), 1, 2)
-        extra_layout.addWidget(self.widgets["Batch size - Training"], 1, 3)
-        extra_layout.addWidget(QLabel("Batch size - Validation"), 2, 2)
-        extra_layout.addWidget(self.widgets["Batch size - Validation"], 2, 3)
-        self.layout.addLayout(extra_layout)
 
         # Separator
         sep_label = QLabel("***")
@@ -195,10 +173,11 @@ class GUIParamLayout(QVBoxLayout):
 
     """
 
-    def __init__(self):
+    def __init__(self, params: dict):
         super().__init__()
 
-        self.params = dict()
+        self.all_params = params
+        self.gui_params = dict()
         self.grid_dict = dict()
         self.grid_layout = QGridLayout()
         self.addLayout(self.grid_layout)
@@ -228,38 +207,11 @@ class GUIParamLayout(QVBoxLayout):
 
         self.clear_grid()
 
-        if caller == "Optimizer:Adam" and caller not in self.params:
-            self.params[caller] = {"Learning rate": 1e-3,
-                                   "Betas": (0.9, 0.999),
-                                   "Epsilon": 1e-8,
-                                   "Weight decay": 0,
-                                   "AMSGrad": ["False", "True"]}
-        elif caller == "Scheduler:ReduceLROnPlateau" and caller not in self.params:
-            self.params[caller] = {"Mode": ["min", "max"],
-                                   "Factor": 0.1,
-                                   "Patience": 10,
-                                   "Threshold": 1e-4,
-                                   "Threshold_mode": ["rel", "abs"],
-                                   "Cooldown": 0,
-                                   "Min LR": 0,
-                                   "Eps": 1e-8,
-                                   "Verbose": ["False", "True"]}
-        elif caller == "Loss Function:Cross Entropy" and caller not in self.params:
-            self.params[caller] = {"Weight": (),
-                                   "Size average": ["True", "False"],
-                                   "Ignore index": -100,
-                                   "Reduce": ["True", "False"],
-                                   "Reduction": ["mean", "sum", "none"]}
-        elif caller == "Loss Function:MSE Loss" and caller not in self.params:
-            self.params[caller] = {"Size average": ["True", "False"],
-                                   "Reduce": ["True", "False"],
-                                   "Reduction": ["mean", "sum", "none"]}
-        elif caller == "Metrics:Inaccuracy" and caller not in self.params:
-            self.params[caller] = {}
-        elif caller == "Metrics:MSE Loss" and caller not in self.params:
-            self.params[caller] = {"Size average": ["True", "False"],
-                                   "Reduce": ["True", "False"],
-                                   "Reduction": ["mean", "sum", "none"]}
+        for first_level in self.all_params.keys():
+            if type(self.all_params[first_level]) == dict:
+                for second_level in self.all_params[first_level].keys():
+                    if caller == f"{first_level}:{second_level}" and caller not in self.gui_params:
+                        self.gui_params[caller] = self.all_params[first_level][second_level]
 
         self.show_layout(caller)
 
@@ -281,7 +233,7 @@ class GUIParamLayout(QVBoxLayout):
         self.grid_layout.addWidget(title, 0, 0, 1, 2)
 
         count = 1
-        for k, v in self.params[name].items():
+        for k, v in self.gui_params[name].items():
             if type(v) == list:
                 cb = QComboBox()
                 cb.addItems(v)
@@ -316,11 +268,11 @@ class GUIParamLayout(QVBoxLayout):
 
         """
 
-        param = self.params[name][key]
+        param = self.gui_params[name][key]
 
         # Update list putting the selected value at index 0
         if type(param) == list:
             param.remove(value)
-            self.params[name][key] = [value] + param
+            self.gui_params[name][key] = [value] + param
         else:
-            self.params[name][key] = value
+            self.gui_params[name][key] = value
