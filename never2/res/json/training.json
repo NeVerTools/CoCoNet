@@ -1,0 +1,50 @@
+{
+  "Optimizer": {
+    "Adam": {
+      "Learning Rate": "1e-3",
+      "Betas": "(0.9, 0.999)",
+      "Eps": "1e-8",
+      "Weight decay": "0.0",
+      "AMSGrad": "[False, True]"
+    }
+  },
+  "Scheduler": {
+    "ReduceLROnPlateau": {
+      "Mode": "[min, max]",
+      "Factor": "0.1",
+      "Patience": 10,
+      "Threshold": 1e-4,
+      "Threshold mode": "[rel, abs]",
+      "Cooldown": 0,
+      "Min LR": 0,
+      "Eps": 1e-8,
+      "Verbose": "[False, True]"
+    }
+  },
+  "Loss Function": {
+    "Cross Entropy": {
+      "Weight": "()",
+      "Size average": "[True, False]",
+      "Ignore index": "-100",
+      "Reduce": "[True, False]",
+      "Reduction": "[mean, sum, none]"
+    },
+    "MSE Loss": {
+      "Size average": "[True, False]",
+      "Reduce": "[True, False]",
+      "Reduction": "[mean, sum, none]"
+    }
+  },
+  "Metrics": {
+    "Inaccuracy": {},
+    "MSE Loss": {
+      "Size average": "[True, False]",
+      "Reduce": "[True, False]",
+      "Reduction": "[mean, sum, none]"
+    }
+  },
+  "Epochs": "",
+  "Validation percentage": "",
+  "Training batch size": "",
+  "Validation batch size": ""
+}
