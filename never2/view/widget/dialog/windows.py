@@ -15,6 +15,20 @@ class NeVerWindow(QtWidgets.QDialog):
     Each window shares a main layout (vertical by default),
     a title and a dictionary of combobox for the parameters.
 
+    Attributes
+    ----------
+    layout : QVBoxLayout
+        The main layout of the window.
+    title : str
+        Window title to display.
+    widgets : dict
+        The dictionary of the displayed widgets.
+
+    Methods
+    ----------
+    render_layout()
+        Procedure to display the window layout.
+
     """
 
     def __init__(self, title="NeVer Window", parent=None):
@@ -45,6 +59,12 @@ class TrainingWindow(NeVerWindow):
 
     Attributes
     ----------
+    nn : NeuralNetwork
+        The current network used in the main window, to be
+        trained with the parameters selected here.
+    train_params : dict
+        The parameters required by pyNeVer to correctly
+        train the network.
 
     Methods
     ----------
@@ -56,11 +76,11 @@ class TrainingWindow(NeVerWindow):
 
         # Training elements
         self.nn = nn
-        self.widgets = dict()
         self.train_params = dict()
         with open('never2/res/json/training.json') as json_file:
             # Init dict with default values
             self.train_params = json.loads(json_file.read())
+            # Update list values correctly
             self.train_params = allow_list_in_dict(self.train_params)
 
         # Dataset
@@ -127,6 +147,7 @@ class TrainingWindow(NeVerWindow):
         btn_layout = QHBoxLayout()
         train_btn = QPushButton("Train network")
         cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.close)
         btn_layout.addWidget(train_btn)
         btn_layout.addWidget(cancel_btn)
         self.layout.addLayout(btn_layout)
@@ -146,12 +167,15 @@ class GUIParamLayout(QVBoxLayout):
     """
     This class is a layout for showing the possible parameters
     of the selected training element. It features a grid with
-    pairs <QLabel, QWidget> for reading parameters.
+    pairs <QLabel, QWidget> for defining the parameters.
 
     Attributes
     ----------
-    params : dict
-        Dictionary of training parameters.
+    all_params : dict
+        Dictionary of first level training parameters,
+        passed by the main class in order to be updated.
+    gui_params : dict
+        Dictionary of second level training parameters.
         Structured as: {<training_par>: <gui_params>}
         where <gui_params> = {<param>: <default_value>}.
     grid_dict : dict
@@ -264,7 +288,7 @@ class GUIParamLayout(QVBoxLayout):
             The name of the parameter detail,
             which is the key of the second-level dict.
         value : str
-            The new value for parameter[name][k].
+            The new value for parameter[name][key].
 
         """
 
