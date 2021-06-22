@@ -1,10 +1,10 @@
 import abc
-import math
-
-from pynever.tensor import Tensor
-from typing import Tuple
-import numpy as np
 import copy
+import math
+from typing import Tuple
+
+import numpy as np
+from pynever.tensor import Tensor
 
 
 class LayerNode(abc.ABC):
@@ -24,7 +24,6 @@ class LayerNode(abc.ABC):
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, out_dim: Tuple):
-
         self.identifier = identifier
         self.in_dim = in_dim
         self.out_dim = out_dim
@@ -36,6 +35,10 @@ class LayerNode(abc.ABC):
 
     def __str__(self):
         return self.__repr__()
+
+    @abc.abstractmethod
+    def update_input(self, in_dim: Tuple):
+        pass
 
 
 class ReLUNode(LayerNode):
@@ -54,6 +57,9 @@ class ReLUNode(LayerNode):
         out_dim = copy.deepcopy(in_dim)
         super().__init__(identifier, in_dim, out_dim)
 
+    def update_input(self, in_dim: Tuple):
+        self.__init__(self.identifier, in_dim)
+
 
 class SigmoidNode(LayerNode):
     """
@@ -70,6 +76,9 @@ class SigmoidNode(LayerNode):
 
         out_dim = copy.deepcopy(in_dim)
         super().__init__(identifier, in_dim, out_dim)
+
+    def update_input(self, in_dim: Tuple):
+        self.__init__(self.identifier, in_dim)
 
 
 class FullyConnectedNode(LayerNode):
@@ -135,6 +144,12 @@ class FullyConnectedNode(LayerNode):
         self.weight = weight
         self.has_bias = has_bias
         self.bias = bias
+
+    def update_input(self, in_dim: Tuple):
+        self.__init__(self.identifier, in_dim, self.out_features, self.weight, self.bias, self.has_bias)
+
+    def update_data(self, out_features: int, weight: Tensor = None, bias: Tensor = None, has_bias: bool = True):
+        self.__init__(self.identifier, self.in_dim, out_features, weight, bias, has_bias)
 
 
 class BatchNormNode(LayerNode):
@@ -227,6 +242,17 @@ class BatchNormNode(LayerNode):
         self.affine = affine
         self.track_running_stats = track_running_stats
 
+    def update_input(self, in_dim: Tuple):
+        self.__init__(self.identifier, in_dim, self.num_features,
+                      self.weight, self.bias, self.running_mean, self.running_var,
+                      self.eps, self.momentum, self.affine, self.track_running_stats)
+
+    def update_data(self, num_features: int, weight: Tensor = None, bias: Tensor = None,
+                    running_mean: Tensor = None, running_var: Tensor = None, eps: float = 1e-5,
+                    momentum: float = 0.1, affine: bool = True, track_running_stats: bool = True):
+        self.__init__(self.identifier, self.in_dim, num_features, weight, bias,
+                      running_mean, running_var, eps, momentum, affine, track_running_stats)
+
 
 class ConvNode(LayerNode):
     """
@@ -295,7 +321,6 @@ class ConvNode(LayerNode):
 
         temp_out_dim = [out_channels]
         for i in range(1, len(in_dim)):
-
             aux = ((in_dim[i] + padding[i - 1] + padding[i + len(in_dim) - 2] -
                     dilation[i - 1] * (kernel_size[i - 1] - 1) - 1) / stride[i - 1]) + 1
 
@@ -339,6 +364,16 @@ class ConvNode(LayerNode):
 
         self.bias = bias
         self.weight = weight
+
+    def update_input(self, in_dim: Tuple):
+        self.__init__(self.identifier, in_dim, self.in_channels, self.out_channels,
+                      self.kernel_size, self.stride, self.padding, self.dilation, self.groups,
+                      self.has_bias, self.bias, self.weight)
+
+    def update_data(self, in_channels: int, out_channels: int, kernel_size: Tuple, stride: Tuple, padding: Tuple,
+                    dilation: Tuple, groups: int, has_bias: bool = False, bias: Tensor = None, weight: Tensor = None):
+        self.__init__(self.identifier, self.in_dim, in_channels, out_channels, kernel_size, stride, padding,
+                      dilation, groups, has_bias, bias, weight)
 
 
 class AveragePoolNode(LayerNode):
@@ -405,6 +440,14 @@ class AveragePoolNode(LayerNode):
         self.padding = padding
         self.ceil_mode = ceil_mode
         self.count_include_pad = count_include_pad
+
+    def update_input(self, in_dim: Tuple):
+        self.__init__(self.identifier, in_dim, self.kernel_size, self.stride,
+                      self.padding, self.ceil_mode, self.count_include_pad)
+
+    def update_data(self, kernel_size: Tuple, stride: Tuple, padding: Tuple, ceil_mode: bool = False,
+                    count_include_pad: bool = False):
+        self.__init__(self.identifier, self.in_dim, kernel_size, stride, padding, ceil_mode, count_include_pad)
 
 
 class MaxPoolNode(LayerNode):
@@ -480,6 +523,14 @@ class MaxPoolNode(LayerNode):
         self.return_indices = return_indices
         self.dilation = dilation
 
+    def update_input(self, in_dim: Tuple):
+        self.__init__(self.identifier, in_dim, self.kernel_size, self.stride,
+                      self.padding, self.dilation, self.ceil_mode, self.return_indices)
+
+    def update_data(self, kernel_size: Tuple, stride: Tuple, padding: Tuple, dilation: Tuple, ceil_mode: bool = False,
+                    return_indices: bool = False):
+        self.__init__(self.identifier, self.in_dim, kernel_size, stride, padding, dilation, ceil_mode, return_indices)
+
 
 class LRNNode(LayerNode):
     """
@@ -499,7 +550,6 @@ class LRNNode(LayerNode):
 
     def __init__(self, identifier: str, in_dim: Tuple, size: int, alpha: float = 0.0001, beta: float = 0.75,
                  k: float = 1.0):
-
         if not (len(in_dim) >= 2):
             raise Exception("The input dimension must be at least 2 (one for the channel and one for the rest)")
 
@@ -509,6 +559,12 @@ class LRNNode(LayerNode):
         self.alpha = alpha
         self.beta = beta
         self.k = k
+
+    def update_input(self, in_dim: Tuple):
+        self.__init__(self.identifier, in_dim, self.size, self.alpha, self.beta, self.k)
+
+    def update_data(self, size: int, alpha: float = 0.0001, beta: float = 0.75, k: float = 1.0):
+        self.__init__(self.identifier, self.in_dim, size, alpha, beta, k)
 
 
 class SoftMaxNode(LayerNode):
@@ -532,6 +588,12 @@ class SoftMaxNode(LayerNode):
         out_dim = copy.deepcopy(in_dim)
         super().__init__(identifier, in_dim, out_dim)
         self.axis = axis
+
+    def update_input(self, in_dim: Tuple):
+        self.__init__(self.identifier, in_dim, self.axis)
+
+    def update_data(self, axis: int = -1):
+        self.__init__(self.identifier, self.in_dim, axis)
 
 
 class UnsqueezeNode(LayerNode):
@@ -577,6 +639,12 @@ class UnsqueezeNode(LayerNode):
 
         self.axes = axes
 
+    def update_input(self, in_dim: Tuple):
+        self.__init__(self.identifier, in_dim, self.axes)
+
+    def update_data(self, axes: Tuple):
+        self.__init__(self.identifier, self.in_dim, axes)
+
 
 class ReshapeNode(LayerNode):
     """
@@ -621,6 +689,12 @@ class ReshapeNode(LayerNode):
         self.shape = shape
         self.allow_zero = allow_zero
 
+    def update_input(self, in_dim: Tuple):
+        self.__init__(self.identifier, in_dim, self.shape, self.allow_zero)
+
+    def update_data(self, shape: Tuple, allow_zero: bool = False):
+        self.__init__(self.identifier, self.in_dim, shape, allow_zero)
+
 
 class FlattenNode(LayerNode):
     """
@@ -638,7 +712,6 @@ class FlattenNode(LayerNode):
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, axis: int = 0):
-
         if not (-len(in_dim) <= axis <= len(in_dim)):
             raise Exception(f"Axis must be in [{-len(in_dim)}, {len(in_dim)}]")
 
@@ -654,6 +727,12 @@ class FlattenNode(LayerNode):
         super().__init__(identifier, in_dim, out_dim)
         self.axis = axis
 
+    def update_input(self, in_dim: Tuple):
+        self.__init__(self.identifier, in_dim, self.axis)
+
+    def update_data(self, axis: int = 0):
+        self.__init__(self.identifier, self.in_dim, axis)
+
 
 class DropoutNode(LayerNode):
     """
@@ -666,9 +745,14 @@ class DropoutNode(LayerNode):
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, p: float = 0.5):
-
         out_dim = copy.deepcopy(in_dim)
         super().__init__(identifier, in_dim, out_dim)
         if not (0 <= p <= 1):
             raise Exception("The p parameter must be between [0, 1]")
         self.p = p
+
+    def update_input(self, in_dim: Tuple):
+        self.__init__(self.identifier, in_dim, self.p)
+
+    def update_data(self, p: float = 0.5):
+        self.__init__(self.identifier, self.in_dim, p)

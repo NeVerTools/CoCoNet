@@ -248,7 +248,8 @@ class Canvas(QWidget):
 
                 for p in temp_list:
                     origin.variables.append(f"{v_name}{p}")
-                print(origin.variables)
+
+                # TODO ADD PROPERTY TO PROJECT
                 return
 
             try:
