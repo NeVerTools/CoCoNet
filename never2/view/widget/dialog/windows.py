@@ -40,6 +40,8 @@ class NeVerWindow(QtWidgets.QDialog):
         self.layout = QVBoxLayout()
         self.title = title
         self.widgets = dict()
+        self.gui_params = dict()
+        self.grid_layout = QGridLayout()
 
         self.setWindowTitle(self.title)
         self.setModal(True)
@@ -66,12 +68,22 @@ class TrainingWindow(NeVerWindow):
     nn : NeuralNetwork
         The current network used in the main window, to be
         trained with the parameters selected here.
+    dataset : Dataset
+        The dataset on which the network is trained.
     train_params : dict
         The parameters required by pyNeVer to correctly
         train the network.
 
     Methods
     ----------
+    clear_grid()
+        Procedure to clear the grid layout.
+    update_grid_view(str)
+        Procedure to update the grid layout.
+    show_layout(str)
+        Procedure to display the grid layout.
+    update_dict_value(str, str, str)
+        Procedure to update the parameters.
 
     """
 
@@ -80,6 +92,7 @@ class TrainingWindow(NeVerWindow):
 
         # Training elements
         self.nn = nn
+        self.dataset = None
         self.train_params = dict()
         with open('never2/res/json/training.json') as json_file:
             # Init dict with default values
@@ -92,6 +105,8 @@ class TrainingWindow(NeVerWindow):
         dataset_layout = QHBoxLayout()
         dataset_picker = QComboBox()
         dataset_picker.addItems(["MNIST", "Fashion MNIST", "James", "..."])
+        dataset_picker.setCurrentIndex(-1)
+        dataset_picker.activated.connect(lambda: self.load_dataset(dataset_picker.currentText()))
         dataset_layout.addWidget(QLabel("Dataset"))
         dataset_layout.addWidget(dataset_picker)
         self.layout.addLayout(dataset_layout)
@@ -129,19 +144,20 @@ class TrainingWindow(NeVerWindow):
             counter += 1
 
         self.widgets["Optimizer"].activated.connect(
-            lambda: self.details_layout.update_view("Optimizer:" + self.widgets["Optimizer"].currentText()))
+            lambda: self.update_grid_view("Optimizer:" + self.widgets["Optimizer"].currentText()))
         self.widgets["Scheduler"].activated.connect(
-            lambda: self.details_layout.update_view("Scheduler:" + self.widgets["Scheduler"].currentText()))
+            lambda: self.update_grid_view("Scheduler:" + self.widgets["Scheduler"].currentText()))
         self.widgets["Loss Function"].activated.connect(
-            lambda: self.details_layout.update_view("Loss Function:" + self.widgets["Loss Function"].currentText()))
+            lambda: self.update_grid_view("Loss Function:" + self.widgets["Loss Function"].currentText()))
         self.widgets["Metrics"].activated.connect(
-            lambda: self.details_layout.update_view("Metrics:" + self.widgets["Metrics"].currentText()))
+            lambda: self.update_grid_view("Metrics:" + self.widgets["Metrics"].currentText()))
+        self.widgets["Epochs"].textChanged.connect(
+            lambda: self.update_dict_value("Epochs", "", self.widgets["Epochs"].text()))
 
         body_layout.addLayout(params_layout)
 
-        self.details_layout = GUIParamLayout(self.train_params)
-        self.details_layout.setAlignment(Qt.AlignTop)
-        body_layout.addLayout(self.details_layout)
+        body_layout.addLayout(self.grid_layout)
+        self.grid_layout.setAlignment(Qt.AlignTop)
         self.layout.addLayout(body_layout)
 
         # Separator
@@ -153,7 +169,7 @@ class TrainingWindow(NeVerWindow):
         # Buttons
         btn_layout = QHBoxLayout()
         train_btn = QPushButton("Train network")
-        train_btn.clicked.connect(lambda: self.train_dataset(dt.TorchFMNIST("data/", True)))
+        train_btn.clicked.connect(self.train_network)
         cancel_btn = QPushButton("Cancel")
         cancel_btn.clicked.connect(self.close)
         btn_layout.addWidget(train_btn)
@@ -162,58 +178,26 @@ class TrainingWindow(NeVerWindow):
 
         self.render_layout()
 
-    def train_dataset(self, dataset: dt.Dataset):
-        train = PytorchTraining(torch.optim.Adam, self.details_layout.gui_params["Optimizer:Adam"],
+    def load_dataset(self, name: str):
+        # TODO DISPLAY LOADING
+        if name == "MNIST":
+            self.dataset = dt.TorchMNIST("data/", True)
+        elif name == "Fashion MNIST":
+            self.dataset = dt.TorchFMNIST("data/", True)
+        elif name == "James":
+            self.dataset = dt.DynamicsJamesPos("data/", True)
+        else:
+            self.dataset = dt.GenericFileDataset("data/", 0)
+
+    def train_network(self):
+        train = PytorchTraining(torch.optim.Adam, self.gui_params["Optimizer:Adam"],
                                 torch.optim.lr_scheduler.ReduceLROnPlateau,
-                                self.details_layout.gui_params["Scheduler:ReduceLROnPlateau"],
+                                self.gui_params["Scheduler:ReduceLROnPlateau"],
                                 cross_entropy,
-                                self.details_layout.gui_params["Loss Function:Cross Entropy"],
-                                PytorchMetrics.inaccuracy, self.details_layout.gui_params["Metrics:Inaccuracy"],
+                                self.gui_params["Loss Function:Cross Entropy"],
+                                PytorchMetrics.inaccuracy, self.gui_params["Metrics:Inaccuracy"],
                                 3, 0.2, 512, 64)
-        train.train(self.nn, dataset)
-
-
-class GUIParamLayout(QVBoxLayout):
-    """
-    This class is a layout for showing the possible parameters
-    of the selected training element. It features a grid with
-    pairs <QLabel, QWidget> for defining the parameters.
-
-    Attributes
-    ----------
-    all_params : dict
-        Dictionary of first level training parameters,
-        passed by the main class in order to be updated.
-    gui_params : dict
-        Dictionary of second level training parameters.
-        Structured as: {<training_par>: <gui_params>}
-    grid_dict : dict
-        Dictionary of graphical pairs (QLabel, QWidget)
-        for displaying and editing the training parameters.
-    grid_layout : QGridLayout
-        Layout containing the second-level parameters.
-
-    Methods
-    ----------
-    clear_grid()
-        Procedure to clear the grid layout.
-    update_view(str)
-        Procedure to update the grid layout.
-    show_layout(str)
-        Procedure to display the grid layout.
-    update_dict_value(str, str, str)
-        Procedure to update the parameters.
-
-    """
-
-    def __init__(self, params: dict):
-        super().__init__()
-
-        self.all_params = params
-        self.gui_params = dict()
-        self.grid_dict = dict()
-        self.grid_layout = QGridLayout()
-        self.addLayout(self.grid_layout)
+        train.train(self.nn, self.dataset)
 
     def clear_grid(self) -> None:
         """
@@ -225,7 +209,7 @@ class GUIParamLayout(QVBoxLayout):
         for i in reversed(range(self.grid_layout.count())):
             self.grid_layout.itemAt(i).widget().deleteLater()
 
-    def update_view(self, caller: str) -> None:
+    def update_grid_view(self, caller: str) -> None:
         """
         This method updates the grid view of the layout,
         displaying the corresponding parameters to the
@@ -240,11 +224,11 @@ class GUIParamLayout(QVBoxLayout):
 
         self.clear_grid()
 
-        for first_level in self.all_params.keys():
-            if type(self.all_params[first_level]) == dict:
-                for second_level in self.all_params[first_level].keys():
+        for first_level in self.train_params.keys():
+            if type(self.train_params[first_level]) == dict:
+                for second_level in self.train_params[first_level].keys():
                     if caller == f"{first_level}:{second_level}" and caller not in self.gui_params:
-                        self.gui_params[caller] = self.all_params[first_level][second_level]
+                        self.gui_params[caller] = self.train_params[first_level][second_level]
 
         self.show_layout(caller)
 
@@ -264,22 +248,24 @@ class GUIParamLayout(QVBoxLayout):
         title = QLabel(name)
         title.setAlignment(Qt.AlignCenter)
         self.grid_layout.addWidget(title, 0, 0, 1, 2)
+        grid_dict = dict()
 
         count = 1
         for k, v in self.gui_params[name].items():
+            long_k = f"{name}:{k}"
             if v["type"] == "bool":
                 cb = QComboBox()
                 cb.addItems([str(v["value"]), str(not v["value"])])
-                self.grid_dict[k] = (QLabel(k), cb)
+                grid_dict[long_k] = (QLabel(k), cb)
             elif "allowed" in v.keys():
                 cb = QComboBox()
                 cb.addItems(v["allowed"])
-                self.grid_dict[k] = (QLabel(k), cb)
+                grid_dict[long_k] = (QLabel(k), cb)
             else:
-                self.grid_dict[k] = (QLabel(k), QLineEdit(str(v["value"])))
+                grid_dict[long_k] = (QLabel(k), QLineEdit(str(v["value"])))
 
-            self.grid_layout.addWidget(self.grid_dict[k][0], count, 0)
-            self.grid_layout.addWidget(self.grid_dict[k][1], count, 1)
+            self.grid_layout.addWidget(grid_dict[long_k][0], count, 0)
+            self.grid_layout.addWidget(grid_dict[long_k][1], count, 1)
             count += 1
 
     def update_dict_value(self, name: str, key: str, value: str) -> None:
@@ -301,11 +287,24 @@ class GUIParamLayout(QVBoxLayout):
 
         """
 
-        param = self.gui_params[name][key]
-
-        # Update list putting the selected value at index 0
-        if type(param) == list:
-            param.remove(value)
-            self.gui_params[name][key] = [value] + param
+        # Cast type
+        if name not in self.gui_params.keys():
+            gui_param = self.train_params[name]
         else:
-            self.gui_params[name][key] = value
+            gui_param = self.gui_params[name][key]
+
+        if gui_param["type"] == "bool":
+            value = value == "True"
+        elif gui_param["type"] == "int":
+            value = int(value)
+        elif gui_param["type"] == "float":
+            value = float(value)
+        elif gui_param["type"] == "tuple":
+            value = eval(value)
+
+        # Apply changes
+        if ":" in name:
+            first_level, second_level = name.split(":")
+            self.train_params[first_level][second_level][key]["value"] = value
+        else:
+            self.train_params[name]["value"] = value

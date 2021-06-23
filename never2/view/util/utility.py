@@ -162,7 +162,6 @@ def force_types(dictionary: dict) -> dict:
                     dictionary[key]["value"] = eval(element["value"])
             else:
                 dictionary[key] = force_types(element)
-    print(dictionary)
     return dictionary
 
 

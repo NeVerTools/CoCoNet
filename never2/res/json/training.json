@@ -86,7 +86,7 @@
         "type": "Tensor",
         "value": "[]"
       },
-      "Size average (deprecated)": {
+      "Size average": {
         "name": "size_average",
         "type": "bool",
         "value": "True"
@@ -96,7 +96,7 @@
         "type": "int",
         "value": "-100"
       },
-      "Reduce (deprecated)": {
+      "Reduce": {
         "name": "reduce",
         "type": "bool",
         "value": "True"
@@ -109,12 +109,12 @@
       }
     },
     "MSE Loss": {
-      "Size average (deprecated)": {
+      "Size average": {
         "name": "size_average",
         "type": "bool",
         "value": "True"
       },
-      "Reduce (deprecated)": {
+      "Reduce": {
         "name": "reduce",
         "type": "bool",
         "value": "True"
@@ -130,12 +130,12 @@
   "Metrics": {
     "Inaccuracy": {},
     "MSE Loss": {
-      "Size average (deprecated)": {
+      "Size average": {
         "name": "size_average",
         "type": "bool",
         "value": "True"
       },
-      "Reduce (deprecated)": {
+      "Reduce": {
         "name": "reduce",
         "type": "bool",
         "value": "True"
