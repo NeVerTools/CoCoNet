@@ -133,6 +133,21 @@ def text_to_tensor_set(text: str) -> tuple:
 
 
 def force_types(dictionary: dict) -> dict:
+    """
+    This method allows to force the value types for the given
+    dictionary.
+
+    Parameters
+    ----------
+    dictionary : dict
+        The dictionary with values expressed as strings.
+
+    Returns
+    -------
+    dict
+        The same dictionary with typed values.
+
+    """
     for key in dictionary.keys():
         element = dictionary[key]
         if isinstance(element, dict):

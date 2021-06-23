@@ -6,11 +6,11 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLayout, QLineEdit, QPushButton
 from torch.nn.functional import cross_entropy
 
-import never2.view.styles as style
 import never2.core.controller.pynevertemp.datasets as dt
+import never2.view.styles as style
+import never2.view.util.utility as u
 from never2.core.controller.pynevertemp.networks import NeuralNetwork
 from never2.core.controller.pynevertemp.strategies.training import PytorchTraining, PytorchMetrics
-import never2.view.util.utility as u
 
 
 class NeVerWindow(QtWidgets.QDialog):
