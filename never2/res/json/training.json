@@ -1,50 +1,171 @@
 {
   "Optimizer": {
     "Adam": {
-      "Learning Rate": "1e-3",
-      "Betas": "(0.9, 0.999)",
-      "Eps": "1e-8",
-      "Weight decay": "0.0",
-      "AMSGrad": "[False, True]"
+      "Learning Rate": {
+        "name": "lr",
+        "type": "float",
+        "value": "1e-3"
+      },
+      "Betas": {
+        "name": "betas",
+        "type": "tuple",
+        "value": "(0.9, 0.999)"
+      },
+      "Epsilon": {
+        "name": "eps",
+        "type": "float",
+        "value": "1e-8"
+      },
+      "Weight decay": {
+        "name": "weight_decay",
+        "type": "float",
+        "value": "0.0"
+      },
+      "AMSGRad": {
+        "name": "amsgrad",
+        "type": "bool",
+        "value": "False"
+      }
     }
   },
   "Scheduler": {
     "ReduceLROnPlateau": {
-      "Mode": "[min, max]",
-      "Factor": "0.1",
-      "Patience": 10,
-      "Threshold": 1e-4,
-      "Threshold mode": "[rel, abs]",
-      "Cooldown": 0,
-      "Min LR": 0,
-      "Eps": 1e-8,
-      "Verbose": "[False, True]"
+      "Mode": {
+        "name": "mode",
+        "type": "str",
+        "value": "min",
+        "allowed": "[min, max]"
+      },
+      "Factor": {
+        "name": "factor",
+        "type": "float",
+        "value": "0.1"
+      },
+      "Patience": {
+        "name": "patience",
+        "type": "int",
+        "value": "10"
+      },
+      "Threshold": {
+        "name": "threshold",
+        "type": "float",
+        "value": "1e-4"
+      },
+      "Threshold mode": {
+        "name": "threshold_mode",
+        "type": "str",
+        "value": "rel",
+        "allowed": "[rel, abs]"
+      },
+      "Cooldown": {
+        "name": "cooldown",
+        "type": "int",
+        "value": "0"
+      },
+      "Min LR": {
+        "name": "min_lr",
+        "type": "float",
+        "value": "0.0"
+      },
+      "Epsilon": {
+        "name": "eps",
+        "type": "float",
+        "value": "1e-8"
+      },
+      "Verbose": {
+        "name": "verbose",
+        "type": "bool",
+        "value": "False"
+      }
     }
   },
   "Loss Function": {
     "Cross Entropy": {
-      "Weight": "()",
-      "Size average": "[True, False]",
-      "Ignore index": "-100",
-      "Reduce": "[True, False]",
-      "Reduction": "[mean, sum, none]"
+      "Weight": {
+        "name": "weight",
+        "type": "Tensor",
+        "value": "[]"
+      },
+      "Size average (deprecated)": {
+        "name": "size_average",
+        "type": "bool",
+        "value": "True"
+      },
+      "Ignore index": {
+        "name": "ignore_index",
+        "type": "int",
+        "value": "-100"
+      },
+      "Reduce (deprecated)": {
+        "name": "reduce",
+        "type": "bool",
+        "value": "True"
+      },
+      "Reduction": {
+        "name": "reduction",
+        "type": "str",
+        "value": "mean",
+        "allowed": "[mean, sum, none]"
+      }
     },
     "MSE Loss": {
-      "Size average": "[True, False]",
-      "Reduce": "[True, False]",
-      "Reduction": "[mean, sum, none]"
+      "Size average (deprecated)": {
+        "name": "size_average",
+        "type": "bool",
+        "value": "True"
+      },
+      "Reduce (deprecated)": {
+        "name": "reduce",
+        "type": "bool",
+        "value": "True"
+      },
+      "Reduction": {
+        "name": "reduction",
+        "type": "str",
+        "value": "mean",
+        "allowed": "[mean, sum, none]"
+      }
     }
   },
   "Metrics": {
     "Inaccuracy": {},
     "MSE Loss": {
-      "Size average": "[True, False]",
-      "Reduce": "[True, False]",
-      "Reduction": "[mean, sum, none]"
+      "Size average (deprecated)": {
+        "name": "size_average",
+        "type": "bool",
+        "value": "True"
+      },
+      "Reduce (deprecated)": {
+        "name": "reduce",
+        "type": "bool",
+        "value": "True"
+      },
+      "Reduction": {
+        "name": "reduction",
+        "type": "str",
+        "value": "mean",
+        "allowed": "[mean, sum, none]"
+      }
     }
   },
-  "Epochs": "",
-  "Validation percentage": "",
-  "Training batch size": "",
-  "Validation batch size": ""
+  "Epochs": {
+    "name": "n_epochs",
+    "type": "int",
+    "value": "3"
+  },
+  "Validation percentage": {
+    "name": "validation_percentage",
+    "type": "float",
+    "value": "0.2"
+  },
+  "Training batch size": {
+    "name": "train_batch_size",
+    "type": "int",
+    "value": "512"
+  },
+  "Validation batch size": {
+    "name": "validation_batch_size",
+    "type": "int",
+    "value": "64"
+  }
 }

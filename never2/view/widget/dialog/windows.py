@@ -1,12 +1,16 @@
 import json
 
+import torch.optim
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLayout, QLineEdit, QPushButton
+from torch.nn.functional import cross_entropy
 
 import never2.view.styles as style
+import never2.core.controller.pynevertemp.datasets as dt
 from never2.core.controller.pynevertemp.networks import NeuralNetwork
-from never2.view.util.utility import allow_list_in_dict
+from never2.core.controller.pynevertemp.strategies.training import PytorchTraining, PytorchMetrics
+import never2.view.util.utility as u
 
 
 class NeVerWindow(QtWidgets.QDialog):
@@ -80,8 +84,9 @@ class TrainingWindow(NeVerWindow):
         with open('never2/res/json/training.json') as json_file:
             # Init dict with default values
             self.train_params = json.loads(json_file.read())
-            # Update list values correctly
-            self.train_params = allow_list_in_dict(self.train_params)
+            # Update dict with types
+            self.train_params = u.allow_list_in_dict(self.train_params)
+            self.train_params = u.force_types(self.train_params)
 
         # Dataset
         dataset_layout = QHBoxLayout()
@@ -109,13 +114,15 @@ class TrainingWindow(NeVerWindow):
         # Widgets builder
         counter = 1
         for first_level in self.train_params.keys():
-            if type(self.train_params[first_level]) == dict:
+            subkey = next(iter(self.train_params[first_level]))
+            if type(self.train_params[first_level][subkey]) == dict:
                 self.widgets[first_level] = QComboBox()
                 for second_level in self.train_params[first_level].keys():
                     self.widgets[first_level].addItem(second_level)
                 self.widgets[first_level].setCurrentIndex(-1)
             else:
-                self.widgets[str(first_level)] = QLineEdit()
+                self.widgets[first_level] = QLineEdit()
+                self.widgets[first_level].setText(str(self.train_params[first_level]["value"]))
 
             params_layout.addWidget(QLabel(first_level), counter, 0)
             params_layout.addWidget(self.widgets[first_level], counter, 1)
@@ -146,6 +153,7 @@ class TrainingWindow(NeVerWindow):
         # Buttons
         btn_layout = QHBoxLayout()
         train_btn = QPushButton("Train network")
+        train_btn.clicked.connect(lambda: self.train_dataset(dt.TorchFMNIST("data/", True)))
         cancel_btn = QPushButton("Cancel")
         cancel_btn.clicked.connect(self.close)
         btn_layout.addWidget(train_btn)
@@ -154,13 +162,15 @@ class TrainingWindow(NeVerWindow):
 
         self.render_layout()
 
-    # def train_dataset(self, dataset: Dataset):
-    #     train = PytorchTraining(self.optimizer, self.details_layout.params["Optimizer:Adam"],
-    #                             self.scheduler, self.details_layout.params["Scheduler:ReduceLROnPlateau"],
-    #                             self.loss_function, self.details_layout.params["Loss Function:MSE Loss"],
-    #                             self.metrics, self.details_layout.params["Metrics:MSE Loss"],
-    #                             10, 30, 5, 5)
-    #     train.train(self.nn, dataset)
+    def train_dataset(self, dataset: dt.Dataset):
+        train = PytorchTraining(torch.optim.Adam, self.details_layout.gui_params["Optimizer:Adam"],
+                                torch.optim.lr_scheduler.ReduceLROnPlateau,
+                                self.details_layout.gui_params["Scheduler:ReduceLROnPlateau"],
+                                cross_entropy,
+                                self.details_layout.gui_params["Loss Function:Cross Entropy"],
+                                PytorchMetrics.inaccuracy, self.details_layout.gui_params["Metrics:Inaccuracy"],
+                                3, 0.2, 512, 64)
+        train.train(self.nn, dataset)
 
 
 class GUIParamLayout(QVBoxLayout):
@@ -177,7 +187,6 @@ class GUIParamLayout(QVBoxLayout):
     gui_params : dict
         Dictionary of second level training parameters.
         Structured as: {<training_par>: <gui_params>}
-        where <gui_params> = {<param>: <default_value>}.
     grid_dict : dict
         Dictionary of graphical pairs (QLabel, QWidget)
         for displaying and editing the training parameters.
@@ -258,16 +267,16 @@ class GUIParamLayout(QVBoxLayout):
 
         count = 1
         for k, v in self.gui_params[name].items():
-            if type(v) == list:
+            if v["type"] == "bool":
                 cb = QComboBox()
-                cb.addItems(v)
+                cb.addItems([str(v["value"]), str(not v["value"])])
                 self.grid_dict[k] = (QLabel(k), cb)
-                self.grid_dict[k][1].activated.connect(
-                    lambda: self.update_dict_value(name, k, self.grid_dict[k][1].currentText()))
+            elif "allowed" in v.keys():
+                cb = QComboBox()
+                cb.addItems(v["allowed"])
+                self.grid_dict[k] = (QLabel(k), cb)
             else:
-                self.grid_dict[k] = (QLabel(k), QLineEdit(str(v)))
-                self.grid_dict[k][1].textChanged.connect(
-                    lambda: self.update_dict_value(name, k, self.grid_dict[k][1].text()))
+                self.grid_dict[k] = (QLabel(k), QLineEdit(str(v["value"])))
 
             self.grid_layout.addWidget(self.grid_dict[k][0], count, 0)
             self.grid_layout.addWidget(self.grid_dict[k][1], count, 1)

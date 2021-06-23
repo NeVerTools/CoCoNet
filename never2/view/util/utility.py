@@ -132,6 +132,25 @@ def text_to_tensor_set(text: str) -> tuple:
     return tensors
 
 
+def force_types(dictionary: dict) -> dict:
+    for key in dictionary.keys():
+        element = dictionary[key]
+        if isinstance(element, dict):
+            if "type" in element.keys():
+                if element["type"] == "bool":
+                    dictionary[key]["value"] = element["value"] == "True"
+                elif element["type"] == "int":
+                    dictionary[key]["value"] = int(element["value"])
+                elif element["type"] == "float":
+                    dictionary[key]["value"] = float(element["value"])
+                elif element["type"] == "tuple":
+                    dictionary[key]["value"] = eval(element["value"])
+            else:
+                dictionary[key] = force_types(element)
+    print(dictionary)
+    return dictionary
+
+
 def allow_list_in_dict(dictionary: dict) -> dict:
     """
     This method translates string representations of lists
