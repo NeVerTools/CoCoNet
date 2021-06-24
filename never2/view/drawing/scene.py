@@ -254,7 +254,7 @@ class Canvas(QWidget):
                 for p in temp_list:
                     origin.variables.append(f"{v_name}{p}")
 
-                # TODO ADD PROPERTY TO PROJECT
+                self.project.properties[origin.block_id] = origin
                 return
 
             try:
@@ -644,6 +644,8 @@ class Canvas(QWidget):
             item = self.scene.delete_selected()
             if item is not None:
                 if type(item) == QGraphicsRectItem:
+                    if self.scene.blocks[item].block_id in self.project.properties.keys():
+                        self.project.properties.pop(self.scene.blocks[item].block_id)
                     if self.scene.blocks[item].block_id in self.renderer.NN.nodes.keys():
                         # Get the first node
                         first_node = self.renderer.NN.get_first_node()
