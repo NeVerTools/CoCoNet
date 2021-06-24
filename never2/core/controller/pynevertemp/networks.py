@@ -1,4 +1,5 @@
 import abc
+
 import never2.core.controller.pynevertemp.nodes as nodes
 
 
@@ -6,7 +7,7 @@ class NeuralNetwork(abc.ABC):
     """
     An abstract class used for our internal representation of a generic NeuralNetwork. It consists of a graph of LayerNodes
     and a list of AlternativeRepresentations. It should be noted that this data structure it is not a able
-    to compute the input-output relation defined by the network. The parameters of the computational graph are
+    to compute the input-output relation defined by the network. The properties of the computational graph are
     specialized in the concrete classes.
 
     Attributes
@@ -27,7 +28,6 @@ class NeuralNetwork(abc.ABC):
     """
 
     def __init__(self):
-
         self.nodes = {}
         self.edges = {}
         self.alt_rep_cache = []
@@ -45,6 +45,8 @@ class SequentialNetwork(NeuralNetwork):
     ----------
     identifier : str
         Identifier of the Sequential Neural Network.
+    input_id : str
+        Identifier for the input of the Sequential Neural Network.
 
     Methods
     -------
@@ -62,9 +64,10 @@ class SequentialNetwork(NeuralNetwork):
 
     """
 
-    def __init__(self, identifier: str):
+    def __init__(self, identifier: str, input_id: str):
 
         super().__init__()
+        self.input_id = input_id
         self.identifier = identifier
 
     def add_node(self, node: nodes.LayerNode):

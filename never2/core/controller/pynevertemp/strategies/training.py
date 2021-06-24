@@ -1,19 +1,18 @@
 import abc
-import never2.core.controller.pynevertemp.networks as networks
-import never2.core.controller.pynevertemp.datasets as datasets
-import never2.core.controller.pynevertemp.strategies.conversion as cv
+import logging
+import math
 import os
 import shutil
+from typing import Callable, Dict
+
+import numpy as np
 import torch
-import torch.optim as opt
 import torch.optim.lr_scheduler as schedulers
 import torch.utils.data as tdt
-import math
-import numpy as np
-import torch.nn as nn
-import torch.nn.functional as funct
-from typing import Callable, Dict, Union, Optional, Sequence, Collection
-import logging
+
+import never2.core.controller.pynevertemp.datasets as datasets
+import never2.core.controller.pynevertemp.networks as networks
+import never2.core.controller.pynevertemp.strategies.conversion as cv
 
 logger_name = "pynever.strategies.training"
 
@@ -305,7 +304,7 @@ class PytorchTraining(TrainingStrategy):
                 if batch_idx % self.verbose_rate == 0:
                     logger.info('Train Epoch: {} [{}/{} ({:.1f}%)]\tLoss: {:.6f}'.format(
                         epoch, batch_idx * len(data), len(training_set),
-                        100. * batch_idx / math.floor(len(training_set) / self.train_batch_size),
+                               100. * batch_idx / math.floor(len(training_set) / self.train_batch_size),
                         loss.data.item()))
 
             # avg_loss = avg_loss / float(math.floor(len(training_set) / self.train_batch_size))

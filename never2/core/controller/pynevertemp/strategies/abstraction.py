@@ -1,19 +1,19 @@
 import abc
-import never2.core.controller.pynevertemp.nodes as nodes
-import uuid
-import numpy as np
-import multiprocessing
 import itertools
-from typing import Set, List, Union
-import math
-import scipy.stats as sts
-import scipy.spatial.distance as dist
-import time
 import logging
+import math
+import multiprocessing
+import time
+import uuid
+from typing import Set, List, Union
 
-from never2.core.controller.pynevertemp.tensor import Tensor
+import numpy as np
+import scipy.spatial.distance as dist
+import scipy.stats as sts
 from ortools.linear_solver import pywraplp
 
+import never2.core.controller.pynevertemp.nodes as nodes
+from never2.core.controller.pynevertemp.tensor import Tensor
 
 logger_empty = logging.getLogger("pynever.strategies.abstraction.empty_times")
 logger_lp = logging.getLogger("pynever.strategies.abstraction.lp_times")
@@ -453,7 +453,6 @@ def intersect_with_halfspace(star: Star, coef_mat: Tensor, bias_mat: Tensor) -> 
 
 
 def __mixed_step_relu(abs_input: Set[Star], var_index: int, refinement_flag: bool) -> Set[Star]:
-
     abs_input = list(abs_input)
     abs_output = set()
 
@@ -706,8 +705,8 @@ def area_sig_triangle(lb: float, ub: float) -> float:
     return base * height / 2.0
 
 
-def __recursive_step_sigmoid(star: Star, var_index: int, approx_level: int, lb: float, ub: float, tolerance: float) -> Set[Star]:
-
+def __recursive_step_sigmoid(star: Star, var_index: int, approx_level: int, lb: float, ub: float, tolerance: float) -> \
+Set[Star]:
     assert approx_level >= 0
 
     if abs(ub - lb) < tolerance:
@@ -802,14 +801,15 @@ def __recursive_step_sigmoid(star: Star, var_index: int, approx_level: int, lb: 
                 best_boundary = boundary
 
         star_set = set()
-        star_set = star_set.union(__recursive_step_sigmoid(star, var_index, approx_level - 1, lb, best_boundary, tolerance))
-        star_set = star_set.union(__recursive_step_sigmoid(star, var_index, approx_level - 1, best_boundary, ub, tolerance))
+        star_set = star_set.union(
+            __recursive_step_sigmoid(star, var_index, approx_level - 1, lb, best_boundary, tolerance))
+        star_set = star_set.union(
+            __recursive_step_sigmoid(star, var_index, approx_level - 1, best_boundary, ub, tolerance))
 
         return star_set
 
 
 def __approx_step_sigmoid(abs_input: Set[Star], var_index: int, approx_level: int, tolerance: float) -> Set[Star]:
-
     abs_output = set()
     for star in abs_input:
 
@@ -992,7 +992,7 @@ class AbsReLUNode(AbsLayerNode):
 
     def __parallel_starset_forward(self, abs_input: StarSet) -> StarSet:
 
-        #with open(abstraction_logfile, "a") as f:
+        # with open(abstraction_logfile, "a") as f:
         #    f.write("Node: " + self.identifier + "\n")
 
         my_pool = multiprocessing.Pool(multiprocessing.cpu_count())
@@ -1004,7 +1004,6 @@ class AbsReLUNode(AbsLayerNode):
         abs_output = StarSet()
 
         for result in parallel_results:
-
             star_set = result
             abs_output.stars = abs_output.stars.union(star_set)
 
@@ -1017,7 +1016,6 @@ class AbsReLUNode(AbsLayerNode):
 
         abs_output = StarSet()
         for star in abs_input.stars:
-
             result = mixed_single_relu_forward(star, self.heuristic, self.params)
 
             abs_output.stars = abs_output.stars.union(result)
@@ -1160,7 +1158,7 @@ class AbsSigmoidNode(AbsLayerNode):
 
     def __starset_forward(self, abs_input: StarSet) -> StarSet:
 
-        #parallel = True
+        # parallel = True
         if parallel:
             abs_output = StarSet()
             my_pool = multiprocessing.Pool(1)

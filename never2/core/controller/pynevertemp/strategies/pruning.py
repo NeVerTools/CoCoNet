@@ -51,7 +51,7 @@ class WeightPruning(PruningStrategy):
     ----------
     sparsity_rate : float
         It determines the percentage of neurons which will be removed. It must be a Real number between 0 and 1.
-    training_strategy : AdamTraining
+    training_strategy : PytorchTraining
         The training strategy to use for pre-training and/or fine-tuning.
     pre_training : bool
         Flag to indicate if the network need to be pre-trained.
@@ -63,7 +63,7 @@ class WeightPruning(PruningStrategy):
 
     """
 
-    def __init__(self, sparsity_rate: float, training_strategy: training.AdamTraining = None,
+    def __init__(self, sparsity_rate: float, training_strategy: training.PytorchTraining = None,
                  pre_training: bool = False):
 
         self.sparsity_rate = sparsity_rate

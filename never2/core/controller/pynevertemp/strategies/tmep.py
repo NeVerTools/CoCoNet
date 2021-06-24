@@ -1,17 +1,15 @@
-import numpy as np
+import logging
+
+import torch
+import torch.nn.functional as funct
+import torch.optim as opt
+import torch.optim.lr_scheduler as schedulers
+import torchvision.transforms as transforms
 
 import never2.core.controller.pynevertemp.datasets as dt
-import torch.utils.data as torch_data
-import torchvision.transforms as transforms
 import never2.core.controller.pynevertemp.networks as networks
 import never2.core.controller.pynevertemp.nodes as nodes
 import never2.core.controller.pynevertemp.strategies.training as training
-import torch.optim as opt
-import torch.optim.lr_scheduler as schedulers
-import torch.nn as nn
-import torch.nn.functional as funct
-import torch
-import logging
 
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,)),
                                 transforms.Lambda(lambda x: torch.flatten(x))])
