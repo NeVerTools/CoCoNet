@@ -6,7 +6,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QStatusBar, QAction, QLabel, QGraphicsRectItem, QPushButton
 
 import never2.view.styles as style
-from never2.core.controller.project import Project
 from never2.view.drawing.element import GraphicLine, NodeBlock
 from never2.view.drawing.scene import DrawingMode, Canvas
 from never2.view.widget.dialog.dialogs import ConfirmDialog, MessageDialog, MessageType, HelpDialog
@@ -78,12 +77,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # Parameters toolbar
         self.parameters = ParamToolbar()
 
-        # Project in use
-        self.project = Project()
-        self.project.opened_net.connect(lambda: self.canvas.draw_network(self.project.network))
-
         # Drawing Canvas
-        self.canvas = Canvas(self.project.network, self.toolbar.blocks)
+        self.canvas = Canvas(self.toolbar.blocks)
 
         # Status bar
         self.status_bar = QStatusBar()
@@ -389,7 +384,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         self.clear()
-        self.project.file_name = ("", "")
+        self.canvas.project.file_name = ("", "")
         self.setWindowTitle(self.SYSNAME)
 
     def open(self):
@@ -416,13 +411,13 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.canvas.scene.selectionChanged.connect(lambda: self.update_status())
                     self.update_status()
                     # A file is opened
-                    self.project.open()
-                    self.setWindowTitle(self.SYSNAME + " - " + self.project.network.identifier)
+                    self.canvas.project.open()
+                    self.setWindowTitle(self.SYSNAME + " - " + self.canvas.project.network.identifier)
         else:
             # If the canvas was already empty, the opening function is directly
             # called
-            self.project.open()
-            self.setWindowTitle(self.SYSNAME + " - " + self.project.network.identifier)
+            self.canvas.project.open()
+            self.setWindowTitle(self.SYSNAME + " - " + self.canvas.project.network.identifier)
 
     def save(self, _as: bool = True):
         """
@@ -445,7 +440,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 for node in self.canvas.renderer.disconnected_network:
                     try:
                         self.canvas.renderer.add_node_to_nn(node)
-                        self.project.save(_as)
+                        self.canvas.project.save(_as)
                     except Exception as e:
                         error_dialog = MessageDialog(str(e), MessageType.ERROR)
                         error_dialog.exec()
@@ -466,12 +461,12 @@ class MainWindow(QtWidgets.QMainWindow):
             every_node_connected = True
             # every node has to be in the nodes dictionary
             for node in self.canvas.renderer.disconnected_network:
-                if node not in self.project.network.nodes:
+                if node not in self.canvas.project.network.nodes:
                     every_node_connected = False
                     break
 
             if every_node_connected:
-                self.project.save(_as)
+                self.canvas.project.save(_as)
             else:
                 # If there are disconnected nodes, a message is displayed to the
                 # user to choose if saving only the connected network
@@ -481,7 +476,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                                "Do you wish to continue?")
                 confirm_dialog.exec()
                 if confirm_dialog.confirm:
-                    self.project.save(_as)
+                    self.canvas.project.save(_as)
         else:
             # If the network is not sequential, it cannot be saved.
             not_sequential_dialog = MessageDialog("The network is not sequential and "

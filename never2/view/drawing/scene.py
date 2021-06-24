@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QGraphicsRectItem, QWidget, QGraphicsScene, QApplica
 
 import never2.view.styles as style
 from never2.core.controller.nodewrapper import NodeOps
+from never2.core.controller.project import Project
 from never2.core.controller.pynevertemp.networks import SequentialNetwork, NeuralNetwork
 from never2.core.controller.pynevertemp.tensor import Tensor
 from never2.core.model.network import NetworkNode, NetworkProperty
@@ -107,12 +108,16 @@ class Canvas(QWidget):
     # Max number of zoom allowed
     MAX_ZOOM = 100
 
-    def __init__(self, network: SequentialNetwork, blocks: dict):
+    def __init__(self, blocks: dict):
         super(Canvas, self).__init__()
         self.zooms = 0
         self.num_nodes = 0
         self.num_props = 0
-        self.renderer = SequentialNetworkRenderer(network, blocks)
+
+        self.project = Project()
+        self.project.opened_net.connect(lambda: self.draw_network(self.project.network))
+
+        self.renderer = SequentialNetworkRenderer(self.project.network, blocks)
 
         self.scene = NetworkScene(self)
         self.scene.selectionChanged.connect(lambda: self.update_scene())
