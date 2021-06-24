@@ -1,10 +1,10 @@
 import json
 
-import torch.optim
+import torch.nn.functional as fun
+import torch.optim as opt
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLayout, QLineEdit, QPushButton
-from torch.nn.functional import cross_entropy
 
 import never2.core.controller.pynevertemp.datasets as dt
 import never2.view.styles as style
@@ -153,6 +153,12 @@ class TrainingWindow(NeVerWindow):
             lambda: self.update_grid_view("Metrics:" + self.widgets["Metrics"].currentText()))
         self.widgets["Epochs"].textChanged.connect(
             lambda: self.update_dict_value("Epochs", "", self.widgets["Epochs"].text()))
+        self.widgets["Validation percentage"].textChanged.connect(
+            lambda: self.update_dict_value("Validation percentage", "", self.widgets["Validation percentage"].text()))
+        self.widgets["Training batch size"].textChanged.connect(
+            lambda: self.update_dict_value("Training batch size", "", self.widgets["Training batch size"].text()))
+        self.widgets["Validation batch size"].textChanged.connect(
+            lambda: self.update_dict_value("Validation batch size", "", self.widgets["Validation batch size"].text()))
 
         body_layout.addLayout(params_layout)
 
@@ -190,13 +196,12 @@ class TrainingWindow(NeVerWindow):
             self.dataset = dt.GenericFileDataset("data/", 0)
 
     def train_network(self):
-        train = PytorchTraining(torch.optim.Adam, self.gui_params["Optimizer:Adam"],
-                                torch.optim.lr_scheduler.ReduceLROnPlateau,
+        train = PytorchTraining(opt.Adam, self.gui_params["Optimizer:Adam"],
+                                fun.cross_entropy,
+                                3, 0.2, 512, 64,
+                                opt.lr_scheduler.ReduceLROnPlateau,
                                 self.gui_params["Scheduler:ReduceLROnPlateau"],
-                                cross_entropy,
-                                self.gui_params["Loss Function:Cross Entropy"],
-                                PytorchMetrics.inaccuracy, self.gui_params["Metrics:Inaccuracy"],
-                                3, 0.2, 512, 64)
+                                PytorchMetrics.inaccuracy)
         train.train(self.nn, self.dataset)
 
     def clear_grid(self) -> None:
@@ -248,24 +253,22 @@ class TrainingWindow(NeVerWindow):
         title = QLabel(name)
         title.setAlignment(Qt.AlignCenter)
         self.grid_layout.addWidget(title, 0, 0, 1, 2)
-        grid_dict = dict()
 
         count = 1
         for k, v in self.gui_params[name].items():
-            long_k = f"{name}:{k}"
             if v["type"] == "bool":
                 cb = QComboBox()
                 cb.addItems([str(v["value"]), str(not v["value"])])
-                grid_dict[long_k] = (QLabel(k), cb)
+                widget = (QLabel(k), cb)
             elif "allowed" in v.keys():
                 cb = QComboBox()
                 cb.addItems(v["allowed"])
-                grid_dict[long_k] = (QLabel(k), cb)
+                widget = (QLabel(k), cb)
             else:
-                grid_dict[long_k] = (QLabel(k), QLineEdit(str(v["value"])))
+                widget = (QLabel(k), QLineEdit(str(v["value"])))
 
-            self.grid_layout.addWidget(grid_dict[long_k][0], count, 0)
-            self.grid_layout.addWidget(grid_dict[long_k][1], count, 1)
+            self.grid_layout.addWidget(widget[0], count, 0)
+            self.grid_layout.addWidget(widget[1], count, 1)
             count += 1
 
     def update_dict_value(self, name: str, key: str, value: str) -> None:
@@ -305,6 +308,7 @@ class TrainingWindow(NeVerWindow):
         # Apply changes
         if ":" in name:
             first_level, second_level = name.split(":")
+            self.gui_params[name][key]["value"] = value
             self.train_params[first_level][second_level][key]["value"] = value
         else:
             self.train_params[name]["value"] = value
