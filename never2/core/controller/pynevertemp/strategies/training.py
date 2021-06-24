@@ -13,6 +13,9 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as funct
 from typing import Callable, Dict, Union, Optional, Sequence, Collection
+import logging
+
+logger_name = "pynever.strategies.training"
 
 
 class TrainingStrategy(abc.ABC):
@@ -95,28 +98,9 @@ class PytorchTraining(TrainingStrategy):
         Dictionary of the parameters to pass to the constructor of the optimizer excluding the first which is always
         assumed to be the parameters to optimize
 
-    scheduler_con : type
-        Reference to the class constructor for the Scheduler for the learning rate of choice for the training strategy
-
-    sch_params : Dict
-        Dictionary of the parameters to pass to the constructor of the scheduler excluding the first which is always
-        assumed to be the optimizer whose learning rate must be updated.
-
     loss_function : Callable
-        Loss function for the training strategy. We assume it to be a function taking as parameters two pytorch Tensor
-        corresponding to the output of the network and the target plus whatever other parameters passed in loss_param.
-
-    loss_params : Dict
-        Dictionary of the parameters to pass to the loss funtion other than the output of the network and the target.
-
-    precision_metric : Callable
-        Function for measuring the precision of the neural network. It is used to choose the best model and to control
-        the Plateau Scheduler and the early stopping. It is assumed that it produce a float value and such value
-        decrease for increasing correctness of the network (as the traditional loss value).
-
-    metric_params : Dict
-        Supplementary parameters for the metric other than the output and the target (which should always be the first
-        two parameters of the metric.
+        Loss function for the training strategy. We assume it to take as parameters two pytorch Tensor
+        corresponding to the output of the network and the target.
 
     n_epochs : int
         Number of epochs for the training procedure.
@@ -130,13 +114,26 @@ class PytorchTraining(TrainingStrategy):
     validation_batch_size : int
         Dimension for the validation batch size for the training procedure
 
+    scheduler_con : type, Optional
+        Reference to the class constructor for the Scheduler for the learning rate of choice for the training strategy
+        (default: None)
+
+    sch_params : Dict, Optional
+        Dictionary of the parameters to pass to the constructor of the scheduler excluding the first which is always
+        assumed to be the optimizer whose learning rate must be updated. (default: None)
+
+    precision_metric : Callable, Optional
+        Function for measuring the precision of the neural network. It is used to choose the best model and to control
+        the Plateau Scheduler and the early stopping. We assume it to take as parameters two pytorch Tensor
+        corresponding to the output of the network and the target.It should produce a float value and such value should
+        decrease for increasing correctness of the network (as the traditional loss value).
+        Optional supplementary parameters should be given as attributes of the object. (default: None)
+
     network_transform : Callable, Optional
         We provide the possibility to define a function which will be applied to the network after
         the computation of backward and before the optimizer step. In practice we use it for the manipulation
-        needed to the pruning oriented training. (default: None)
-
-    transform_params : Dict, Optional
-        The arguments of the network_transform other than the network itself
+        needed to the pruning oriented training. It should take a pytorch module (i.e., the neural network) as
+        input and optional supplementary parameters () should be given as attributes of the object. (default: None)
 
     cuda : bool, Optional
         Whether to use the cuda library for the procedure (default: False).
@@ -154,11 +151,11 @@ class PytorchTraining(TrainingStrategy):
 
     """
 
-    def __init__(self, optimizer_con: type, opt_params: Dict, scheduler_con: type, sch_params: Dict,
-                 loss_function: Callable, loss_params: Dict, precision_metric: Callable, metric_params: Dict,
-                 n_epochs: int, validation_percentage: float, train_batch_size: int, validation_batch_size: int,
-                 network_transform: Callable = None, transform_params: Dict = None, cuda: bool = False,
-                 train_patience: int = None, checkpoints_root: str = '', verbose_rate: int = 30):
+    def __init__(self, optimizer_con: type, opt_params: Dict, loss_function: Callable, n_epochs: int,
+                 validation_percentage: float, train_batch_size: int, validation_batch_size: int,
+                 scheduler_con: type = None, sch_params: Dict = None, precision_metric: Callable = None,
+                 network_transform: Callable = None, cuda: bool = False, train_patience: int = None,
+                 checkpoints_root: str = '', verbose_rate: int = 30):
 
         TrainingStrategy.__init__(self)
 
@@ -167,16 +164,16 @@ class PytorchTraining(TrainingStrategy):
         self.scheduler_con = scheduler_con
         self.sch_params = sch_params
         self.loss_function = loss_function
-        self.loss_params = loss_params
+
+        if precision_metric is None:
+            precision_metric = loss_function
         self.precision_metric = precision_metric
-        self.metric_params = metric_params
 
         self.n_epochs = n_epochs
         self.validation_percentage = validation_percentage
         self.train_batch_size = train_batch_size
         self.validation_batch_size = validation_batch_size
         self.network_transform = network_transform
-        self.transform_params = transform_params
         self.cuda = cuda
 
         if train_patience is None:
@@ -224,12 +221,18 @@ class PytorchTraining(TrainingStrategy):
         else:
             net.pytorch_network.cpu()
 
+        logger = logging.getLogger(logger_name)
+
         # We set all the values of the network to double.
         net.pytorch_network.double()
 
         # We build the optimizer and the scheduler
         optimizer = self.optimizer_con(net.pytorch_network.parameters(), **self.opt_params)
-        scheduler = self.scheduler_con(optimizer, **self.sch_params)
+
+        if self.scheduler_con is not None:
+            scheduler = self.scheduler_con(optimizer, **self.sch_params)
+        else:
+            scheduler = None
 
         # We split the dataset in training set and validation set.
         validation_len = int(dataset.__len__() * self.validation_percentage)
@@ -246,20 +249,20 @@ class PytorchTraining(TrainingStrategy):
 
         if os.path.isfile(checkpoints_path):
 
-            print(f"Loading Checkpoint: '{checkpoints_path}'")
+            logger.info(f"Loading Checkpoint: '{checkpoints_path}'")
             checkpoint = torch.load(checkpoints_path)
             start_epoch = checkpoint['epoch']
             net.pytorch_network.load_state_dict(checkpoint['network_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             best_loss_score = checkpoint['best_loss_score']
             epochs_without_decrease = checkpoint['epochs_without_decrease']
-            print(f"Loaded Checkpoint: '{checkpoints_path}'")
-            print(f"Epoch: {start_epoch}, Best Loss Score: {best_loss_score}")
+            logger.info(f"Loaded Checkpoint: '{checkpoints_path}'")
+            logger.info(f"Epoch: {start_epoch}, Best Loss Score: {best_loss_score}")
 
         else:
             # Otherwise we initialize the values of interest
-            print(f"No Checkpoint was found at '{checkpoints_path}'")
-            # TODO: add comment on numbers
+            logger.info(f"No Checkpoint was found at '{checkpoints_path}'")
+            # best_loss_score is set to a high number so that the first epoch will replace it
             best_loss_score = 999999
             epochs_without_decrease = 0
             start_epoch = 0
@@ -290,17 +293,17 @@ class PytorchTraining(TrainingStrategy):
                 data = data.double()
                 optimizer.zero_grad()
                 output = net.pytorch_network(data)
-                loss = self.loss_function(output, target, **self.loss_params)
+                loss = self.loss_function(output, target)
                 avg_loss += loss.data.item()
                 loss.backward()
 
                 if self.network_transform is not None:
-                    self.network_transform(net, self.transform_params)
+                    self.network_transform(net)
 
                 optimizer.step()
 
                 if batch_idx % self.verbose_rate == 0:
-                    print('Train Epoch: {} [{}/{} ({:.1f}%)]\tLoss: {:.6f}'.format(
+                    logger.info('Train Epoch: {} [{}/{} ({:.1f}%)]\tLoss: {:.6f}'.format(
                         epoch, batch_idx * len(data), len(training_set),
                         100. * batch_idx / math.floor(len(training_set) / self.train_batch_size),
                         loss.data.item()))
@@ -326,12 +329,12 @@ class PytorchTraining(TrainingStrategy):
                         target = target.double()
                     data = data.double()
                     output = net.pytorch_network(data)
-                    loss = self.precision_metric(output, target, **self.metric_params)
+                    loss = self.precision_metric(output, target)
                     validation_loss += loss.data.item()
 
             # validation_loss = validation_loss / float(math.floor(len(validation_set) / self.validation_batch_size))
             validation_loss = validation_loss / batch_idx
-            print('\nValidation Set Average loss: {:.4f}\n'.format(validation_loss))
+            logger.info('\nValidation Set Average loss: {:.4f}\n'.format(validation_loss))
 
             if validation_loss < best_loss_score:
                 epochs_without_decrease = 0
@@ -341,10 +344,11 @@ class PytorchTraining(TrainingStrategy):
 
             # We need to distinguish among different scheduler because not all the pytorch scheduler present the same
             # interface.
-            if isinstance(scheduler, schedulers.ReduceLROnPlateau):
-                scheduler.step(validation_loss)
-            elif scheduler is not None:
-                scheduler.step()
+            if scheduler is not None:
+                if isinstance(scheduler, schedulers.ReduceLROnPlateau):
+                    scheduler.step(validation_loss)
+                elif scheduler is not None:
+                    scheduler.step()
 
             # CHECKPOINT
 
@@ -367,7 +371,7 @@ class PytorchTraining(TrainingStrategy):
             best_checkpoint = torch.load(best_model_path)
             net.pytorch_network.load_state_dict(best_checkpoint['network_state_dict'])
 
-        print(f"Best Loss Score: {best_loss_score}")
+        logger.info(f"Best Loss Score: {best_loss_score}")
 
         return net
 

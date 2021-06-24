@@ -56,7 +56,7 @@ class Project(QObject):
         super(QObject, self).__init__()
         self.file_name = ("", "")
 
-        self.network = pynn.SequentialNetwork("", "")
+        self.network = pynn.SequentialNetwork("")
         self.properties = dict()
 
         self.input_handler = None

@@ -33,9 +33,13 @@ class TorchMNIST(Dataset, tv.datasets.MNIST):
     train : bool
         If True then the training set is loaded otherwise the test set is loaded.
     transform : Callable, Optional
-        Transformation to apply to the data.
+        Transformation to apply to the data. We assume this is an object like the transforms presented in torchvision.
+        The parameters of the callable (other than the object subject to the transformation) should be attributes of
+        the object.
     target_transform : Callable, Optional
-        Transformation to apply to the targets.
+        Transformation to apply to the targets. We assume this is an object like the transforms presented in
+        torchvision. The parameters of the callable (other than the object subject to the transformation) should be
+        attributes of the object.
     download : bool
         True if the dataset must be downloaded, False otherwise.
 
@@ -64,9 +68,13 @@ class TorchFMNIST(Dataset, tv.datasets.FashionMNIST):
     train : bool
         If True then the training set is loaded otherwise the test set is loaded.
     transform : Callable, Optional
-        Transformation to apply to the data.
+        Transformation to apply to the data. We assume this is an object like the transforms presented in torchvision.
+        The parameters of the callable (other than the object subject to the transformation) should be attributes of
+        the object.
     target_transform : Callable, Optional
-        Transformation to apply to the targets.
+        Transformation to apply to the targets. We assume this is an object like the transforms presented in
+        torchvision. The parameters of the callable (other than the object subject to the transformation) should be
+        attributes of the object.
     download : bool
         True if the dataset must be downloaded, False otherwise.
 
@@ -103,9 +111,13 @@ class GenericFileDataset(Dataset, tdata.Dataset):
     delimiter : str, Optional
         Delimiter between the different values of the datapoints. Refer to numpy.loadtxt for more details.
     transform : Callable, Optional
-        Transformation to apply to the data.
+        Transformation to apply to the data. We assume this is an object like the transforms presented in torchvision.
+        The parameters of the callable (other than the object subject to the transformation) should be attributes of
+        the object.
     target_transform : Callable, Optional
-        Transformation to apply to the targets.
+        Transformation to apply to the targets. We assume this is an object like the transforms presented in
+        torchvision. The parameters of the callable (other than the object subject to the transformation) should be
+        attributes of the object.
 
     """
 
@@ -151,9 +163,13 @@ class DynamicsJamesPos(GenericFileDataset, tdata.Dataset):
     train : bool
         If True then the training set is loaded otherwise the test set is loaded.
     transform : Callable, Optional
-        Transformation to apply to the data.
+        Transformation to apply to the data. We assume this is an object like the transforms presented in torchvision.
+        The parameters of the callable (other than the object subject to the transformation) should be attributes of
+        the object.
     target_transform : Callable, Optional
-        Transformation to apply to the targets.
+        Transformation to apply to the targets. We assume this is an object like the transforms presented in
+        torchvision. The parameters of the callable (other than the object subject to the transformation) should be
+        attributes of the object.
 
     """
 

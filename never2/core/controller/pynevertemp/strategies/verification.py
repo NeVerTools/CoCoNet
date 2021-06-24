@@ -1,4 +1,5 @@
 import abc
+import logging
 import time
 from typing import List, Optional
 
@@ -6,7 +7,10 @@ import never2.core.controller.pynevertemp.networks as networks
 import never2.core.controller.pynevertemp.nodes as nodes
 import never2.core.controller.pynevertemp.strategies.abstraction as abst
 import never2.core.controller.pynevertemp.utilities as util
-from pynever.tensor import Tensor
+from never2.core.controller.pynevertemp.tensor import Tensor
+
+
+logger_name = "pynever.strategies.verification"
 
 
 class Property(abc.ABC):
@@ -133,8 +137,6 @@ class NeverVerification(VerificationStrategy):
 
     Attributes
     ----------
-    log_filepath : str
-        Filepath for saving the log files of the verification procedure.
 
     refinement_heuristic : str
         Heuristic used to decide the refinement level of the ReLU abstraction.
@@ -157,17 +159,19 @@ class NeverVerification(VerificationStrategy):
         Verify that the neural network of interest satisfy the property given as argument.
     """
 
-    def __init__(self, log_filepath: str, heuristic: str = "best_n_neurons", params: List = [0],
+    def __init__(self, heuristic: str = "best_n_neurons", params: List = [0],
                  refinement_level: int = None):
 
-        self.log_filepath = log_filepath
         self.heuristic = heuristic
         self.params = params
         self.refinement_level = refinement_level
 
     def verify(self, network: networks.NeuralNetwork, prop: Property) -> (bool, Optional[Tensor]):
 
-        assert isinstance(network, networks.SequentialNetwork), "Only sequential networks are supported at present"
+        if not isinstance(network, networks.SequentialNetwork):
+            raise Exception("Only sequential networks are supported at present")
+
+        logger = logging.getLogger(logger_name)
         abst_networks = abst.AbsSeqNetwork("Abstract Network")
 
         current_node = network.get_first_node()
@@ -185,51 +189,47 @@ class NeverVerification(VerificationStrategy):
                                                            self.refinement_level))
 
             else:
-                raise NotImplementedError
+                raise Exception(f"Node type: {current_node.__class__} not supported")
 
             current_node = network.get_next_node(current_node)
 
-        with open(self.log_filepath, "w") as log_file:
-            areas_log = self.log_filepath.replace(".txt", "_areas.txt")
-            with open(areas_log, "w") as area_log_file:
+        ver_start_time = time.perf_counter()
+        if isinstance(prop, NeVerProperty):
 
-                if isinstance(prop, NeVerProperty):
+            input_star = abst.Star(prop.in_coef_mat, prop.in_bias_mat)
+            input_starset = abst.StarSet({input_star})
+            current_node = abst_networks.get_first_node()
+            output_starset = input_starset
+            while current_node is not None:
+                time_start = time.perf_counter()
+                output_starset = current_node.forward(output_starset)
+                time_end = time.perf_counter()
 
-                    input_star = abst.Star(prop.in_coef_mat, prop.in_bias_mat)
-                    input_starset = abst.StarSet({input_star})
-                    current_node = abst_networks.get_first_node()
-                    output_starset = input_starset
-                    while current_node is not None:
-                        time_start = time.perf_counter()
-                        output_starset = current_node.forward(output_starset)
-                        time_end = time.perf_counter()
+                logger.info(f"Computing starset for layer {current_node.identifier}. Current starset has dimension "
+                            f"{len(output_starset.stars)}. Time to compute: {time_end - time_start}s.")
 
-                        print(f"Computing starset for layer {current_node.identifier}. Current starset has dimension "
-                              f"{len(output_starset.stars)}. Time to compute: {time_end - time_start}s.")
-                        log_file.write(f"Computing starset for layer {current_node.identifier}. "
-                                       f"Current starset has dimension {len(output_starset.stars)}."
-                                       f"Time to compute: {time_end - time_start}s.\n")
+                current_node = abst_networks.get_next_node(current_node)
 
-                        current_node = abst_networks.get_next_node(current_node)
+            out_coef_mat = prop.out_coef_mat
+            out_bias_mat = prop.out_bias_mat
 
-                    out_coef_mat = prop.out_coef_mat
-                    out_bias_mat = prop.out_bias_mat
+        else:
+            raise NotImplementedError
 
-                else:
-                    raise NotImplementedError
+        verified = True
+        for i in range(len(out_coef_mat)):
 
-                verified = True
-                for i in range(len(out_coef_mat)):
+            for star in output_starset.stars:
+                out_coef = out_coef_mat[i]
+                out_bias = out_bias_mat[i]
+                temp_star = abst.intersect_with_halfspace(star, out_coef, out_bias)
+                if not temp_star.check_if_empty():
+                    verified = False
+                    # print(f"Star {k}: Unsafe")
 
-                    for star in output_starset.stars:
-                        out_coef = out_coef_mat[i]
-                        out_bias = out_bias_mat[i]
-                        temp_star = abst.intersect_with_halfspace(star, out_coef, out_bias)
-                        if not temp_star.check_if_empty():
-                            verified = False
-                            # print(f"Star {k}: Unsafe")
-
-                log_file.write(f"Verification Result: {verified}.\n")
+        ver_end_time = time.perf_counter()
+        logger.info(f"Verification Result: {verified}.")
+        logger.info(f"Verification Time: {ver_end_time - ver_start_time}\n")
 
         return verified
 

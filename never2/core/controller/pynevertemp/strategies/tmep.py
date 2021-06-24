@@ -11,6 +11,7 @@ import torch.optim.lr_scheduler as schedulers
 import torch.nn as nn
 import torch.nn.functional as funct
 import torch
+import logging
 
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,)),
                                 transforms.Lambda(lambda x: torch.flatten(x))])
@@ -29,7 +30,16 @@ network.add_node(rl4)
 fc5 = nodes.FullyConnectedNode("FC5", rl4.out_dim, 10)
 network.add_node(fc5)
 
-tr = training.PytorchTraining(opt.Adam, dict(), schedulers.ReduceLROnPlateau, dict(), funct.cross_entropy, dict(),
-                              training.PytorchMetrics.inaccuracy, dict(), 3, 0.2, 512, 64)
+logger = logging.getLogger("pynever")
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
+tr = training.PytorchTraining(opt.Adam, dict(), funct.cross_entropy, 3, 0.2, 512, 64,
+                              schedulers.ReduceLROnPlateau, dict(),
+                              training.PytorchMetrics.inaccuracy)
 
 tr.train(network, fmnist)

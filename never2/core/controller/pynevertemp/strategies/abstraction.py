@@ -9,17 +9,18 @@ import math
 import scipy.stats as sts
 import scipy.spatial.distance as dist
 import time
+import logging
 
-from pynever.tensor import Tensor
+from never2.core.controller.pynevertemp.tensor import Tensor
 from ortools.linear_solver import pywraplp
 
 
-# abstraction_logfile = "logs/ABSTRACTION_LOG.txt"
-lp_times_file = "logs/lp_times.txt"
-lb_times_file = "logs/lb_times.txt"
-ub_times_file = "logs/ub_times.txt"
-empty_times_file = "logs/empty_times.txt"
-save_times = False
+logger_empty = logging.getLogger("pynever.strategies.abstraction.empty_times")
+logger_lp = logging.getLogger("pynever.strategies.abstraction.lp_times")
+logger_lb = logging.getLogger("pynever.strategies.abstraction.lb_times")
+logger_ub = logging.getLogger("pynever.strategies.abstraction.ub_times")
+
+# save_times = False
 propagate_bounds = False
 parallel = True
 
@@ -145,9 +146,7 @@ class Star:
                 self.is_empty = False
 
         end_time = time.perf_counter()
-        if save_times:
-            with open(empty_times_file, "a") as f:
-                f.write(f"{end_time - start_time},")
+        logger_empty.debug(f"{end_time - start_time},")
 
         return self.is_empty
 
@@ -184,6 +183,8 @@ class Star:
                 self.is_empty = True
                 self.lbs[i] = None
                 self.ubs[i] = None
+                ub_end = 0
+                ub_start = 0
             else:
                 self.is_empty = False
 
@@ -198,15 +199,10 @@ class Star:
                 self.ubs[i] = ub
 
             end_time = time.perf_counter()
-            #print(f"TIME: {end_time - start_time}")
 
-            if save_times:
-                with open(lp_times_file, "a") as f:
-                    f.write(f"{end_time - start_time},")
-                with open(ub_times_file, "a") as f:
-                    f.write(f"{ub_end - ub_start},")
-                with open(lb_times_file, "a") as f:
-                    f.write(f"{lb_end - lb_start},")
+            logger_lp.debug(f"{end_time - start_time},")
+            logger_lb.debug(f"{ub_end - ub_start},")
+            logger_ub.debug(f"{lb_end - lb_start},")
 
         return self.lbs[i], self.ubs[i]
 
