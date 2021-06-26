@@ -631,6 +631,7 @@ class PropertyBlock(GraphicBlock):
     def __init__(self, block_id: str, property: NetworkProperty):
         super().__init__(block_id)
         self.property = property
+        self.condition_label = QLabel("POST")
         self.property_label = QLabel(property.property_string)
         self.variables = []
         self.init_layout()
@@ -646,7 +647,9 @@ class PropertyBlock(GraphicBlock):
         # Override title label
         self.title_label.setText(f"{self.property.type} property")
         self.title_label.setStyleSheet(style.PROPERTY_TITLE_STYLE)
+        self.condition_label.setStyleSheet(style.PROPERTY_CONDITION_STYLE)
         self.main_layout.addWidget(self.title_label)
+        self.main_layout.addWidget(self.condition_label)
 
         self.init_grid()
 

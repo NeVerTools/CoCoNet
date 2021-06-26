@@ -71,6 +71,17 @@ NODE_TITLE_STYLE = ("QLabel {"
                     "background-color: " + BLUE_1 + ";" +
                     "}")
 
+PROPERTY_CONDITION_STYLE = ("QLabel {"
+                            "color: white;"
+                            "background-color: " + RED_2 + ";" +
+                            "margin-bottom: -5px;"
+                            "padding-left: 7px;"
+                            "font-family: calibri;"
+                            "font-size: 12px;"
+                            "border-bottom-left-radius: 0px;"
+                            "border-bottom-right-radius: 0px;"
+                            "}")
+
 PROPERTY_TITLE_STYLE = ("QLabel {"
                         "color: white;"
                         "background-color: " + ORANGE_0 + ";" +
