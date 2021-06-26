@@ -670,7 +670,7 @@ class ONNXConverter(ConversionStrategy):
                     bias = parameters[node.input[2]]
                 in_features = weight.shape[1]
                 out_features = weight.shape[0]
-                network.add_node(nodes.FullyConnectedNode(node.output[0], in_dim, in_features,
+                network.add_node(nodes.FullyConnectedNode(node.output[0], in_dim,
                                                           out_features, weight, bias, has_bias))
             elif node.op_type == "BatchNormalization":
                 # We assume that the real input is always the first element of node.input, the weight tensor
@@ -1094,7 +1094,7 @@ class PyTorchConverter(ConversionStrategy):
                 if m.bias is not None:
                     bias = m.bias.detach().numpy()
                     has_bias = True
-                new_node = nodes.FullyConnectedNode(m.identifier, m.in_dim, in_features,
+                new_node = nodes.FullyConnectedNode(m.identifier, m.in_dim,
                                                     out_features, weight, bias, has_bias)
 
             elif isinstance(m, pyt_l.BatchNorm1d) or isinstance(m, pyt_l.BatchNorm2d) or \
