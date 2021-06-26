@@ -129,15 +129,23 @@ class TrainingWindow(NeVerWindow):
         # Widgets builder
         counter = 1
         for first_level in self.train_params.keys():
+            # def activation_combo(key: str):
+            #     return lambda: self.update_grid_view(f"{key}:{self.widgets[key].currentText()}")
+            #
+            # def activation_line(key: str):
+            #     return lambda: self.update_dict_value(key, "", self.widgets[key].text())
+
             subkey = next(iter(self.train_params[first_level]))
             if type(self.train_params[first_level][subkey]) == dict:
                 self.widgets[first_level] = QComboBox()
                 for second_level in self.train_params[first_level].keys():
                     self.widgets[first_level].addItem(second_level)
                 self.widgets[first_level].setCurrentIndex(-1)
+                # self.widgets[first_level].activated.connect(lambda: activation_combo(first_level))
             else:
                 self.widgets[first_level] = QLineEdit()
                 self.widgets[first_level].setText(str(self.train_params[first_level]["value"]))
+                # self.widgets[first_level].textChanged.connect(lambda: activation_line(first_level))
 
             params_layout.addWidget(QLabel(first_level), counter, 0)
             params_layout.addWidget(self.widgets[first_level], counter, 1)
@@ -183,26 +191,6 @@ class TrainingWindow(NeVerWindow):
         self.layout.addLayout(btn_layout)
 
         self.render_layout()
-
-    def load_dataset(self, name: str):
-        # TODO DISPLAY LOADING
-        if name == "MNIST":
-            self.dataset = dt.TorchMNIST("data/", True)
-        elif name == "Fashion MNIST":
-            self.dataset = dt.TorchFMNIST("data/", True)
-        elif name == "James":
-            self.dataset = dt.DynamicsJamesPos("data/", True)
-        else:
-            self.dataset = dt.GenericFileDataset("data/", 0)
-
-    def train_network(self):
-        train = PytorchTraining(opt.Adam, self.gui_params["Optimizer:Adam"],
-                                fun.cross_entropy,
-                                3, 0.2, 512, 64,
-                                opt.lr_scheduler.ReduceLROnPlateau,
-                                self.gui_params["Scheduler:ReduceLROnPlateau"],
-                                PytorchMetrics.inaccuracy)
-        train.train(self.nn, self.dataset)
 
     def clear_grid(self) -> None:
         """
@@ -308,7 +296,27 @@ class TrainingWindow(NeVerWindow):
         # Apply changes
         if ":" in name:
             first_level, second_level = name.split(":")
-            self.gui_params[name][key]["value"] = value
+            self.gui_params[name][key]["value"] = value  # Forse non necessario
             self.train_params[first_level][second_level][key]["value"] = value
         else:
             self.train_params[name]["value"] = value
+
+    def load_dataset(self, name: str):
+        # TODO DISPLAY LOADING
+        if name == "MNIST":
+            self.dataset = dt.TorchMNIST("data/", True)
+        elif name == "Fashion MNIST":
+            self.dataset = dt.TorchFMNIST("data/", True)
+        elif name == "James":
+            self.dataset = dt.DynamicsJamesPos("data/", True)
+        else:
+            self.dataset = dt.GenericFileDataset("data/", 0)
+
+    def train_network(self):
+        train = PytorchTraining(opt.Adam, self.gui_params["Optimizer:Adam"],
+                                fun.cross_entropy,
+                                3, 0.2, 512, 64,
+                                opt.lr_scheduler.ReduceLROnPlateau,
+                                self.gui_params["Scheduler:ReduceLROnPlateau"],
+                                PytorchMetrics.inaccuracy)
+        train.train(self.nn, self.dataset)
