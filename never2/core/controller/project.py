@@ -119,6 +119,7 @@ class Project(QObject):
             # A  "wait cursor" appears locking the interface
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.output_handler.save(self.network, self.file_name)
+            self.output_handler.save_properties(self.properties, self.file_name)
             QApplication.restoreOverrideCursor()
 
             # At the end of the loading, the main thread looks for eventual
@@ -352,6 +353,27 @@ class OutputHandler:
 
         except Exception as e:
             self.exception = e
+
+    def save_properties(self, properties: dict, filename: tuple):
+        # TODO
+        self.extension = "smt2"
+        variables_def = []
+        constraints = []
+
+        # Variables definition
+        for p in properties.values():
+            for v in p.variables:
+                variables_def.append("(declare-const " + v + " Real)")
+
+        # Constraints
+        for p in properties.values():
+            constraints.append(p.property.property_string)
+
+        # Stream
+        for v in variables_def:
+            print(v)
+        for c in constraints:
+            print(c)
 
     def convert_network(self, network: pynn.NeuralNetwork, filename: str) -> AlternativeRepresentation:
         """
