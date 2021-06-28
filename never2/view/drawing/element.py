@@ -12,7 +12,6 @@ from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsRectItem, QGraphicsTextI
 import never2.view.styles as style
 import never2.view.util.utility as u
 from never2.core.controller.pynevertemp.tensor import Tensor
-from never2.core.model.network import NetworkProperty
 
 MAX_FLOAT_LABEL_LENGTH = 5
 
@@ -618,21 +617,30 @@ class PropertyBlock(GraphicBlock):
 
     Attributes
     ----------
-    property : NetworkProperty
-        The property element for this block.
+    property_type : str
+        The property type (SMT, Polyhedral...).
+    smt_string : str
+        The SMT-LIB expression of the property.
     property_label : QLabel
         The visible label of the property.
+    condition_label : QLabel
+        The POST or PRE label of the property.
     variables : list
         The list of admissible variables
         for the property.
 
     """
 
-    def __init__(self, block_id: str, property: NetworkProperty):
+    def __init__(self, block_id: str, p_type: str):
         super().__init__(block_id)
-        self.property = property
+        self.property_type = p_type
+        if p_type == "SMT":
+            self.smt_string = "-"
+        elif p_type == "Polyhedral":
+            self.smt_string = "Ax - b <= 0"
+
         self.condition_label = QLabel("POST")
-        self.property_label = QLabel(property.property_string)
+        self.property_label = QLabel(self.smt_string)
         self.variables = []
         self.init_layout()
         self.init_context_menu()
@@ -645,7 +653,7 @@ class PropertyBlock(GraphicBlock):
         """
 
         # Override title label
-        self.title_label.setText(f"{self.property.type} property")
+        self.title_label.setText(f"{self.property_type} property")
         self.title_label.setStyleSheet(style.PROPERTY_TITLE_STYLE)
         self.condition_label.setStyleSheet(style.PROPERTY_CONDITION_STYLE)
         self.main_layout.addWidget(self.title_label)
@@ -671,4 +679,4 @@ class PropertyBlock(GraphicBlock):
         self.set_context_menu(block_actions)
 
     def update_label(self):
-        self.property_label.setText(self.property.property_string)
+        self.property_label.setText(self.smt_string)

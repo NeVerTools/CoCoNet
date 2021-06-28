@@ -13,7 +13,7 @@ from never2.core.controller.nodewrapper import NodeOps
 from never2.core.controller.project import Project
 from never2.core.controller.pynevertemp.networks import SequentialNetwork, NeuralNetwork
 from never2.core.controller.pynevertemp.tensor import Tensor
-from never2.core.model.network import NetworkNode, NetworkProperty
+from never2.core.model.network import NetworkNode
 from never2.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock, GraphicBlock
 from never2.view.drawing.renderer import SequentialNetworkRenderer
 from never2.view.widget.dialog.dialogs import EditNodeDialog, MessageDialog, MessageType, EditSmtPropertyDialog, \
@@ -472,7 +472,7 @@ class Canvas(QWidget):
 
         return block
 
-    def draw_property(self, property: NetworkProperty = None, copy: PropertyBlock = None,
+    def draw_property(self, property_type: str = "", copy: PropertyBlock = None,
                       pos: QPoint = None) -> PropertyBlock:
         """
         This method creates a graphic PropertyBlock for representing
@@ -481,7 +481,7 @@ class Canvas(QWidget):
 
         Parameters
         ----------
-        property : NetworkProperty, optional
+        property_type : str, optional
             The property to draw on the canvas.
         copy : PropertyBlock, optional
             The property to copy in the canvas.
@@ -495,14 +495,14 @@ class Canvas(QWidget):
 
         """
 
-        assert property is None or copy is None, \
+        assert property_type == "" or copy is None, \
             "Improper use of method, only a block must be specified."
 
         # Create a new block or copy the given one
         if copy is not None:
-            block = PropertyBlock("", copy.property)
+            block = PropertyBlock("", copy.property_type)
         else:
-            block = PropertyBlock("", property)
+            block = PropertyBlock("", property_type)
 
         # Create the identifier
         if copy is not None and \
@@ -526,21 +526,21 @@ class Canvas(QWidget):
 
     @staticmethod
     def define_property(item: PropertyBlock) -> None:
-        if item.property.type == "SMT":
+        if item.property_type == "SMT":
             dialog = EditSmtPropertyDialog(item)
             dialog.exec()
 
             if dialog.has_edits:
-                item.property.property_string = dialog.new_property
+                item.smt_string = dialog.new_property
                 item.update_label()
-        elif item.property.type == "Polyhedral":
+        elif item.property_type == "Polyhedral":
             dialog = EditPolyhedralPropertyDialog(item)
             dialog.exec()
 
             if dialog.has_edits:
-                item.property.property_string = ""
+                item.smt_string = ""
                 for p in dialog.property_list:
-                    item.property.property_string += p + "\n"
+                    item.smt_string += p + "\n"
                 item.update_label()
 
     def show_parameters(self, block: NodeBlock = None):
@@ -720,7 +720,7 @@ class Canvas(QWidget):
                 if isinstance(copied_item, NodeBlock):
                     self.draw_node(None, copied_item)
                 elif isinstance(copied_item, PropertyBlock):
-                    self.draw_property(None, copied_item)
+                    self.draw_property("", copied_item)
 
     def clear_scene(self):
         """

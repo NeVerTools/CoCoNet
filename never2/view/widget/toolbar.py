@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QDockWidget, QScrollArea, QSizePolicy, QWidget, QVBo
 from PyQt5.QtWidgets import QToolBar, QToolButton
 
 import never2.view.styles as style
-from never2.core.model.network import NetworkNode, NetworkProperty
+from never2.core.model.network import NetworkNode
 from never2.view.drawing.element import NodeBlock
 
 
@@ -314,15 +314,11 @@ class PropertyButton(QPushButton):
     ----------
     name : str
         The string appearing on the button.
-    property : NetworkProperty
-        The property that will be displayed if the user clicks on the
-        button.
 
     """
 
-    def __init__(self, name: str, property: NetworkProperty):
+    def __init__(self, name: str):
         self.name = name
-        self.property = property
         super(PropertyButton, self).__init__(name)
 
 
@@ -443,8 +439,7 @@ class BlocksToolbar(QToolBar):
         props = ("SMT", "Polyhedral")
 
         for k in props:
-            self.properties[k] = NetworkProperty(k)
-            button = PropertyButton(k, self.properties[k])
+            button = PropertyButton(k)
             button.setToolTip(k)
             button.setStyleSheet(style.BUTTON_STYLE)
             self.p_buttons[k] = button
