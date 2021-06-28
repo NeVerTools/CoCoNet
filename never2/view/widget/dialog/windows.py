@@ -4,9 +4,9 @@ import torch.nn.functional as fun
 import torch.optim as opt
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLayout, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLayout, QLineEdit, QPushButton, \
+    QFileDialog
 
-import never2.core.controller.pynevertemp.datasets as dt
 import never2.view.styles as style
 import never2.view.util.utility as u
 from never2.core.controller.pynevertemp.networks import NeuralNetwork
@@ -92,7 +92,7 @@ class TrainingWindow(NeVerWindow):
 
         # Training elements
         self.nn = nn
-        self.dataset = None
+        self.dataset_path = ""
         self.train_params = dict()
         with open('never2/res/json/training.json') as json_file:
             # Init dict with default values
@@ -104,7 +104,7 @@ class TrainingWindow(NeVerWindow):
         # Dataset
         dataset_layout = QHBoxLayout()
         dataset_picker = QComboBox()
-        dataset_picker.addItems(["MNIST", "Fashion MNIST", "James", "..."])
+        dataset_picker.addItems(["MNIST", "Fashion MNIST", "..."])
         dataset_picker.setCurrentIndex(-1)
         dataset_picker.activated.connect(lambda: self.load_dataset(dataset_picker.currentText()))
         dataset_layout.addWidget(QLabel("Dataset"))
@@ -129,11 +129,12 @@ class TrainingWindow(NeVerWindow):
         # Widgets builder
         counter = 1
         for first_level in self.train_params.keys():
-            # def activation_combo(key: str):
-            #     return lambda: self.update_grid_view(f"{key}:{self.widgets[key].currentText()}")
-            #
-            # def activation_line(key: str):
-            #     return lambda: self.update_dict_value(key, "", self.widgets[key].text())
+            # Activation functions for dynamic widgets
+            def activation_combo(key: str):
+                return lambda: self.update_grid_view(f"{key}:{self.widgets[key].currentText()}")
+
+            def activation_line(key: str):
+                return lambda: self.update_dict_value(key, "", self.widgets[key].text())
 
             subkey = next(iter(self.train_params[first_level]))
             if type(self.train_params[first_level][subkey]) == dict:
@@ -141,35 +142,17 @@ class TrainingWindow(NeVerWindow):
                 for second_level in self.train_params[first_level].keys():
                     self.widgets[first_level].addItem(second_level)
                 self.widgets[first_level].setCurrentIndex(-1)
-                # self.widgets[first_level].activated.connect(lambda: activation_combo(first_level))
+                self.widgets[first_level].activated.connect(activation_combo(first_level))
             else:
                 self.widgets[first_level] = QLineEdit()
                 self.widgets[first_level].setText(str(self.train_params[first_level]["value"]))
-                # self.widgets[first_level].textChanged.connect(lambda: activation_line(first_level))
+                self.widgets[first_level].textChanged.connect(activation_line(first_level))
 
             params_layout.addWidget(QLabel(first_level), counter, 0)
             params_layout.addWidget(self.widgets[first_level], counter, 1)
             counter += 1
 
-        self.widgets["Optimizer"].activated.connect(
-            lambda: self.update_grid_view("Optimizer:" + self.widgets["Optimizer"].currentText()))
-        self.widgets["Scheduler"].activated.connect(
-            lambda: self.update_grid_view("Scheduler:" + self.widgets["Scheduler"].currentText()))
-        self.widgets["Loss Function"].activated.connect(
-            lambda: self.update_grid_view("Loss Function:" + self.widgets["Loss Function"].currentText()))
-        self.widgets["Metrics"].activated.connect(
-            lambda: self.update_grid_view("Metrics:" + self.widgets["Metrics"].currentText()))
-        self.widgets["Epochs"].textChanged.connect(
-            lambda: self.update_dict_value("Epochs", "", self.widgets["Epochs"].text()))
-        self.widgets["Validation percentage"].textChanged.connect(
-            lambda: self.update_dict_value("Validation percentage", "", self.widgets["Validation percentage"].text()))
-        self.widgets["Training batch size"].textChanged.connect(
-            lambda: self.update_dict_value("Training batch size", "", self.widgets["Training batch size"].text()))
-        self.widgets["Validation batch size"].textChanged.connect(
-            lambda: self.update_dict_value("Validation batch size", "", self.widgets["Validation batch size"].text()))
-
         body_layout.addLayout(params_layout)
-
         body_layout.addLayout(self.grid_layout)
         self.grid_layout.setAlignment(Qt.AlignTop)
         self.layout.addLayout(body_layout)
@@ -241,22 +224,37 @@ class TrainingWindow(NeVerWindow):
         title = QLabel(name)
         title.setAlignment(Qt.AlignCenter)
         self.grid_layout.addWidget(title, 0, 0, 1, 2)
+        widgets_2level = dict()
 
         count = 1
         for k, v in self.gui_params[name].items():
+            # Activation functions for dynamic widgets
+            def activation_combo(superkey: str, key: str):
+                return lambda: self.update_dict_value(name,
+                                                      key,
+                                                      widgets_2level[f"{superkey}-{key}"][1].currentText())
+
+            def activation_line(superkey: str, key: str):
+                return lambda: self.update_dict_value(name,
+                                                      key,
+                                                      widgets_2level[f"{superkey}-{key}"][1].text())
+
             if v["type"] == "bool":
                 cb = QComboBox()
                 cb.addItems([str(v["value"]), str(not v["value"])])
-                widget = (QLabel(k), cb)
+                widgets_2level[f"{name}:{k}"] = (QLabel(k), cb)
+                widgets_2level[f"{name}:{k}"][1].activated.connect(activation_combo(name, k))
             elif "allowed" in v.keys():
                 cb = QComboBox()
                 cb.addItems(v["allowed"])
-                widget = (QLabel(k), cb)
+                widgets_2level[f"{name}:{k}"] = (QLabel(k), cb)
+                widgets_2level[f"{name}:{k}"][1].activated.connect(activation_combo(name, k))
             else:
-                widget = (QLabel(k), QLineEdit(str(v["value"])))
+                widgets_2level[f"{name}:{k}"] = (QLabel(k), QLineEdit(str(v["value"])))
+                widgets_2level[f"{name}:{k}"][1].textChanged.connect(activation_line(name, k))
 
-            self.grid_layout.addWidget(widget[0], count, 0)
-            self.grid_layout.addWidget(widget[1], count, 1)
+            self.grid_layout.addWidget(widgets_2level[f"{name}:{k}"][0], count, 0)
+            self.grid_layout.addWidget(widgets_2level[f"{name}:{k}"][1], count, 1)
             count += 1
 
     def update_dict_value(self, name: str, key: str, value: str) -> None:
@@ -296,21 +294,18 @@ class TrainingWindow(NeVerWindow):
         # Apply changes
         if ":" in name:
             first_level, second_level = name.split(":")
-            self.gui_params[name][key]["value"] = value  # Forse non necessario
             self.train_params[first_level][second_level][key]["value"] = value
         else:
             self.train_params[name]["value"] = value
 
     def load_dataset(self, name: str):
-        # TODO DISPLAY LOADING
         if name == "MNIST":
-            self.dataset = dt.TorchMNIST("data/", True)
+            self.dataset_path = "data/MNIST/"
         elif name == "Fashion MNIST":
-            self.dataset = dt.TorchFMNIST("data/", True)
-        elif name == "James":
-            self.dataset = dt.DynamicsJamesPos("data/", True)
+            self.dataset_path = "data/fMNIST/"
         else:
-            self.dataset = dt.GenericFileDataset("data/", 0)
+            datapath = QFileDialog.getOpenFileName(None, "Select data source...", "")
+            self.dataset_path = datapath[0]
 
     def train_network(self):
         train = PytorchTraining(opt.Adam, self.gui_params["Optimizer:Adam"],
@@ -319,4 +314,3 @@ class TrainingWindow(NeVerWindow):
                                 opt.lr_scheduler.ReduceLROnPlateau,
                                 self.gui_params["Scheduler:ReduceLROnPlateau"],
                                 PytorchMetrics.inaccuracy)
-        train.train(self.nn, self.dataset)
