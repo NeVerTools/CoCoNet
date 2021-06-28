@@ -367,13 +367,19 @@ class OutputHandler:
 
         # Constraints
         for p in properties.values():
-            constraints.append(p.property.property_string)
+            constraints.append(p.smt_string)
+
+        smt_stream = ""
 
         # Stream
         for v in variables_def:
-            print(v)
+            smt_stream += v + "\n"
+        smt_stream += "\n"
         for c in constraints:
-            print(c)
+            smt_stream += c
+            smt_stream += "\n"
+
+        print(smt_stream)
 
     def convert_network(self, network: pynn.NeuralNetwork, filename: str) -> AlternativeRepresentation:
         """
