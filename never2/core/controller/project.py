@@ -329,7 +329,7 @@ class OutputHandler:
         self.exception = None
         self.strategy = None
 
-    def save(self, network: pynn.NeuralNetwork, filename: tuple):
+    def save(self, network: pynn.NeuralNetwork, filename: tuple) -> None:
         """
         This method converts the current network and saves it in the chosen
         format.
@@ -343,7 +343,6 @@ class OutputHandler:
             self.alt_repr = self.convert_network(network, filename[0])
 
             # Saving the network on file depending on the format
-            # TODO check save
             if isinstance(self.alt_repr, ONNXNetwork):
                 onnx.save(self.alt_repr.onnx_network.onnx_network, filename[0])
             elif isinstance(self.alt_repr, PyTorchNetwork):
@@ -354,32 +353,37 @@ class OutputHandler:
         except Exception as e:
             self.exception = e
 
-    def save_properties(self, properties: dict, filename: tuple):
-        # TODO
+    def save_properties(self, properties: dict, filename: tuple) -> None:
+        """
+        This method saves the properties in the network as a SMT-LIB
+        file. The file shares the same name as the network file, with
+        the changed extension.
+
+        Parameters
+        ----------
+        properties : dict
+            The dictionary of defined properties.
+        filename : tuple
+            The tuple containing the file name and the extension.
+
+        """
+
+        path = filename[0].replace("." + self.extension, ".smt2")
+
+        # Update extension
         self.extension = "smt2"
-        variables_def = []
-        constraints = []
 
-        # Variables definition
-        for p in properties.values():
-            for v in p.variables:
-                variables_def.append("(declare-const " + v + " Real)")
+        # Create and write file
+        with open(path, "w") as f:
+            # Variables
+            for p in properties.values():
+                for v in p.variables:
+                    f.write("(declare-const " + v + " Real)\n")
+            f.write("\n")
 
-        # Constraints
-        for p in properties.values():
-            constraints.append(p.smt_string)
-
-        smt_stream = ""
-
-        # Stream
-        for v in variables_def:
-            smt_stream += v + "\n"
-        smt_stream += "\n"
-        for c in constraints:
-            smt_stream += c
-            smt_stream += "\n"
-
-        print(smt_stream)
+            # Constraints
+            for p in properties.values():
+                f.write(p.smt_string + "\n")
 
     def convert_network(self, network: pynn.NeuralNetwork, filename: str) -> AlternativeRepresentation:
         """
