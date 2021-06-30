@@ -150,22 +150,18 @@
   },
   "Epochs": {
     "name": "n_epochs",
-    "type": "int",
-    "value": "3"
+    "type": "int"
   },
   "Validation percentage": {
     "name": "validation_percentage",
-    "type": "float",
-    "value": "0.2"
+    "type": "float"
   },
   "Training batch size": {
     "name": "train_batch_size",
-    "type": "int",
-    "value": "512"
+    "type": "int"
   },
   "Validation batch size": {
     "name": "validation_batch_size",
-    "type": "int",
-    "value": "64"
+    "type": "int"
   }
 }

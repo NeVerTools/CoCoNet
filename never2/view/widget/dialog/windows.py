@@ -106,7 +106,7 @@ class TrainingWindow(NeVerWindow):
         dataset_picker = QComboBox()
         dataset_picker.addItems(["MNIST", "Fashion MNIST", "..."])
         dataset_picker.setCurrentIndex(-1)
-        dataset_picker.activated.connect(lambda: self.load_dataset(dataset_picker.currentText()))
+        dataset_picker.activated.connect(lambda: self.setup_dataset(dataset_picker.currentText()))
         dataset_layout.addWidget(QLabel("Dataset"))
         dataset_layout.addWidget(dataset_picker)
         self.layout.addLayout(dataset_layout)
@@ -136,8 +136,8 @@ class TrainingWindow(NeVerWindow):
             def activation_line(key: str):
                 return lambda: self.update_dict_value(key, "", self.widgets[key].text())
 
-            subkey = next(iter(self.train_params[first_level]))
-            if type(self.train_params[first_level][subkey]) == dict:
+            sub_key = next(iter(self.train_params[first_level]))
+            if type(self.train_params[first_level][sub_key]) == dict:
                 self.widgets[first_level] = QComboBox()
                 for second_level in self.train_params[first_level].keys():
                     self.widgets[first_level].addItem(second_level)
@@ -145,7 +145,8 @@ class TrainingWindow(NeVerWindow):
                 self.widgets[first_level].activated.connect(activation_combo(first_level))
             else:
                 self.widgets[first_level] = QLineEdit()
-                self.widgets[first_level].setText(str(self.train_params[first_level]["value"]))
+                if "value" in self.train_params[first_level].keys():
+                    self.widgets[first_level].setText(str(self.train_params[first_level]["value"]))
                 self.widgets[first_level].textChanged.connect(activation_line(first_level))
 
             params_layout.addWidget(QLabel(first_level), counter, 0)
@@ -298,7 +299,7 @@ class TrainingWindow(NeVerWindow):
         else:
             self.train_params[name]["value"] = value
 
-    def load_dataset(self, name: str):
+    def setup_dataset(self, name: str):
         if name == "MNIST":
             self.dataset_path = "data/MNIST/"
         elif name == "Fashion MNIST":

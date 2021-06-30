@@ -151,7 +151,7 @@ def force_types(dictionary: dict) -> dict:
     for key in dictionary.keys():
         element = dictionary[key]
         if isinstance(element, dict):
-            if "type" in element.keys():
+            if "value" in element.keys():  # value => type
                 if element["type"] == "bool":
                     dictionary[key]["value"] = element["value"] == "True"
                 elif element["type"] == "int":
