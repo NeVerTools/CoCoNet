@@ -103,12 +103,12 @@ class TrainingWindow(NeVerWindow):
 
         # Dataset
         dataset_layout = QHBoxLayout()
-        dataset_picker = QComboBox()
-        dataset_picker.addItems(["MNIST", "Fashion MNIST", "..."])
-        dataset_picker.setCurrentIndex(-1)
-        dataset_picker.activated.connect(lambda: self.setup_dataset(dataset_picker.currentText()))
+        self.widgets["dataset"] = QComboBox()
+        self.widgets["dataset"].addItems(["MNIST", "Fashion MNIST", "Custom data source..."])
+        self.widgets["dataset"].setCurrentIndex(-1)
+        self.widgets["dataset"].activated.connect(lambda: self.setup_dataset(self.widgets["dataset"].currentText()))
         dataset_layout.addWidget(QLabel("Dataset"))
-        dataset_layout.addWidget(dataset_picker)
+        dataset_layout.addWidget(self.widgets["dataset"])
         self.layout.addLayout(dataset_layout)
 
         # Separator

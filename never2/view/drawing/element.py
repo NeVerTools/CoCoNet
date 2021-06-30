@@ -653,7 +653,7 @@ class PropertyBlock(GraphicBlock):
         """
 
         # Override title label
-        self.title_label.setText(f"{self.property_type} property")
+        self.title_label.setText(self.property_type)
         self.title_label.setStyleSheet(style.PROPERTY_TITLE_STYLE)
         self.condition_label.setStyleSheet(style.PROPERTY_CONDITION_STYLE)
         self.main_layout.addWidget(self.title_label)

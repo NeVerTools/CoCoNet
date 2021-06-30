@@ -435,8 +435,7 @@ class BlocksToolbar(QToolBar):
             self.b_buttons[k] = button
 
     def __init_properties(self):
-        # TODO UPDATE WITH JSON
-        props = ("SMT", "Polyhedral")
+        props = ("Generic SMT", "Polyhedral")
 
         for k in props:
             button = PropertyButton(k)
