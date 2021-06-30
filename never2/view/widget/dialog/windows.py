@@ -145,11 +145,12 @@ class TrainingWindow(NeVerWindow):
                 self.widgets[first_level].activated.connect(activation_combo(first_level))
             else:
                 self.widgets[first_level] = QLineEdit()
-                if "value" in self.train_params[first_level].keys():
-                    self.widgets[first_level].setText(str(self.train_params[first_level]["value"]))
+                self.widgets[first_level].setText(str(self.train_params[first_level].get("value", "")))
                 self.widgets[first_level].textChanged.connect(activation_line(first_level))
 
-            params_layout.addWidget(QLabel(first_level), counter, 0)
+            w_label = QLabel(first_level)
+            w_label.setToolTip(self.train_params[first_level].get("description"))
+            params_layout.addWidget(w_label, counter, 0)
             params_layout.addWidget(self.widgets[first_level], counter, 1)
             counter += 1
 
@@ -240,18 +241,20 @@ class TrainingWindow(NeVerWindow):
                                                       key,
                                                       widgets_2level[f"{superkey}-{key}"][1].text())
 
+            w_label = QLabel(k)
+            w_label.setToolTip(v.get("description"))
             if v["type"] == "bool":
                 cb = QComboBox()
                 cb.addItems([str(v["value"]), str(not v["value"])])
-                widgets_2level[f"{name}:{k}"] = (QLabel(k), cb)
+                widgets_2level[f"{name}:{k}"] = (w_label, cb)
                 widgets_2level[f"{name}:{k}"][1].activated.connect(activation_combo(name, k))
             elif "allowed" in v.keys():
                 cb = QComboBox()
                 cb.addItems(v["allowed"])
-                widgets_2level[f"{name}:{k}"] = (QLabel(k), cb)
+                widgets_2level[f"{name}:{k}"] = (w_label, cb)
                 widgets_2level[f"{name}:{k}"][1].activated.connect(activation_combo(name, k))
             else:
-                widgets_2level[f"{name}:{k}"] = (QLabel(k), QLineEdit(str(v["value"])))
+                widgets_2level[f"{name}:{k}"] = (w_label, QLineEdit(str(v["value"])))
                 widgets_2level[f"{name}:{k}"][1].textChanged.connect(activation_line(name, k))
 
             self.grid_layout.addWidget(widgets_2level[f"{name}:{k}"][0], count, 0)
