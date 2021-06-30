@@ -11,6 +11,7 @@ import never2.view.styles as style
 import never2.view.util.utility as u
 from never2.core.controller.pynevertemp.networks import NeuralNetwork
 from never2.core.controller.pynevertemp.strategies.training import PytorchTraining, PytorchMetrics
+from never2.view.widget.dialog.dialogs import MessageDialog, MessageType
 
 
 class NeVerWindow(QtWidgets.QDialog):
@@ -312,6 +313,29 @@ class TrainingWindow(NeVerWindow):
             self.dataset_path = datapath[0]
 
     def train_network(self):
+        err_dialog = None
+        if self.dataset_path == "":
+            err_dialog = MessageDialog("No dataset selected.", MessageType.ERROR)
+        elif self.widgets["Optimizer"].currentIndex() == -1:
+            err_dialog = MessageDialog("No optimizer selected.", MessageType.ERROR)
+        elif self.widgets["Scheduler"].currentIndex() == -1:
+            err_dialog = MessageDialog("No scheduler selected.", MessageType.ERROR)
+        elif self.widgets["Loss Function"].currentIndex() == -1:
+            err_dialog = MessageDialog("No loss function selected.", MessageType.ERROR)
+        elif self.widgets["Metrics"].currentIndex() == -1:
+            err_dialog = MessageDialog("No metrics selected.", MessageType.ERROR)
+        elif "value" not in self.train_params["Epochs"].keys():
+            err_dialog = MessageDialog("No epochs selected.", MessageType.ERROR)
+        elif "value" not in self.train_params["Validation percentage"].keys():
+            err_dialog = MessageDialog("No validation percentage selected.", MessageType.ERROR)
+        elif "value" not in self.train_params["Training batch size"].keys():
+            err_dialog = MessageDialog("No training batch size selected.", MessageType.ERROR)
+        elif "value" not in self.train_params["Validation batch size"].keys():
+            err_dialog = MessageDialog("No validation batch size selected.", MessageType.ERROR)
+        if err_dialog is not None:
+            err_dialog.show()
+            return
+
         train = PytorchTraining(opt.Adam, self.gui_params["Optimizer:Adam"],
                                 fun.cross_entropy,
                                 3, 0.2, 512, 64,
