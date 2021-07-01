@@ -235,7 +235,7 @@ class Canvas(QWidget):
                 return
 
             if isinstance(origin, PropertyBlock) and isinstance(destination, NodeBlock):
-                v_name = destination.block_id + "_Y_"
+                v_name = destination.block_id + "_"
                 temp_list = []
                 ped_list = []
 
@@ -254,7 +254,8 @@ class Canvas(QWidget):
                 for p in temp_list:
                     origin.variables.append(f"{v_name}{p}")
 
-                self.project.properties[origin.block_id] = origin
+                # Properties dict is {node_id: property}
+                self.project.properties[destination.block_id] = origin
                 return
 
             try:

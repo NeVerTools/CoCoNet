@@ -634,7 +634,7 @@ class PropertyBlock(GraphicBlock):
     def __init__(self, block_id: str, p_type: str):
         super().__init__(block_id)
         self.property_type = p_type
-        if p_type == "SMT":
+        if p_type == "Generic SMT":
             self.smt_string = "-"
         elif p_type == "Polyhedral":
             self.smt_string = "Ax - b <= 0"

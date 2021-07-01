@@ -1,0 +1,80 @@
+{
+  "Navigation": {
+    "File": {
+      "New...": {
+        "Shortcut": "Ctrl+N"
+      },
+      "Open": {
+        "Network...": {
+          "Shortcut": "Ctrl+O"
+        },
+        "Properties...": {
+          "Shortcut": "Ctrl+Shift+O"
+        }
+      },
+      "Save": {
+        "Shortcut": "Ctrl+S"
+      },
+      "Save as...": {
+        "Shortcut": "Ctrl+Shift+S"
+      }
+    },
+    "Edit": {
+      "Draw connection": {
+        "Shortcut": "Ctrl+D"
+      },
+      "Edit node": {
+        "Shortcut": "Ctrl+E"
+      },
+      "Copy element": {
+        "Shortcut": "Ctrl+C"
+      },
+      "Paste element": {
+        "Shortcut": "Ctrl+V"
+      },
+      "Cut element": {
+        "Shortcut": "Ctrl+X"
+      },
+      "Delete element": {
+        "Shortcut": "DEL"
+      },
+      "Clear canvas": {
+        "Shortcut": "Ctrl+Shift+C"
+      }
+    },
+    "View": {
+      "Zoom in": {
+        "Shortcut": "Ctrl+"
+      },
+      "Zoom out": {
+        "Shortcut": "Ctrl-"
+      },
+      "Dimensions": {
+      },
+      "Tools": {
+      },
+      "Blocks": {
+      },
+      "Properties": {
+      },
+      "Parameters": {
+        "Shortcut": "Ctrl+P"
+      }
+    },
+    "Learning": {
+      "Train...": {
+      },
+      "Prune...": {
+      }
+    },
+    "Verification": {
+      "Verify...": {
+      },
+      "Repair...": {
+      }
+    },
+    "Help": {
+      "Shortcut": "Ctrl+H"
+    }
+  }
+}

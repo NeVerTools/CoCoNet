@@ -226,6 +226,11 @@ class MainWindow(QtWidgets.QMainWindow):
         repair_action = QAction("Repair...", self)
         repair_action.triggered.connect(lambda: self.temp_window())
 
+        # TODO REMOVE
+        test_action = QAction("TEST", self)
+        test_action.triggered.connect(lambda: self.canvas.project.open_property())
+        menu_file.addAction(test_action)
+
         # Build File menu
         menu_file.addAction(new_action)
         menu_file.addAction(open_action)
