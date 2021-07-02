@@ -116,6 +116,7 @@ class Canvas(QWidget):
 
         self.project = Project()
         self.project.opened_net.connect(lambda: self.draw_network(self.project.network))
+        self.project.opened_property.connect(lambda: self.draw_properties())
 
         self.renderer = SequentialNetworkRenderer(self.project.network, blocks)
 
@@ -311,6 +312,9 @@ class Canvas(QWidget):
                 destination_item = rect
 
             if origin_item is not None and destination_item is not None:
+                if "Pr" in origin_id:
+                    self.scene.auto_add_line(origin_item, destination_item)
+                    return
                 try:
                     # Update the node input
                     NodeOps.update_node_input(
@@ -502,6 +506,7 @@ class Canvas(QWidget):
         # Create a new block or copy the given one
         if copy is not None:
             block = PropertyBlock("", copy.property_type)
+            block.smt_string = copy.smt_string
         else:
             block = PropertyBlock("", property_type)
 
@@ -527,7 +532,7 @@ class Canvas(QWidget):
 
     @staticmethod
     def define_property(item: PropertyBlock) -> None:
-        if item.property_type == "SMT":
+        if item.property_type == "Generic SMT":
             dialog = EditSmtPropertyDialog(item)
             dialog.exec()
 
@@ -776,7 +781,16 @@ class Canvas(QWidget):
             if edge[0] is not None and edge[1] is not None:
                 self.draw_line_between(edge[0], edge[1])
 
-        # TODO DRAW PROPERTIES
+    def draw_properties(self):
+        tot_height = 0
+        for n, p in self.project.properties.items():
+            for node in self.project.network.nodes.values():
+                if node.identifier == n:
+                    new_p = self.draw_property(copy=p, pos=QPoint(350, tot_height))
+                    new_p.update_label()
+                    tot_height += (new_p.rect.rect().height() + 50)
+                    self.draw_line_between(new_p.block_id, n)
+                    break
 
     def train_network(self):
         if not self.renderer.NN.nodes:

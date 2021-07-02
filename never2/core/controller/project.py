@@ -56,6 +56,7 @@ class Project(QObject):
 
     # This signal will be connected to the canvas to draw the opened network.
     opened_net = pyqtSignal()
+    opened_property = pyqtSignal()
 
     def __init__(self):
         super(QObject, self).__init__()
@@ -110,6 +111,12 @@ class Project(QObject):
         -------
 
         """
+        # Check project
+        if not self.network.nodes:
+            err = MessageDialog("No network loaded!", MessageType.ERROR)
+            err.show()
+            return
+
         # Select file
         property_file_name = QFileDialog.getOpenFileName(None, "Open property file", "", PROPERTY_FORMATS_OPENING)
 
@@ -119,6 +126,7 @@ class Project(QObject):
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.properties = self.input_handler.read_properties(property_file_name[0])
             QApplication.restoreOverrideCursor()
+            self.opened_property.emit()
 
     def save(self, _as: bool = True):
         """
@@ -282,21 +290,23 @@ class InputHandler:
         properties = dict()
 
         for d in declarations:
-            varname = str(d.args[0]).split("_")[0].replace("\'", "")  # Variable format is <v_name>_<idx>
+            varname = str(d.args[0]).split('_')[0].replace('\'', '')  # Variable format is <v_name>_<idx>
             if varname not in var_list:
                 var_list.append(varname)
 
         counter = 0
-        for v in var_list:
-            constraints = []
-            for a in assertions:  # TODO ASSERTIONS IS A GENERATOR
-                line = str(a.args[0])
-                if v in line:
-                    constraints.append(line)
-                    p_id = f"{counter}Pr"
-                    counter += 1
-                    properties[v] = PropertyBlock(p_id, "Generic SMT")
-                    properties[v].smt_string = "".join(constraints)
+
+        for a in assertions:
+            line = str(a.args[0]).replace('\'', '')
+            for v in var_list:
+                if f" {v}" in line or f"({v}" in line:  # Either '(v ...' or '... v)'
+                    if v not in properties.keys():
+                        properties[v] = PropertyBlock(f"{counter}Pr", "Generic SMT")
+                        properties[v].smt_string = ''
+                        counter += 1
+                    wrap = '(assert (' + line + ')'
+                    properties[v].smt_string += f"{wrap}\n"
+                    break
 
         return properties
 

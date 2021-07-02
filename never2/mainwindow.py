@@ -158,6 +158,8 @@ class MainWindow(QtWidgets.QMainWindow):
         open_action = QAction("Open...", self)
         open_action.setShortcut("Ctrl+O")
         open_action.triggered.connect(lambda: self.open())
+        load_p_action = QAction("Load property...", self)
+        load_p_action.triggered.connect(lambda: self.canvas.project.open_property())
         save_action = QAction("Save", self)
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(lambda: self.save(False))
@@ -226,14 +228,10 @@ class MainWindow(QtWidgets.QMainWindow):
         repair_action = QAction("Repair...", self)
         repair_action.triggered.connect(lambda: self.temp_window())
 
-        # TODO REMOVE
-        test_action = QAction("TEST", self)
-        test_action.triggered.connect(lambda: self.canvas.project.open_property())
-        menu_file.addAction(test_action)
-
         # Build File menu
         menu_file.addAction(new_action)
         menu_file.addAction(open_action)
+        menu_file.addAction(load_p_action)
         menu_file.addSeparator()
         menu_file.addAction(save_action)
         menu_file.addAction(save_as_action)
