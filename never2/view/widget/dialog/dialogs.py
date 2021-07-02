@@ -542,7 +542,7 @@ class EditPolyhedralPropertyDialog(NeVerDialog):
         self.render_layout()
 
     def add_entry(self, var: str, op: str, val: str) -> None:
-        self.property_list.append(f"{var} {op} {val}")
+        self.property_list.append((var, op, val))
         self.var_cb.setCurrentIndex(0)
         self.op_cb.setCurrentIndex(0)
         self.val.setText("")

@@ -5,6 +5,7 @@ import torch
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from PyQt5.QtWidgets import QFileDialog, QApplication
 from pysmt.smtlib.parser import SmtLibParser
+from pysmt.environment import get_env
 from tensorflow import keras
 
 import never2.core.controller.pynevertemp.networks as pynn
@@ -282,7 +283,9 @@ class InputHandler:
             The dictionary of properties
 
         """
+
         parser = SmtLibParser()
+        get_env().enable_infix_notation = False
         script = parser.get_script_fname(path)
         declarations = script.filter_by_command_name(['declare-fun', 'declare-const'])
         assertions = script.filter_by_command_name('assert')
@@ -298,13 +301,14 @@ class InputHandler:
 
         for a in assertions:
             line = str(a.args[0]).replace('\'', '')
+            tokens = line.replace('(', '').replace(')', '').split()
             for v in var_list:
                 if f" {v}" in line or f"({v}" in line:  # Either '(v ...' or '... v)'
                     if v not in properties.keys():
                         properties[v] = PropertyBlock(f"{counter}Pr", "Generic SMT")
                         properties[v].smt_string = ''
                         counter += 1
-                    wrap = '(assert (' + line + ')'
+                    wrap = '(assert ' + f"({tokens[1]} {tokens[0]} {tokens[2]})" + ')'
                     properties[v].smt_string += f"{wrap}\n"
                     break
 

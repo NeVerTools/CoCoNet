@@ -634,13 +634,15 @@ class PropertyBlock(GraphicBlock):
     def __init__(self, block_id: str, p_type: str):
         super().__init__(block_id)
         self.property_type = p_type
+        self.pre_condition = True
+        self.smt_string = ""
         if p_type == "Generic SMT":
-            self.smt_string = "-"
+            self.label_string = "-"
         elif p_type == "Polyhedral":
-            self.smt_string = "Ax - b <= 0"
+            self.label_string = "Ax - b <= 0"
 
-        self.condition_label = QLabel("POST")
-        self.property_label = QLabel(self.smt_string)
+        self.condition_label = QLabel("PRE")
+        self.property_label = QLabel(self.label_string)
         self.variables = []
         self.init_layout()
         self.init_context_menu()
@@ -678,5 +680,8 @@ class PropertyBlock(GraphicBlock):
         block_actions["Define"] = QAction("Define...", self)
         self.set_context_menu(block_actions)
 
-    def update_label(self):
+    def set_label(self):
+        self.property_label.setText(self.label_string)
+
+    def set_smt_label(self):
         self.property_label.setText(self.smt_string)

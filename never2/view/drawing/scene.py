@@ -256,6 +256,8 @@ class Canvas(QWidget):
                     origin.variables.append(f"{v_name}{p}")
 
                 # Properties dict is {node_id: property}
+                origin.pre_condition = False
+                origin.condition_label.setText("POST")
                 self.project.properties[destination.block_id] = origin
                 return
 
@@ -538,16 +540,18 @@ class Canvas(QWidget):
 
             if dialog.has_edits:
                 item.smt_string = dialog.new_property
-                item.update_label()
+                item.set_smt_label()
         elif item.property_type == "Polyhedral":
             dialog = EditPolyhedralPropertyDialog(item)
             dialog.exec()
 
             if dialog.has_edits:
-                item.smt_string = ""
+                if item.label_string == 'Ax - b <= 0':
+                    item.label_string = ''
                 for p in dialog.property_list:
-                    item.smt_string += p + "\n"
-                item.update_label()
+                    item.label_string += f"{p[0]} {p[1]} {p[2]}\n"
+                    item.smt_string += '(assert (' + f"{p[1]} {p[0]} {float(p[2])}" + '))\n'
+                item.set_label()
 
     def show_parameters(self, block: NodeBlock = None):
         """
@@ -787,7 +791,7 @@ class Canvas(QWidget):
             for node in self.project.network.nodes.values():
                 if node.identifier == n:
                     new_p = self.draw_property(copy=p, pos=QPoint(350, tot_height))
-                    new_p.update_label()
+                    new_p.set_smt_label()
                     tot_height += (new_p.rect.rect().height() + 50)
                     self.draw_line_between(new_p.block_id, n)
                     break
