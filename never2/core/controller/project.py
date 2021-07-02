@@ -278,14 +278,12 @@ class InputHandler:
 
         Returns
         -------
-
         dict
             The dictionary of properties
 
         """
 
         parser = SmtLibParser()
-        get_env().enable_infix_notation = False
         script = parser.get_script_fname(path)
         declarations = script.filter_by_command_name(['declare-fun', 'declare-const'])
         assertions = script.filter_by_command_name('assert')

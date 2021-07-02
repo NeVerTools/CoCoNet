@@ -304,6 +304,17 @@ class TrainingWindow(NeVerWindow):
             self.train_params[name]["value"] = value
 
     def setup_dataset(self, name: str):
+        """
+        This method loads the dataset path in order to
+        use it in the training function.
+
+        Parameters
+        ----------
+        name : str
+            The dataset name.
+
+        """
+
         if name == "MNIST":
             self.dataset_path = "data/MNIST/"
         elif name == "Fashion MNIST":
