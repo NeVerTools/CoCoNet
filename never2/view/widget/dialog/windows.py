@@ -125,6 +125,40 @@ class TrainingWindow(NeVerWindow):
         self.layout.addWidget(sep_label)
 
         # Main body
+        body_layout = self.create_widget_layout()
+        self.layout.addLayout(body_layout)
+
+        # Separator
+        sep_label = QLabel("***")
+        sep_label.setAlignment(Qt.AlignCenter)
+        sep_label.setStyleSheet(style.NODE_LABEL_STYLE)
+        self.layout.addWidget(sep_label)
+
+        # Buttons
+        btn_layout = QHBoxLayout()
+        train_btn = QPushButton("Train network")
+        train_btn.clicked.connect(self.train_network)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.close)
+        btn_layout.addWidget(train_btn)
+        btn_layout.addWidget(cancel_btn)
+        self.layout.addLayout(btn_layout)
+
+        self.render_layout()
+
+    def create_widget_layout(self) -> QHBoxLayout:
+        """
+        This method sets up the parameters layout by reading
+        the JSON-based dict of train_params and building
+        the corresponding graphic objects.
+
+        Returns
+        -------
+        QHBoxLayout
+            The layout with all the widgets loaded.
+
+        """
+
         body_layout = QHBoxLayout()
         params_layout = QGridLayout()
         params_layout.setAlignment(Qt.AlignTop)
@@ -133,7 +167,6 @@ class TrainingWindow(NeVerWindow):
         title.setAlignment(Qt.AlignCenter)
         params_layout.addWidget(title, 0, 0, 1, 2)
 
-        # Widgets builder
         counter = 1
         for first_level in self.train_params.keys():
             # Activation functions for dynamic widgets
@@ -164,25 +197,8 @@ class TrainingWindow(NeVerWindow):
         body_layout.addLayout(params_layout)
         body_layout.addLayout(self.grid_layout)
         self.grid_layout.setAlignment(Qt.AlignTop)
-        self.layout.addLayout(body_layout)
 
-        # Separator
-        sep_label = QLabel("***")
-        sep_label.setAlignment(Qt.AlignCenter)
-        sep_label.setStyleSheet(style.NODE_LABEL_STYLE)
-        self.layout.addWidget(sep_label)
-
-        # Buttons
-        btn_layout = QHBoxLayout()
-        train_btn = QPushButton("Train network")
-        train_btn.clicked.connect(self.train_network)
-        cancel_btn = QPushButton("Cancel")
-        cancel_btn.clicked.connect(self.close)
-        btn_layout.addWidget(train_btn)
-        btn_layout.addWidget(cancel_btn)
-        self.layout.addLayout(btn_layout)
-
-        self.render_layout()
+        return body_layout
 
     def clear_grid(self) -> None:
         """
