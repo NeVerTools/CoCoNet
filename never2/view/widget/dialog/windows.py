@@ -1,4 +1,5 @@
 import json
+from typing import Callable
 
 import torch.nn.functional as fun
 import torch.optim as opt
@@ -33,6 +34,8 @@ class NeVerWindow(QtWidgets.QDialog):
     ----------
     render_layout()
         Procedure to display the window layout.
+    create_widget_layout(str, dict, Callable, Callable)
+
 
     """
 
@@ -54,6 +57,62 @@ class NeVerWindow(QtWidgets.QDialog):
         """
 
         self.setLayout(self.layout)
+
+    def create_widget_layout(self, layout_name: str, widget_dict: dict,
+                             cb_f: Callable = None, line_f: Callable = None) -> QHBoxLayout:
+        """
+        This method sets up the parameters layout by reading
+        the JSON-based dict of train_params and building
+        the corresponding graphic objects.
+
+        Parameters
+        ----------
+        layout_name : str
+            The name of the layout to be shown in the label.
+        widget_dict : dict
+            The dictionary of widgets to build.
+        cb_f : Callable, optional
+            The activation function for combo boxes.
+        line_f : Callable, optional
+            The activation function for text boxes.
+
+        Returns
+        ----------
+        QHBoxLayout
+            The layout with all the widgets loaded.
+
+        """
+
+        widget_layout = QHBoxLayout()
+        left_layout = QGridLayout()
+        left_layout.setAlignment(Qt.AlignTop)
+
+        title = QLabel(layout_name)
+        title.setAlignment(Qt.AlignCenter)
+        left_layout.addWidget(title, 0, 0, 1, 2)
+
+        counter = 1
+        for first_level in widget_dict.keys():
+            sub_key = next(iter(widget_dict[first_level]))
+            if type(widget_dict[first_level][sub_key]) == dict:
+                self.widgets[first_level] = QComboBox()
+                for second_level in widget_dict[first_level].keys():
+                    self.widgets[first_level].addItem(second_level)
+                self.widgets[first_level].setCurrentIndex(-1)
+                self.widgets[first_level].activated.connect(cb_f(first_level))
+            else:
+                self.widgets[first_level] = QLineEdit()
+                self.widgets[first_level].setText(str(widget_dict[first_level].get("value", "")))
+                self.widgets[first_level].textChanged.connect(line_f(first_level))
+
+            w_label = QLabel(first_level)
+            w_label.setToolTip(widget_dict[first_level].get("description"))
+            left_layout.addWidget(w_label, counter, 0)
+            left_layout.addWidget(self.widgets[first_level], counter, 1)
+            counter += 1
+
+        widget_layout.addLayout(left_layout)
+        return widget_layout
 
 
 class TrainingWindow(NeVerWindow):
@@ -125,7 +184,17 @@ class TrainingWindow(NeVerWindow):
         self.layout.addWidget(sep_label)
 
         # Main body
-        body_layout = self.create_widget_layout()
+        # Activation functions for dynamic widgets
+        def activation_combo(key: str):
+            return lambda: self.update_grid_view(f"{key}:{self.widgets[key].currentText()}")
+
+        def activation_line(key: str):
+            return lambda: self.update_dict_value(key, "", self.widgets[key].text())
+
+        body_layout = self.create_widget_layout("Training parameters", self.train_params,
+                                                activation_combo, activation_line)
+        body_layout.addLayout(self.grid_layout)
+        self.grid_layout.setAlignment(Qt.AlignTop)
         self.layout.addLayout(body_layout)
 
         # Separator
@@ -145,60 +214,6 @@ class TrainingWindow(NeVerWindow):
         self.layout.addLayout(btn_layout)
 
         self.render_layout()
-
-    def create_widget_layout(self) -> QHBoxLayout:
-        """
-        This method sets up the parameters layout by reading
-        the JSON-based dict of train_params and building
-        the corresponding graphic objects.
-
-        Returns
-        -------
-        QHBoxLayout
-            The layout with all the widgets loaded.
-
-        """
-
-        body_layout = QHBoxLayout()
-        params_layout = QGridLayout()
-        params_layout.setAlignment(Qt.AlignTop)
-
-        title = QLabel("Training parameters")
-        title.setAlignment(Qt.AlignCenter)
-        params_layout.addWidget(title, 0, 0, 1, 2)
-
-        counter = 1
-        for first_level in self.train_params.keys():
-            # Activation functions for dynamic widgets
-            def activation_combo(key: str):
-                return lambda: self.update_grid_view(f"{key}:{self.widgets[key].currentText()}")
-
-            def activation_line(key: str):
-                return lambda: self.update_dict_value(key, "", self.widgets[key].text())
-
-            sub_key = next(iter(self.train_params[first_level]))
-            if type(self.train_params[first_level][sub_key]) == dict:
-                self.widgets[first_level] = QComboBox()
-                for second_level in self.train_params[first_level].keys():
-                    self.widgets[first_level].addItem(second_level)
-                self.widgets[first_level].setCurrentIndex(-1)
-                self.widgets[first_level].activated.connect(activation_combo(first_level))
-            else:
-                self.widgets[first_level] = QLineEdit()
-                self.widgets[first_level].setText(str(self.train_params[first_level].get("value", "")))
-                self.widgets[first_level].textChanged.connect(activation_line(first_level))
-
-            w_label = QLabel(first_level)
-            w_label.setToolTip(self.train_params[first_level].get("description"))
-            params_layout.addWidget(w_label, counter, 0)
-            params_layout.addWidget(self.widgets[first_level], counter, 1)
-            counter += 1
-
-        body_layout.addLayout(params_layout)
-        body_layout.addLayout(self.grid_layout)
-        self.grid_layout.setAlignment(Qt.AlignTop)
-
-        return body_layout
 
     def clear_grid(self) -> None:
         """
@@ -375,3 +390,8 @@ class TrainingWindow(NeVerWindow):
                                 opt.lr_scheduler.ReduceLROnPlateau,
                                 self.gui_params["Scheduler:ReduceLROnPlateau"],
                                 PytorchMetrics.inaccuracy)
+
+
+class VerificationWindow(NeVerWindow):
+    def __init__(self):
+        super().__init__("Verify network")
