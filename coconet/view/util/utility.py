@@ -1,5 +1,6 @@
 import numpy as np
 from PyQt5.QtCore import QRectF, QLineF, QPointF
+
 from coconet.core.controller.pynevertemp.tensor import Tensor
 
 
@@ -129,3 +130,65 @@ def text_to_tensor_set(text: str) -> tuple:
             tensors += (Tensor(shape=temp, buffer=np.random.normal(size=temp)),)
 
     return tensors
+
+
+def force_types(dictionary: dict) -> dict:
+    """
+    This method allows to force the value types for the given
+    dictionary.
+
+    Parameters
+    ----------
+    dictionary : dict
+        The dictionary with values expressed as strings.
+
+    Returns
+    -------
+    dict
+        The same dictionary with typed values.
+
+    """
+    for key in dictionary.keys():
+        element = dictionary[key]
+        if isinstance(element, dict):
+            if "value" in element.keys():  # value => type
+                if element["type"] == "bool":
+                    dictionary[key]["value"] = element["value"] == "True"
+                elif element["type"] == "int":
+                    dictionary[key]["value"] = int(element["value"])
+                elif element["type"] == "float":
+                    dictionary[key]["value"] = float(element["value"])
+                elif element["type"] == "tuple":
+                    dictionary[key]["value"] = eval(element["value"])
+            else:
+                dictionary[key] = force_types(element)
+    return dictionary
+
+
+def allow_list_in_dict(dictionary: dict) -> dict:
+    """
+    This method translates string representations of lists
+    in a dictionary to actual lists. Necessary for JSON
+    representation of list values.
+
+    Parameters
+    ----------
+    dictionary : dict
+        The dictionary containing strings representing lists.
+
+    Returns
+    -------
+    dict
+        The same dictionary with actual lists.
+
+    """
+
+    for key in dictionary.keys():
+        element = dictionary[key]
+        if isinstance(element, dict):
+            dictionary[key] = allow_list_in_dict(element)
+        elif isinstance(element, str):
+            if "[" in element:
+                dictionary[key] = element.replace("[", "").replace("]", "").split(",")
+
+    return dictionary

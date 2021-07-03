@@ -36,7 +36,6 @@ class NodeOps:
         elif class_name == 'FullyConnectedNode':
             node = FullyConnectedNode(node_id,
                                       in_dim,
-                                      in_dim[-1],
                                       data["out_features"],
                                       Tensor((data["out_features"], in_dim[-1])),
                                       Tensor((data["out_features"],)))

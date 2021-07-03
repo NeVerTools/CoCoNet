@@ -6,8 +6,8 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setuptools.setup(
     name="CoCoNet",
     version="0.1.1.dev2",
-    author="Stefano Demarchi",
-    author_email="stefano.demarchi@edu.unige.it",
+    author="Dario Guidotti, Stefano Demarchi",
+    author_email="{dario.guidotti}{stefano.demarchi}@edu.unige.it",
     license='GNU General Public License with Commons Clause License Condition v1.0',
     description="Tool for the creation and the conversion of Neural Network models.",
     long_description=long_description,
@@ -21,6 +21,6 @@ setuptools.setup(
         "Operating System:: OS Independent",
     ],
     python_requires='>=3.8',
-    install_requires=['numpy', 'PyQt5', 'pynever', 'onnx', 'torch', 'tensorflow'],
+    install_requires=['numpy', 'PyQt5', 'onnx', 'torch', 'tensorflow']
 )
 

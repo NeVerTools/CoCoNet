@@ -10,9 +10,10 @@ from PyQt5.QtWidgets import QGraphicsRectItem, QWidget, QGraphicsScene, QApplica
 
 import coconet.view.styles as style
 from coconet.core.controller.nodewrapper import NodeOps
+from coconet.core.controller.project import Project
 from coconet.core.controller.pynevertemp.networks import SequentialNetwork, NeuralNetwork
 from coconet.core.controller.pynevertemp.tensor import Tensor
-from coconet.core.model.network import NetworkNode, NetworkProperty
+from coconet.core.model.network import NetworkNode
 from coconet.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock, GraphicBlock
 from coconet.view.drawing.renderer import SequentialNetworkRenderer
 from coconet.view.widget.dialog.dialogs import EditNodeDialog, MessageDialog, MessageType, EditSmtPropertyDialog, \
@@ -106,12 +107,17 @@ class Canvas(QWidget):
     # Max number of zoom allowed
     MAX_ZOOM = 100
 
-    def __init__(self, network: SequentialNetwork, blocks: dict):
+    def __init__(self, blocks: dict):
         super(Canvas, self).__init__()
         self.zooms = 0
         self.num_nodes = 0
         self.num_props = 0
-        self.renderer = SequentialNetworkRenderer(network, blocks)
+
+        self.project = Project()
+        self.project.opened_net.connect(lambda: self.draw_network(self.project.network))
+        self.project.opened_property.connect(lambda: self.draw_properties())
+
+        self.renderer = SequentialNetworkRenderer(self.project.network, blocks)
 
         self.scene = NetworkScene(self)
         self.scene.selectionChanged.connect(lambda: self.update_scene())
@@ -229,7 +235,7 @@ class Canvas(QWidget):
                 return
 
             if isinstance(origin, PropertyBlock) and isinstance(destination, NodeBlock):
-                v_name = destination.block_id + "_Y_"
+                v_name = destination.block_id + "_"
                 temp_list = []
                 ped_list = []
 
@@ -247,7 +253,11 @@ class Canvas(QWidget):
 
                 for p in temp_list:
                     origin.variables.append(f"{v_name}{p}")
-                print(origin.variables)
+
+                # Properties dict is {node_id: property}
+                origin.pre_condition = False
+                origin.condition_label.setText("POST")
+                self.project.properties[destination.block_id] = origin
                 return
 
             try:
@@ -303,6 +313,9 @@ class Canvas(QWidget):
                 destination_item = rect
 
             if origin_item is not None and destination_item is not None:
+                if "Pr" in origin_id:
+                    self.scene.auto_add_line(origin_item, destination_item)
+                    return
                 try:
                     # Update the node input
                     NodeOps.update_node_input(
@@ -465,7 +478,7 @@ class Canvas(QWidget):
 
         return block
 
-    def draw_property(self, property: NetworkProperty = None, copy: PropertyBlock = None,
+    def draw_property(self, property_type: str = "", copy: PropertyBlock = None,
                       pos: QPoint = None) -> PropertyBlock:
         """
         This method creates a graphic PropertyBlock for representing
@@ -474,7 +487,7 @@ class Canvas(QWidget):
 
         Parameters
         ----------
-        property : NetworkProperty, optional
+        property_type : str, optional
             The property to draw on the canvas.
         copy : PropertyBlock, optional
             The property to copy in the canvas.
@@ -488,14 +501,15 @@ class Canvas(QWidget):
 
         """
 
-        assert property is None or copy is None, \
+        assert property_type == "" or copy is None, \
             "Improper use of method, only a block must be specified."
 
         # Create a new block or copy the given one
         if copy is not None:
-            block = PropertyBlock("", copy.property)
+            block = PropertyBlock("", copy.property_type)
+            block.smt_string = copy.smt_string
         else:
-            block = PropertyBlock("", property)
+            block = PropertyBlock("", property_type)
 
         # Create the identifier
         if copy is not None and \
@@ -519,22 +533,24 @@ class Canvas(QWidget):
 
     @staticmethod
     def define_property(item: PropertyBlock) -> None:
-        if item.property.type == "SMT":
+        if item.property_type == "Generic SMT":
             dialog = EditSmtPropertyDialog(item)
             dialog.exec()
 
             if dialog.has_edits:
-                item.property.property_string = dialog.new_property
-                item.update_label()
-        elif item.property.type == "Polyhedral":
+                item.smt_string = dialog.new_property
+                item.set_smt_label()
+        elif item.property_type == "Polyhedral":
             dialog = EditPolyhedralPropertyDialog(item)
             dialog.exec()
 
             if dialog.has_edits:
-                item.property.property_string = ""
+                if item.label_string == 'Ax - b <= 0':
+                    item.label_string = ''
                 for p in dialog.property_list:
-                    item.property.property_string += p + "\n"
-                item.update_label()
+                    item.label_string += f"{p[0]} {p[1]} {p[2]}\n"
+                    item.smt_string += '(assert (' + f"{p[1]} {p[0]} {float(p[2])}" + '))\n'
+                item.set_label()
 
     def show_parameters(self, block: NodeBlock = None):
         """
@@ -637,6 +653,8 @@ class Canvas(QWidget):
             item = self.scene.delete_selected()
             if item is not None:
                 if type(item) == QGraphicsRectItem:
+                    if self.scene.blocks[item].block_id in self.project.properties.keys():
+                        self.project.properties.pop(self.scene.blocks[item].block_id)
                     if self.scene.blocks[item].block_id in self.renderer.NN.nodes.keys():
                         # Get the first node
                         first_node = self.renderer.NN.get_first_node()
@@ -711,7 +729,7 @@ class Canvas(QWidget):
                 if isinstance(copied_item, NodeBlock):
                     self.draw_node(None, copied_item)
                 elif isinstance(copied_item, PropertyBlock):
-                    self.draw_property(None, copied_item)
+                    self.draw_property("", copied_item)
 
     def clear_scene(self):
         """
@@ -720,7 +738,7 @@ class Canvas(QWidget):
         """
 
         self.renderer.disconnected_network = {}
-        self.renderer.NN = SequentialNetwork("")
+        self.renderer.NN = SequentialNetwork("", "")
 
         # Recreate the scene
         self.scene = NetworkScene(self)
@@ -766,7 +784,18 @@ class Canvas(QWidget):
             if edge[0] is not None and edge[1] is not None:
                 self.draw_line_between(edge[0], edge[1])
 
-        # TODO DRAW PROPERTIES
+    def draw_properties(self):
+        tot_height = 0
+        for n, p in self.project.properties.items():
+            for node in self.project.network.nodes.values():
+                if node.identifier == n:
+                    new_p = self.draw_property(copy=p, pos=QPoint(350, tot_height))
+                    new_p.set_smt_label()
+                    new_p.pre_condition = False
+                    new_p.update_condition_label()
+                    tot_height += (new_p.rect.rect().height() + 50)
+                    self.draw_line_between(new_p.block_id, n)
+                    break
 
     @QtCore.pyqtSlot()
     def zoom_in(self):

@@ -4,21 +4,26 @@ import onnx
 import torch
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from PyQt5.QtWidgets import QFileDialog, QApplication
+from pysmt.smtlib.parser import SmtLibParser
 from tensorflow import keras
 
 import coconet.core.controller.pynevertemp.networks as pynn
 from coconet.core.controller.pynevertemp.strategies.conversion import ONNXNetwork, \
     ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork, AlternativeRepresentation
+from coconet.view.drawing.element import PropertyBlock
 from coconet.view.widget.dialog.dialogs import MessageDialog, MessageType, InputDialog
 
 # Formats available for opening and saving networks
-FILE_FORMATS_OPENING = "All supported formats(*.onnx *.pt *.pth *.pb);;\
+NETWORK_FORMATS_OPENING = "All supported formats (*.onnx *.pt *.pth *.pb);;\
             ONNX(*.onnx);;\
             PyTorch(*.pt *.pth);;\
             TensorFlow(*.pb)"
-SUPPORTED_FORMATS = {'ONNX': ['onnx'],
-                     'PyTorch': ['pt', 'pth'],
-                     'TensorFlow': ['pb']}
+PROPERTY_FORMATS_OPENING = "SMT-LIB files (*.smt *.smt2);;\
+                           SMT(*.smt *.smt2)"
+SUPPORTED_NETWORK_FORMATS = {'ONNX': ['onnx'],
+                             'PyTorch': ['pt', 'pth'],
+                             'TensorFlow': ['pb']}
+SUPPORTED_PROPERTY_FORMATS = {'SMT': ['smt', 'smt2']}
 
 
 class Project(QObject):
@@ -51,12 +56,13 @@ class Project(QObject):
 
     # This signal will be connected to the canvas to draw the opened network.
     opened_net = pyqtSignal()
+    opened_property = pyqtSignal()
 
     def __init__(self):
         super(QObject, self).__init__()
         self.file_name = ("", "")
 
-        self.network = pynn.SequentialNetwork("")
+        self.network = pynn.SequentialNetwork("", "")
         self.properties = dict()
 
         self.input_handler = None
@@ -71,7 +77,7 @@ class Project(QObject):
         """
 
         # Open network
-        self.file_name = QFileDialog.getOpenFileName(None, "Open network", "", FILE_FORMATS_OPENING)
+        self.file_name = QFileDialog.getOpenFileName(None, "Open network", "", NETWORK_FORMATS_OPENING)
 
         # If a file has been selected:
         if self.file_name != ("", ""):
@@ -94,6 +100,34 @@ class Project(QObject):
             else:
                 self.opened_net.emit()
 
+    def open_property(self):
+        """
+        This method opens a SMT file containing the description
+        of the network properties. The file is checked to be
+        consistent with the network and then parsed in order
+        to build the property objects.
+
+        Returns
+        -------
+
+        """
+        # Check project
+        if not self.network.nodes:
+            err = MessageDialog("No network loaded!", MessageType.ERROR)
+            err.show()
+            return
+
+        # Select file
+        property_file_name = QFileDialog.getOpenFileName(None, "Open property file", "", PROPERTY_FORMATS_OPENING)
+
+        if property_file_name != ("", ""):
+            self.input_handler = InputHandler()
+
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            self.properties = self.input_handler.read_properties(property_file_name[0])
+            QApplication.restoreOverrideCursor()
+            self.opened_property.emit()
+
     def save(self, _as: bool = True):
         """
         This method converts and saves the network in a file.
@@ -111,7 +145,7 @@ class Project(QObject):
         # If the user picked "save as" option or there isn't a current file,
         # a dialog is opened to chose where to save the net
         if _as or self.file_name == ("", ""):
-            self.file_name = QFileDialog.getSaveFileName(None, 'Save File', "", FILE_FORMATS_OPENING)
+            self.file_name = QFileDialog.getSaveFileName(None, 'Save File', "", NETWORK_FORMATS_OPENING)
 
         if self.file_name != ("", ""):
             self.output_handler = OutputHandler()
@@ -119,6 +153,7 @@ class Project(QObject):
             # A  "wait cursor" appears locking the interface
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.output_handler.save(self.network, self.file_name)
+            self.output_handler.save_properties(self.properties, self.file_name)
             QApplication.restoreOverrideCursor()
 
             # At the end of the loading, the main thread looks for eventual
@@ -196,15 +231,15 @@ class InputHandler:
         self.extension = path.split(".")[-1]
         net_id = path.split("/")[-1].split(".")[0]
 
-        if self.extension in SUPPORTED_FORMATS['ONNX']:
+        if self.extension in SUPPORTED_NETWORK_FORMATS['ONNX']:
             model_proto = onnx.load(path)
             self.alt_repr = ONNXNetwork(net_id + "_onnx", model_proto, True)
 
-        elif self.extension in SUPPORTED_FORMATS['PyTorch']:
+        elif self.extension in SUPPORTED_NETWORK_FORMATS['PyTorch']:
             module = torch.load(path)
             self.alt_repr = PyTorchNetwork(net_id + "_pytorch", module, True)
 
-        elif self.extension in SUPPORTED_FORMATS['TensorFlow']:
+        elif self.extension in SUPPORTED_NETWORK_FORMATS['TensorFlow']:
             head = os.path.split(path)[0]
             module = keras.models.load_model(head)
             # self.alt_repr = TensorflowNetwork(net_id + "_tensorflow", module, True)
@@ -229,6 +264,52 @@ class InputHandler:
                 self.conversion_exception = e
         else:
             self.conversion_exception = Exception("Error in network reading.")
+
+    def read_properties(self, path: str) -> dict:
+        """
+        This method reads the SMT property file and
+        creates a property for each node.
+
+        Parameters
+        ----------
+        path : str
+            The SMT-LIB file path.
+
+        Returns
+        -------
+        dict
+            The dictionary of properties
+
+        """
+
+        parser = SmtLibParser()
+        script = parser.get_script_fname(path)
+        declarations = script.filter_by_command_name(['declare-fun', 'declare-const'])
+        assertions = script.filter_by_command_name('assert')
+        var_list = []
+        properties = dict()
+
+        for d in declarations:
+            varname = str(d.args[0]).split('_')[0].replace('\'', '')  # Variable format is <v_name>_<idx>
+            if varname not in var_list:
+                var_list.append(varname)
+
+        counter = 0
+
+        for a in assertions:
+            line = str(a.args[0]).replace('\'', '')
+            tokens = line.replace('(', '').replace(')', '').split()
+            for v in var_list:
+                if f" {v}" in line or f"({v}" in line:  # Either '(v ...' or '... v)'
+                    if v not in properties.keys():
+                        properties[v] = PropertyBlock(f"{counter}Pr", "Generic SMT")
+                        properties[v].smt_string = ''
+                        counter += 1
+                    wrap = '(assert ' + f"({tokens[1]} {tokens[0]} {tokens[2]})" + ')'
+                    properties[v].smt_string += f"{wrap}\n"
+                    break
+
+        return properties
 
     def read_input_dialog(self) -> tuple:
         """
@@ -328,7 +409,7 @@ class OutputHandler:
         self.exception = None
         self.strategy = None
 
-    def save(self, network: pynn.NeuralNetwork, filename: tuple):
+    def save(self, network: pynn.NeuralNetwork, filename: tuple) -> None:
         """
         This method converts the current network and saves it in the chosen
         format.
@@ -342,7 +423,6 @@ class OutputHandler:
             self.alt_repr = self.convert_network(network, filename[0])
 
             # Saving the network on file depending on the format
-            # TODO check save
             if isinstance(self.alt_repr, ONNXNetwork):
                 onnx.save(self.alt_repr.onnx_network.onnx_network, filename[0])
             elif isinstance(self.alt_repr, PyTorchNetwork):
@@ -352,6 +432,38 @@ class OutputHandler:
 
         except Exception as e:
             self.exception = e
+
+    def save_properties(self, properties: dict, filename: tuple) -> None:
+        """
+        This method saves the properties in the network as a SMT-LIB
+        file. The file shares the same name as the network file, with
+        the changed extension.
+
+        Parameters
+        ----------
+        properties : dict
+            The dictionary of defined properties.
+        filename : tuple
+            The tuple containing the file name and the extension.
+
+        """
+
+        path = filename[0].replace("." + self.extension, ".smt2")
+
+        # Update extension
+        self.extension = "smt2"
+
+        # Create and write file
+        with open(path, "w") as f:
+            # Variables
+            for p in properties.values():
+                for v in p.variables:
+                    f.write("(declare-const " + v + " Real)\n")
+            f.write("\n")
+
+            # Constraints
+            for p in properties.values():
+                f.write(p.smt_string + "\n")
 
     def convert_network(self, network: pynn.NeuralNetwork, filename: str) -> AlternativeRepresentation:
         """
@@ -375,17 +487,17 @@ class OutputHandler:
         # Getting the filename
         net_id = filename.split("/")[-1]
 
-        if self.extension in SUPPORTED_FORMATS['ONNX']:
+        if self.extension in SUPPORTED_NETWORK_FORMATS['ONNX']:
             self.strategy = ONNXConverter()
             model = self.strategy.from_neural_network(network)
             self.alt_repr = ONNXNetwork(net_id + "_onnx", model, True)
 
-        elif self.extension in SUPPORTED_FORMATS['PyTorch']:
+        elif self.extension in SUPPORTED_NETWORK_FORMATS['PyTorch']:
             self.strategy = PyTorchConverter()
             model = self.strategy.from_neural_network(network)
             self.alt_repr = PyTorchNetwork(net_id + "_pytorch", model, True)
 
-        elif self.extension in SUPPORTED_FORMATS['TensorFlow']:
+        elif self.extension in SUPPORTED_NETWORK_FORMATS['TensorFlow']:
             self.strategy = TensorflowConverter()
             model = self.strategy.from_neural_network(network)
             self.alt_repr = TensorflowNetwork(net_id + "_tensorflow", True)

@@ -1,195 +1,10 @@
-import coconet.core.controller.pynevertemp.strategies.conversion as cv
-import coconet.core.controller.pynevertemp.nodes as nodes
-import coconet.core.controller.pynevertemp.networks as networks
-import coconet.core.controller.pynevertemp.datasets as datasets
-import torch
-import math
-import torch.nn.functional as funct
-from coconet.core.controller.pynevertemp.tensor import Tensor
 import numpy as np
+import torch
+import torch.nn.functional as funct
 
-
-def combine_batchnorm1d(linear: nodes.FullyConnectedNode, batchnorm: nodes.BatchNormNode) -> nodes.FullyConnectedNode:
-    """
-    Utility function to combine a BatchNormNode node with a FullyConnectedNode in a corresponding FullyConnectedNode.
-
-    Parameters
-    ----------
-    linear : FullyConnectedNode
-        FullyConnectedNode to combine.
-    batchnorm : BatchNormNode
-        BatchNorm1DNode to combine.
-
-    Return
-    ----------
-    FullyConnectedNode
-        The FullyConnectedNode resulting from the fusion of the two input nodes.
-
-    """
-
-    l_weight = torch.from_numpy(linear.weight)
-    l_bias = torch.from_numpy(linear.bias)
-    bn_running_mean = torch.from_numpy(batchnorm.running_mean)
-    bn_running_var = torch.from_numpy(batchnorm.running_var)
-    bn_weight = torch.from_numpy(batchnorm.weight)
-    bn_bias = torch.from_numpy(batchnorm.bias)
-    bn_eps = batchnorm.eps
-
-    fused_bias = torch.div(bn_weight, torch.sqrt(bn_running_var + bn_eps))
-    fused_bias = torch.mul(fused_bias, torch.sub(l_bias, bn_running_mean))
-    fused_bias = torch.add(fused_bias, bn_bias)
-
-    fused_weight = torch.diag(torch.div(bn_weight, torch.sqrt(bn_running_var + bn_eps)))
-    fused_weight = torch.matmul(fused_weight, l_weight)
-
-    fused_linear = nodes.FullyConnectedNode(linear.identifier, linear.in_features, linear.out_features, fused_weight.numpy(),
-                                            fused_bias.numpy())
-
-    return fused_linear
-
-
-def combine_batchnorm1d_net(network: networks.SequentialNetwork) -> networks.SequentialNetwork:
-    """
-    Utilities function to combine all the FullyConnectedNodes followed by BatchNorm1DNodes in corresponding
-    FullyConnectedNodes.
-
-    Parameters
-    ----------
-    network : SequentialNetwork
-        Sequential Network of interest of which we want to combine the nodes.
-
-    Return
-    ----------
-    SequentialNetwork
-        Corresponding Sequential Network with the combined nodes.
-
-    """
-
-    if not network.up_to_date:
-
-        for alt_rep in network.alt_rep_cache:
-
-            if alt_rep.up_to_date:
-
-                if isinstance(alt_rep, cv.PyTorchNetwork):
-                    pytorch_cv = cv.PyTorchConverter()
-                    network = pytorch_cv.to_neural_network(alt_rep)
-                elif isinstance(alt_rep, cv.ONNXNetwork):
-                    onnx_cv = cv.ONNXConverter
-                    network = onnx_cv.to_neural_network(alt_rep)
-                else:
-                    raise NotImplementedError
-                break
-
-    combined_network = networks.SequentialNetwork(network.identifier + '_combined')
-
-    current_node = network.get_first_node()
-    node_index = 1
-    while network.get_next_node(current_node) is not None and current_node is not None:
-
-        next_node = network.get_next_node(current_node)
-        if isinstance(current_node, nodes.FullyConnectedNode) and isinstance(next_node, nodes.BatchNorm1DNode):
-            combined_node = combine_batchnorm1d(current_node, next_node)
-            combined_node.identifier = f"Combined_Linear_{node_index}"
-            combined_network.add_node(combined_node)
-            next_node = network.get_next_node(next_node)
-
-        elif isinstance(current_node, nodes.FullyConnectedNode):
-            identifier = f"Linear_{node_index}"
-            new_node = nodes.FullyConnectedNode(identifier, current_node.in_features, current_node.out_features,
-                                                current_node.weight, current_node.bias)
-            combined_network.add_node(new_node)
-
-        elif isinstance(current_node, nodes.ReLUNode):
-            identifier = f"ReLU_{node_index}"
-            new_node = nodes.ReLUNode(identifier, current_node.num_features)
-            combined_network.add_node(new_node)
-        else:
-            raise NotImplementedError
-
-        node_index += 1
-        current_node = next_node
-
-    if isinstance(current_node, nodes.FullyConnectedNode):
-        identifier = f"Linear_{node_index}"
-        new_node = nodes.FullyConnectedNode(identifier, current_node.in_features, current_node.out_features,
-                                            current_node.weight, current_node.bias)
-        combined_network.add_node(new_node)
-    elif isinstance(current_node, nodes.ReLUNode):
-        identifier = f"ReLU_{node_index}"
-        new_node = nodes.ReLUNode(identifier, current_node.num_features)
-        combined_network.add_node(new_node)
-    else:
-        raise NotImplementedError
-
-    return combined_network
-
-
-def testing(net: cv.PyTorchNetwork, dataset: datasets.Dataset, test_batch_size: int, cuda: bool) -> (float, float):
-    """
-    Testing procedure for a PyTorchNetwork.
-
-    Parameters
-    ----------
-    net : PyTorchNetwork
-        Neural Network to test.
-    dataset : Dataset
-        Dataset used for testing the network.
-    test_batch_size : int
-        Dimension for the test batch size for the testing procedure
-    cuda : bool
-        Whether to use the cuda library for the procedure (default: False).
-
-    Returns
-    ----------
-    (float, float)
-        Rate of correct samples and loss.
-
-    """
-
-    if cuda:
-        net.pytorch_network.cuda()
-    else:
-        net.pytorch_network.cpu()
-
-    test_set = dataset.get_test_set()
-
-    net.pytorch_network.eval()
-    net.pytorch_network.float()
-    test_loss = 0
-    correct = 0
-    with torch.no_grad():
-
-        batch_idx = 0
-        data_idx = 0
-
-        while data_idx < len(test_set[0]):
-
-            if data_idx + test_batch_size >= len(test_set[0]):
-                last_data_idx = len(test_set[0])
-            else:
-                last_data_idx = data_idx + test_batch_size
-
-            data = torch.from_numpy(test_set[0][data_idx:last_data_idx, :])
-            target = torch.from_numpy(test_set[1][data_idx:last_data_idx])
-
-            if cuda:
-                data, target = data.cuda(), target.cuda()
-
-            data, target = torch.autograd.Variable(data), torch.autograd.Variable(target)
-            output = net.pytorch_network(data)
-            test_loss += funct.cross_entropy(output, target, reduction='sum').data.item()  # sum up batch loss
-            pred = output.data.max(1, keepdim=True)[1]  # get the index of the max log-probability
-            correct += pred.eq(target.data.view_as(pred)).cpu().sum().item()
-            batch_idx += 1
-            data_idx += test_batch_size
-
-    test_loss /= float(math.floor(len(test_set[0]) / test_batch_size))
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.1f}%)\n'.format(
-        test_loss, correct, len(test_set[0]),
-        100. * correct / len(test_set[0])))
-
-    return correct / float(len(test_set[0])), test_loss
+import coconet.core.controller.pynevertemp.networks as networks
+import coconet.core.controller.pynevertemp.strategies.conversion as cv
+from coconet.core.controller.pynevertemp.tensor import Tensor
 
 
 def generate_targeted_linf_robustness_query(data: Tensor, adv_target: int, bounds: tuple,
@@ -240,6 +55,7 @@ def generate_targeted_linf_robustness_query(data: Tensor, adv_target: int, bound
 
             if i != adv_target:
                 f.write(f"(assert (<= (- Y_{i} Y_{adv_target}) 0))\n")
+
 
 def generate_untargeted_linf_robustness_query(data: Tensor, target: int, bounds: tuple,
                                               num_classes: int, epsilon: float, filepath: str):
@@ -366,7 +182,6 @@ def parse_linf_robustness_smtlib(filepath: str) -> (bool, list, int):
 
 
 def net_update(network: networks.NeuralNetwork) -> networks.NeuralNetwork:
-
     if not network.up_to_date:
 
         for alt_rep in network.alt_rep_cache:
@@ -384,7 +199,6 @@ def net_update(network: networks.NeuralNetwork) -> networks.NeuralNetwork:
 
 
 def parse_acas_property(filepath: str) -> ((Tensor, Tensor), (Tensor, Tensor)):
-
     in_coeff = np.zeros((10, 5))
     in_bias = np.zeros((10, 1))
     out_coeff = []
@@ -448,7 +262,6 @@ def parse_acas_property(filepath: str) -> ((Tensor, Tensor), (Tensor, Tensor)):
 
 
 def parse_nnet(filepath: str) -> (list, list, list, list, list, list):
-
     with open(filepath) as f:
 
         line = f.readline()
@@ -528,7 +341,6 @@ def parse_nnet(filepath: str) -> (list, list, list, list, list, list):
 
 def input_search(net: networks.NeuralNetwork, ref_output: Tensor, start_input: Tensor, max_iter: int, rate: float,
                  threshold: float = 1e-5):
-
     py_net = cv.PyTorchConverter().from_neural_network(net).pytorch_network
     py_ref_output = torch.from_numpy(ref_output)
     py_start_input = torch.from_numpy(start_input)
@@ -544,7 +356,7 @@ def input_search(net: networks.NeuralNetwork, ref_output: Tensor, start_input: T
     iteration = 0
 
     while dist > threshold and iteration < max_iter:
-        #current_input.requires_grad = True
+        # current_input.requires_grad = True
         optim.zero_grad()
         dist.backward()
         optim.step()
@@ -566,7 +378,6 @@ def input_search(net: networks.NeuralNetwork, ref_output: Tensor, start_input: T
 
 
 def compute_saliency(net: networks.NeuralNetwork, ref_input: Tensor):
-
     class BackHook:
 
         def __init__(self, module: torch.nn.Module, backward=True):

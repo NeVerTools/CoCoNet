@@ -12,7 +12,6 @@ from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsRectItem, QGraphicsTextI
 import coconet.view.styles as style
 import coconet.view.util.utility as u
 from coconet.core.controller.pynevertemp.tensor import Tensor
-from coconet.core.model.network import NetworkProperty
 
 MAX_FLOAT_LABEL_LENGTH = 5
 
@@ -251,7 +250,7 @@ class GraphicLine(QGraphicsLineItem):
 class GraphicBlock(QtWidgets.QWidget):
     """
     This class works as a base class for graphical block objects in
-    NeVer. It provides a rectangle widget that can be customized
+    CoCoNet. It provides a rectangle widget that can be customized
     by inheriting from this class.
 
     Attributes
@@ -614,24 +613,36 @@ class NodeBlock(GraphicBlock):
 class PropertyBlock(GraphicBlock):
     """
     This class represents the widget associated to a
-    SMTLIB property in NeVer.
+    SMTLIB property in CoCoNet.
 
     Attributes
     ----------
-    property : NetworkProperty
-        The property element for this block.
+    property_type : str
+        The property type (SMT, Polyhedral...).
+    smt_string : str
+        The SMT-LIB expression of the property.
     property_label : QLabel
         The visible label of the property.
+    condition_label : QLabel
+        The POST or PRE label of the property.
     variables : list
         The list of admissible variables
         for the property.
 
     """
 
-    def __init__(self, block_id: str, property: NetworkProperty):
+    def __init__(self, block_id: str, p_type: str):
         super().__init__(block_id)
-        self.property = property
-        self.property_label = QLabel(property.property_string)
+        self.property_type = p_type
+        self.pre_condition = True
+        self.smt_string = ""
+        if p_type == "Generic SMT":
+            self.label_string = "-"
+        elif p_type == "Polyhedral":
+            self.label_string = "Ax - b <= 0"
+
+        self.condition_label = QLabel("PRE")
+        self.property_label = QLabel(self.label_string)
         self.variables = []
         self.init_layout()
         self.init_context_menu()
@@ -644,9 +655,11 @@ class PropertyBlock(GraphicBlock):
         """
 
         # Override title label
-        self.title_label.setText(f"{self.property.type} property")
+        self.title_label.setText(self.property_type)
         self.title_label.setStyleSheet(style.PROPERTY_TITLE_STYLE)
+        self.condition_label.setStyleSheet(style.PROPERTY_CONDITION_STYLE)
         self.main_layout.addWidget(self.title_label)
+        self.main_layout.addWidget(self.condition_label)
 
         self.init_grid()
 
@@ -667,5 +680,14 @@ class PropertyBlock(GraphicBlock):
         block_actions["Define"] = QAction("Define...", self)
         self.set_context_menu(block_actions)
 
-    def update_label(self):
-        self.property_label.setText(self.property.property_string)
+    def set_label(self):
+        self.property_label.setText(self.label_string)
+
+    def set_smt_label(self):
+        self.property_label.setText(self.smt_string)
+
+    def update_condition_label(self):
+        if self.pre_condition:
+            self.condition_label.setText("PRE")
+        else:
+            self.condition_label.setText("POST")

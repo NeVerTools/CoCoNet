@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QDockWidget, QScrollArea, QSizePolicy, QWidget, QVBo
 from PyQt5.QtWidgets import QToolBar, QToolButton
 
 import coconet.view.styles as style
-from coconet.core.model.network import NetworkNode, NetworkProperty
+from coconet.core.model.network import NetworkNode
 from coconet.view.drawing.element import NodeBlock
 
 
@@ -314,15 +314,11 @@ class PropertyButton(QPushButton):
     ----------
     name : str
         The string appearing on the button.
-    property : NetworkProperty
-        The property that will be displayed if the user clicks on the
-        button.
 
     """
 
-    def __init__(self, name: str, property: NetworkProperty):
+    def __init__(self, name: str):
         self.name = name
-        self.property = property
         super(PropertyButton, self).__init__(name)
 
 
@@ -439,12 +435,10 @@ class BlocksToolbar(QToolBar):
             self.b_buttons[k] = button
 
     def __init_properties(self):
-        # TODO UPDATE WITH JSON
-        props = ("SMT", "Polyhedral")
+        props = ("Generic SMT", "Polyhedral")
 
         for k in props:
-            self.properties[k] = NetworkProperty(k)
-            button = PropertyButton(k, self.properties[k])
+            button = PropertyButton(k)
             button.setToolTip(k)
             button.setStyleSheet(style.BUTTON_STYLE)
             self.p_buttons[k] = button

@@ -6,7 +6,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QStatusBar, QAction, QLabel, QGraphicsRectItem, QPushButton
 
 import coconet.view.styles as style
-from coconet.core.controller.project import Project
 from coconet.view.drawing.element import GraphicLine, NodeBlock
 from coconet.view.drawing.scene import DrawingMode, Canvas
 from coconet.view.widget.dialog.dialogs import ConfirmDialog, MessageDialog, MessageType, HelpDialog
@@ -46,7 +45,7 @@ class MainWindow(QtWidgets.QMainWindow):
     update_status()
         Changes the status bar displaying on it the canvas mode and the
         selected items.
-    change_draw_mode(newmode)
+    change_draw_mode(DrawingMode)
         Changes the drawing mode of the canvas.
     create_from(NodeButton)
         Draws in the canvas the block corresponding to the button pressed.
@@ -65,7 +64,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Init window appearance
         self.SYSNAME = "CoCoNet"
         self.setWindowTitle(self.SYSNAME)
-        self.setWindowIcon(QtGui.QIcon('coconet/res/icons/CCNN_logo.svg'))
+        self.setWindowIcon(QtGui.QIcon('coconet/res/icons/logo.svg'))
         self.setStyleSheet("background-color: " + style.GREY_1)
 
         # Navigation menu
@@ -78,12 +77,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # Parameters toolbar
         self.parameters = ParamToolbar()
 
-        # Project in use
-        self.project = Project()
-        self.project.opened_net.connect(lambda: self.canvas.draw_network(self.project.network))
-
         # Drawing Canvas
-        self.canvas = Canvas(self.project.network, self.toolbar.blocks)
+        self.canvas = Canvas(self.toolbar.blocks)
 
         # Status bar
         self.status_bar = QStatusBar()
@@ -159,6 +154,8 @@ class MainWindow(QtWidgets.QMainWindow):
         open_action = QAction("Open...", self)
         open_action.setShortcut("Ctrl+O")
         open_action.triggered.connect(lambda: self.open())
+        load_p_action = QAction("Load property...", self)
+        load_p_action.triggered.connect(lambda: self.canvas.project.open_property())
         save_action = QAction("Save", self)
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(lambda: self.save(False))
@@ -218,6 +215,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Build File menu
         menu_file.addAction(new_action)
         menu_file.addAction(open_action)
+        menu_file.addAction(load_p_action)
         menu_file.addSeparator()
         menu_file.addAction(save_action)
         menu_file.addAction(save_as_action)
@@ -266,7 +264,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if isinstance(button, NodeButton):
                 self.canvas.draw_node(button.node_type)
             elif isinstance(button, PropertyButton):
-                self.canvas.draw_property(button.property)
+                self.canvas.draw_property(button.name)
 
         return pressed
 
@@ -360,7 +358,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         self.clear()
-        self.project.file_name = ("", "")
+        self.canvas.project.file_name = ("", "")
         self.setWindowTitle(self.SYSNAME)
 
     def open(self):
@@ -387,13 +385,13 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.canvas.scene.selectionChanged.connect(lambda: self.update_status())
                     self.update_status()
                     # A file is opened
-                    self.project.open()
-                    self.setWindowTitle(self.SYSNAME + " - " + self.project.network.identifier)
+                    self.canvas.project.open()
+                    self.setWindowTitle(self.SYSNAME + " - " + self.canvas.project.network.identifier)
         else:
             # If the canvas was already empty, the opening function is directly
             # called
-            self.project.open()
-            self.setWindowTitle(self.SYSNAME + " - " + self.project.network.identifier)
+            self.canvas.project.open()
+            self.setWindowTitle(self.SYSNAME + " - " + self.canvas.project.network.identifier)
 
     def save(self, _as: bool = True):
         """
@@ -416,7 +414,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 for node in self.canvas.renderer.disconnected_network:
                     try:
                         self.canvas.renderer.add_node_to_nn(node)
-                        self.project.save(_as)
+                        self.canvas.project.save(_as)
                     except Exception as e:
                         error_dialog = MessageDialog(str(e), MessageType.ERROR)
                         error_dialog.exec()
@@ -437,12 +435,12 @@ class MainWindow(QtWidgets.QMainWindow):
             every_node_connected = True
             # every node has to be in the nodes dictionary
             for node in self.canvas.renderer.disconnected_network:
-                if node not in self.project.network.nodes:
+                if node not in self.canvas.project.network.nodes:
                     every_node_connected = False
                     break
 
             if every_node_connected:
-                self.project.save(_as)
+                self.canvas.project.save(_as)
             else:
                 # If there are disconnected nodes, a message is displayed to the
                 # user to choose if saving only the connected network
@@ -452,7 +450,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                                "Do you wish to continue?")
                 confirm_dialog.exec()
                 if confirm_dialog.confirm:
-                    self.project.save(_as)
+                    self.canvas.project.save(_as)
         else:
             # If the network is not sequential, it cannot be saved.
             not_sequential_dialog = MessageDialog("The network is not sequential and "

@@ -1,25 +1,26 @@
 import abc
-import coconet.core.controller.pynevertemp.nodes as nodes
-import uuid
-import numpy as np
-import multiprocessing
 import itertools
-from typing import Set, List, Union
+import logging
 import math
-import scipy.stats as sts
-import scipy.spatial.distance as dist
+import multiprocessing
 import time
+import uuid
+from typing import Set, List, Union
 
-from coconet.core.controller.pynevertemp.tensor import Tensor
+import numpy as np
+import scipy.spatial.distance as dist
+import scipy.stats as sts
 from ortools.linear_solver import pywraplp
 
+import coconet.core.controller.pynevertemp.nodes as nodes
+from coconet.core.controller.pynevertemp.tensor import Tensor
 
-# abstraction_logfile = "logs/ABSTRACTION_LOG.txt"
-lp_times_file = "logs/lp_times.txt"
-lb_times_file = "logs/lb_times.txt"
-ub_times_file = "logs/ub_times.txt"
-empty_times_file = "logs/empty_times.txt"
-save_times = False
+logger_empty = logging.getLogger("pynever.strategies.abstraction.empty_times")
+logger_lp = logging.getLogger("pynever.strategies.abstraction.lp_times")
+logger_lb = logging.getLogger("pynever.strategies.abstraction.lb_times")
+logger_ub = logging.getLogger("pynever.strategies.abstraction.ub_times")
+
+# save_times = False
 propagate_bounds = False
 parallel = True
 
@@ -145,9 +146,7 @@ class Star:
                 self.is_empty = False
 
         end_time = time.perf_counter()
-        if save_times:
-            with open(empty_times_file, "a") as f:
-                f.write(f"{end_time - start_time},")
+        logger_empty.debug(f"{end_time - start_time},")
 
         return self.is_empty
 
@@ -163,7 +162,7 @@ class Star:
 
         if self.lbs[i] is None or self.ubs[i] is None or self.is_empty is None:
 
-            #print("Computing bounds")
+            # print("Computing bounds")
             start_time = time.perf_counter()
 
             solver, alphas, constraints = self.__get_predicate_lp_solver()
@@ -184,6 +183,8 @@ class Star:
                 self.is_empty = True
                 self.lbs[i] = None
                 self.ubs[i] = None
+                ub_end = 0
+                ub_start = 0
             else:
                 self.is_empty = False
 
@@ -198,15 +199,10 @@ class Star:
                 self.ubs[i] = ub
 
             end_time = time.perf_counter()
-            #print(f"TIME: {end_time - start_time}")
 
-            if save_times:
-                with open(lp_times_file, "a") as f:
-                    f.write(f"{end_time - start_time},")
-                with open(ub_times_file, "a") as f:
-                    f.write(f"{ub_end - ub_start},")
-                with open(lb_times_file, "a") as f:
-                    f.write(f"{lb_end - lb_start},")
+            logger_lp.debug(f"{end_time - start_time},")
+            logger_lb.debug(f"{ub_end - ub_start},")
+            logger_ub.debug(f"{lb_end - lb_start},")
 
         return self.lbs[i], self.ubs[i]
 
@@ -457,7 +453,6 @@ def intersect_with_halfspace(star: Star, coef_mat: Tensor, bias_mat: Tensor) -> 
 
 
 def __mixed_step_relu(abs_input: Set[Star], var_index: int, refinement_flag: bool) -> Set[Star]:
-
     abs_input = list(abs_input)
     abs_output = set()
 
@@ -593,7 +588,7 @@ def mixed_single_relu_forward(star: Star, heuristic: str, params: List) -> Set[S
 
     temp_abs_input = {star}
     if star.check_if_empty():
-        return [], set()
+        return set()
     else:
 
         if heuristic == "best_n_neurons":
@@ -710,8 +705,8 @@ def area_sig_triangle(lb: float, ub: float) -> float:
     return base * height / 2.0
 
 
-def __recursive_step_sigmoid(star: Star, var_index: int, approx_level: int, lb: float, ub: float, tolerance: float) -> Set[Star]:
-
+def __recursive_step_sigmoid(star: Star, var_index: int, approx_level: int, lb: float, ub: float, tolerance: float) -> \
+Set[Star]:
     assert approx_level >= 0
 
     if abs(ub - lb) < tolerance:
@@ -806,14 +801,15 @@ def __recursive_step_sigmoid(star: Star, var_index: int, approx_level: int, lb: 
                 best_boundary = boundary
 
         star_set = set()
-        star_set = star_set.union(__recursive_step_sigmoid(star, var_index, approx_level - 1, lb, best_boundary, tolerance))
-        star_set = star_set.union(__recursive_step_sigmoid(star, var_index, approx_level - 1, best_boundary, ub, tolerance))
+        star_set = star_set.union(
+            __recursive_step_sigmoid(star, var_index, approx_level - 1, lb, best_boundary, tolerance))
+        star_set = star_set.union(
+            __recursive_step_sigmoid(star, var_index, approx_level - 1, best_boundary, ub, tolerance))
 
         return star_set
 
 
 def __approx_step_sigmoid(abs_input: Set[Star], var_index: int, approx_level: int, tolerance: float) -> Set[Star]:
-
     abs_output = set()
     for star in abs_input:
 
@@ -926,7 +922,7 @@ class AbsReLUNode(AbsLayerNode):
         Identifier of the LayerNode.
 
     ref_node : ReLUNode
-        LayerNode di riferimento per l'abstract transformer.
+        Reference LayerNode for the abstract transformer.
 
     heuristic : str
         Heuristic used to decide the refinement level of the abstraction.
@@ -935,9 +931,9 @@ class AbsReLUNode(AbsLayerNode):
         - best_n_neurons: for each star the n best neuron to refine are selected based on the loss of precision
           the abstraction would incur using the coarse over_approximation.
 
-    params : List
+    params : Dict
         Parameters for the heuristic of interest.
-        If the heuristic is given_flags then params is a list whose first element is the list of refinement flags.
+        If the heuristic is given_flags then params is a Dict whose first element is the list of refinement flags.
         If the heuristic is best_n_neurons then params is a list whose first element is the number of neurons to refine.
 
     Methods
@@ -996,7 +992,7 @@ class AbsReLUNode(AbsLayerNode):
 
     def __parallel_starset_forward(self, abs_input: StarSet) -> StarSet:
 
-        #with open(abstraction_logfile, "a") as f:
+        # with open(abstraction_logfile, "a") as f:
         #    f.write("Node: " + self.identifier + "\n")
 
         my_pool = multiprocessing.Pool(multiprocessing.cpu_count())
@@ -1008,7 +1004,6 @@ class AbsReLUNode(AbsLayerNode):
         abs_output = StarSet()
 
         for result in parallel_results:
-
             star_set = result
             abs_output.stars = abs_output.stars.union(star_set)
 
@@ -1021,7 +1016,6 @@ class AbsReLUNode(AbsLayerNode):
 
         abs_output = StarSet()
         for star in abs_input.stars:
-
             result = mixed_single_relu_forward(star, self.heuristic, self.params)
 
             abs_output.stars = abs_output.stars.union(result)
@@ -1136,9 +1130,9 @@ class AbsSigmoidNode(AbsLayerNode):
         super().__init__(identifier, ref_node)
 
         if approx_levels is None:
-            approx_levels = [0 for i in range(ref_node.num_features)]
+            approx_levels = [0 for i in range(ref_node.in_dim[-1])]
         elif isinstance(approx_levels, int):
-            approx_levels = [approx_levels for i in range(ref_node.num_features)]
+            approx_levels = [approx_levels for i in range(ref_node.in_dim[-1])]
 
         self.approx_levels = approx_levels
 
@@ -1164,7 +1158,7 @@ class AbsSigmoidNode(AbsLayerNode):
 
     def __starset_forward(self, abs_input: StarSet) -> StarSet:
 
-        #parallel = True
+        # parallel = True
         if parallel:
             abs_output = StarSet()
             my_pool = multiprocessing.Pool(1)
@@ -1195,7 +1189,7 @@ class AbsSigmoidNode(AbsLayerNode):
 class AbsNeuralNetwork(abc.ABC):
     """
     An abstract class used for our internal representation of a generic NeuralNetwork for Abstract Interpretation.
-    It consists of a graph of AbsLayerNodes. The parameters of the computational graph are specialized in the
+    It consists of a graph of AbsLayerNodes. The properties of the computational graph are specialized in the
     concrete classes. The method forward and backward calls the corresponding methods in the AbsLayerNodes following the
     correct order to compute the output AbsElement.
 

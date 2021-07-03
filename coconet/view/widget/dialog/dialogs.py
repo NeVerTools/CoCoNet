@@ -53,7 +53,7 @@ class MessageType(Enum):
 class CoCoNetDialog(QtWidgets.QDialog):
     """
     Base class for grouping common elements of the dialogs.
-    Each dialog share a main_layout (vertical by default), a title
+    Each dialog shares a main_layout (vertical by default), a title
     and a string content.
 
     Attributes
@@ -402,7 +402,7 @@ class EditSmtPropertyDialog(CoCoNetDialog):
     def __init__(self, property_block: PropertyBlock):
         super().__init__("", "Edit property")
         self.property_block = property_block
-        self.new_property = self.property_block.property.property_string
+        self.new_property = self.property_block.smt_string
         self.has_edits = False
         self.layout = QGridLayout()
 
@@ -426,13 +426,13 @@ class EditSmtPropertyDialog(CoCoNetDialog):
         # "Apply" button which saves changes
         apply_button = QPushButton("Apply")
         apply_button.setStyleSheet(style.BUTTON_STYLE)
-        apply_button.clicked.connect(lambda: self.save_data())
+        apply_button.clicked.connect(self.save_data)
         self.layout.addWidget(apply_button, 2, 0)
 
         # "Cancel" button which closes the dialog without saving
         cancel_button = QPushButton("Cancel")
         cancel_button.setStyleSheet(style.BUTTON_STYLE)
-        cancel_button.clicked.connect(lambda: self.close())
+        cancel_button.clicked.connect(self.close)
         self.layout.addWidget(cancel_button, 2, 1)
 
         self.layout.setColumnStretch(0, 1)
@@ -526,13 +526,13 @@ class EditPolyhedralPropertyDialog(CoCoNetDialog):
         # "Save" button which saves the state
         save_button = QPushButton("Save")
         save_button.setStyleSheet(style.BUTTON_STYLE)
-        save_button.clicked.connect(lambda: self.save_property())
+        save_button.clicked.connect(self.save_property)
         self.layout.addWidget(save_button, 3, 1)
 
         # "Cancel" button which closes the dialog without saving
         cancel_button = QPushButton("Cancel")
         cancel_button.setStyleSheet(style.BUTTON_STYLE)
-        cancel_button.clicked.connect(lambda: self.close())
+        cancel_button.clicked.connect(self.close)
         self.layout.addWidget(cancel_button, 3, 2)
 
         self.layout.setColumnStretch(0, 1)
@@ -542,9 +542,7 @@ class EditPolyhedralPropertyDialog(CoCoNetDialog):
         self.render_layout()
 
     def add_entry(self, var: str, op: str, val: str) -> None:
-        constraint = "(assert ("
-        end = "))"
-        self.property_list.append(f"{constraint}{op} {var} {val}{end}")
+        self.property_list.append((var, op, val))
         self.var_cb.setCurrentIndex(0)
         self.op_cb.setCurrentIndex(0)
         self.val.setText("")

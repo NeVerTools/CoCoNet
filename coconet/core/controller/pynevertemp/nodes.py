@@ -101,22 +101,23 @@ class FullyConnectedNode(LayerNode):
 
     """
 
-    def __init__(self, identifier: str, in_dim: Tuple, in_features: int, out_features: int,
+    def __init__(self, identifier: str, in_dim: Tuple, out_features: int,
                  weight: Tensor = None, bias: Tensor = None, has_bias: bool = True):
 
         if not len(in_dim) >= 1:
             raise Exception("FullyConnectedNode: in_dim cannot be empty")
 
-        in_dim_error = f"Wrong value for in_features ({in_features}): " \
+        """in_dim_error = f"Wrong value for in_features ({in_features}): " \
                        f"should be equal to the last element of in_dim ({in_dim[-1]})."
         if not in_dim[-1] == in_features:
-            raise Exception(in_dim_error)
+            raise Exception(in_dim_error)"""
 
         temp = list(in_dim)
         temp[-1] = out_features
         out_dim = tuple(temp)
         super().__init__(identifier, in_dim, out_dim)
 
+        in_features = in_dim[-1]
         self.in_features = in_features
         self.out_features = out_features
 
@@ -146,12 +147,10 @@ class FullyConnectedNode(LayerNode):
         self.bias = bias
 
     def update_input(self, in_dim: Tuple):
-        self.__init__(self.identifier, in_dim, self.in_features, self.out_features,
-                      self.weight, self.bias, self.has_bias)
+        self.__init__(self.identifier, in_dim, self.out_features, self.weight, self.bias, self.has_bias)
 
-    def update_data(self, in_features: int, out_features: int,
-                    weight: Tensor = None, bias: Tensor = None, has_bias: bool = True):
-        self.__init__(self.identifier, self.in_dim, in_features, out_features, weight, bias, has_bias)
+    def update_data(self, out_features: int, weight: Tensor = None, bias: Tensor = None, has_bias: bool = True):
+        self.__init__(self.identifier, self.in_dim, out_features, weight, bias, has_bias)
 
 
 class BatchNormNode(LayerNode):
@@ -167,6 +166,7 @@ class BatchNormNode(LayerNode):
 
     Attributes
     ----------
+
     num_features : int
         Number of input and output feature of the Batch Normalization Layer.
     weight : Tensor, optional
@@ -206,9 +206,20 @@ class BatchNormNode(LayerNode):
 
         self.num_features = num_features
 
-        if track_running_stats and running_mean is None and running_var is None:
-            running_mean = np.ones(num_features)
-            running_var = np.zeros(num_features)
+        if track_running_stats:
+            if running_mean is None:
+                running_mean = np.ones(num_features)
+            if running_var is None:
+                running_var = np.zeros(num_features)
+
+            if not running_var.shape[0] == num_features:
+                raise Exception("The dimension of the running_var should be equal to num_features")
+            if not running_mean.shape[0] == num_features:
+                raise Exception("The dimension of the running_mean should be equal to num_features")
+
+        else:
+            running_mean = None
+            running_var = None
 
         if weight is None:
             weight = np.ones(num_features)
@@ -281,7 +292,6 @@ class ConvNode(LayerNode):
         Tensor containing the bias parameter of the Conv Layer (default: None)
     weight : Tensor, optional
         Tensor containing the weight parameters of the Conv layer (default: None)
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, in_channels: int, out_channels: int,
@@ -394,7 +404,6 @@ class AveragePoolNode(LayerNode):
         In order to use ceil mode. (default: False)
     count_include_pad: bool, optional
         Whether include pad pixels when calculating values for the edges (default: False)
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, kernel_size: Tuple, stride: Tuple,
@@ -471,7 +480,6 @@ class MaxPoolNode(LayerNode):
         In order to use ceil mode. (default: False)
     return_indices: bool
         If True it will return the max indices along with the outputs (default: False)
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, kernel_size: Tuple, stride: Tuple,
@@ -539,7 +547,6 @@ class LRNNode(LayerNode):
         Exponent. (default: 0.75)
     k : float, optional
         Additive factor (default: 1.0)
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, size: int, alpha: float = 0.0001, beta: float = 0.75,
@@ -569,7 +576,6 @@ class SoftMaxNode(LayerNode):
     ----------
     axis : int, optional
         A dimension along which Softmax will be computed (so every slice along dim will sum to 1)
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, axis: int = -1):
@@ -595,12 +601,10 @@ class UnsqueezeNode(LayerNode):
     """
     A class used for our internal representation of a Unsqueeze Layer.
     We follow the ONNX operator convention for attributes and definitions.
-
     Attributes
     ----------
     axes : Tuple
         List of indices at which to insert the singleton dimension.
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, axes: Tuple):
@@ -623,6 +627,7 @@ class UnsqueezeNode(LayerNode):
             raise Exception(f"Every axes element must be in [{- (len(in_dim) + len(axes))}, "
                             f"{(len(in_dim) + len(axes) - 1)}]")
 
+        # We add the singleton dimensions to the out_dim
         out_dim = copy.deepcopy(in_dim)
         out_dim = list(out_dim)
         temp_axes = list(axes)
@@ -646,7 +651,6 @@ class ReshapeNode(LayerNode):
     """
     A class used for our internal representation of a Reshape layer of a Neural Network.
     We follow the ONNX operator convention for attributes and definitions.
-
     Attributes
     ----------
     shape : Tuple
@@ -697,7 +701,6 @@ class FlattenNode(LayerNode):
     """
     A class used for our internal representation of a Flatten layer of a Neural Network. We follow the ONNX operator
     convention for attributes and definitions.
-
     Attributes
     ----------
     axis : int, optional
@@ -736,12 +739,10 @@ class DropoutNode(LayerNode):
     """
     A class used for our internal representation of a Dropout Layer of a Neural Network.
     The inplace parameter of pytorch and the seed attribute and training_mode of onnx are not supported.
-
     Attributes
     ----------
     p : float, optional
         Probability of an element to be zeroed (default: 0.5)
-
     """
 
     def __init__(self, identifier: str, in_dim: Tuple, p: float = 0.5):
