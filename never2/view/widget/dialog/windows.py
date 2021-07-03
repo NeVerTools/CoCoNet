@@ -41,8 +41,6 @@ class NeVerWindow(QtWidgets.QDialog):
         self.layout = QVBoxLayout()
         self.title = title
         self.widgets = dict()
-        self.gui_params = dict()
-        self.grid_layout = QGridLayout()
 
         self.setWindowTitle(self.title)
         self.setModal(True)
@@ -69,11 +67,16 @@ class TrainingWindow(NeVerWindow):
     nn : NeuralNetwork
         The current network used in the main window, to be
         trained with the parameters selected here.
-    dataset : Dataset
-        The dataset on which the network is trained.
+    dataset_path : str
+        The dataset path to train the network.
     train_params : dict
         The parameters required by pyNeVer to correctly
         train the network.
+    gui_params : dict
+        The dictionary of secondary parameters displayed
+        based on the selection.
+    grid_layout : QGridLayout
+        The layout to display the GUI parameters on.
 
     Methods
     ----------
@@ -95,6 +98,9 @@ class TrainingWindow(NeVerWindow):
         self.nn = nn
         self.dataset_path = ""
         self.train_params = dict()
+        self.gui_params = dict()
+        self.grid_layout = QGridLayout()
+
         with open('never2/res/json/training.json') as json_file:
             # Init dict with default values
             self.train_params = json.loads(json_file.read())
