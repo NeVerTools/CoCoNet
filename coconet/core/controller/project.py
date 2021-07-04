@@ -1,11 +1,8 @@
-import os
-
 import onnx
 import torch
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from PyQt5.QtWidgets import QFileDialog, QApplication
 from pysmt.smtlib.parser import SmtLibParser
-from tensorflow import keras
 
 import coconet.core.controller.pynevertemp.networks as pynn
 from coconet.core.controller.pynevertemp.strategies.conversion import ONNXNetwork, \
@@ -14,15 +11,13 @@ from coconet.view.drawing.element import PropertyBlock
 from coconet.view.widget.dialog.dialogs import MessageDialog, MessageType, InputDialog
 
 # Formats available for opening and saving networks
-NETWORK_FORMATS_OPENING = "All supported formats (*.onnx *.pt *.pth *.pb);;\
+NETWORK_FORMATS_OPENING = "All supported formats (*.onnx *.pt *.pth);;\
             ONNX(*.onnx);;\
-            PyTorch(*.pt *.pth);;\
-            TensorFlow(*.pb)"
+            PyTorch(*.pt *.pth)"
 PROPERTY_FORMATS_OPENING = "SMT-LIB files (*.smt *.smt2);;\
                            SMT(*.smt *.smt2)"
 SUPPORTED_NETWORK_FORMATS = {'ONNX': ['onnx'],
-                             'PyTorch': ['pt', 'pth'],
-                             'TensorFlow': ['pb']}
+                             'PyTorch': ['pt', 'pth']}
 SUPPORTED_PROPERTY_FORMATS = {'SMT': ['smt', 'smt2']}
 
 
@@ -239,12 +234,6 @@ class InputHandler:
             module = torch.load(path)
             self.alt_repr = PyTorchNetwork(net_id + "_pytorch", module, True)
 
-        elif self.extension in SUPPORTED_NETWORK_FORMATS['TensorFlow']:
-            head = os.path.split(path)[0]
-            module = keras.models.load_model(head)
-            # self.alt_repr = TensorflowNetwork(net_id + "_tensorflow", module, True)
-            self.alt_repr = TensorflowNetwork(net_id + "_tensorflow", True)
-
         # Convert the network
         if self.alt_repr is not None:
             try:
@@ -427,8 +416,6 @@ class OutputHandler:
                 onnx.save(self.alt_repr.onnx_network.onnx_network, filename[0])
             elif isinstance(self.alt_repr, PyTorchNetwork):
                 torch.save(self.alt_repr.pytorch_network.pytorch_network, filename[0])
-            elif isinstance(self.alt_repr, TensorflowNetwork):
-                keras.models.save(self.alt_repr, filename)
 
         except Exception as e:
             self.exception = e
@@ -494,13 +481,9 @@ class OutputHandler:
 
         elif self.extension in SUPPORTED_NETWORK_FORMATS['PyTorch']:
             self.strategy = PyTorchConverter()
-            model = self.strategy.from_neural_network(network)
-            self.alt_repr = PyTorchNetwork(net_id + "_pytorch", model, True)
-
-        elif self.extension in SUPPORTED_NETWORK_FORMATS['TensorFlow']:
-            self.strategy = TensorflowConverter()
-            model = self.strategy.from_neural_network(network)
-            self.alt_repr = TensorflowNetwork(net_id + "_tensorflow", True)
+            self.alt_repr = self.strategy.from_neural_network(network)
+            self.alt_repr.identifier = net_id + "_pytorch"
+            self.alt_repr.up_to_date = True
         else:
             raise Exception("Format not supported")
 
