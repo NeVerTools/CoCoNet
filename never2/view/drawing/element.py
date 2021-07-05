@@ -685,3 +685,9 @@ class PropertyBlock(GraphicBlock):
 
     def set_smt_label(self):
         self.property_label.setText(self.smt_string)
+
+    def update_condition_label(self):
+        if self.pre_condition:
+            self.condition_label.setText("PRE")
+        else:
+            self.condition_label.setText("POST")

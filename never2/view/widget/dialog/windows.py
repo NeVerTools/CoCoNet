@@ -1,4 +1,6 @@
 import json
+import logging
+from typing import Callable
 
 import torch.nn.functional as fun
 import torch.optim as opt
@@ -12,6 +14,7 @@ import never2.view.util.utility as u
 from never2.core.controller.pynevertemp.networks import NeuralNetwork
 from never2.core.controller.pynevertemp.strategies.training import PytorchTraining, PytorchMetrics
 from never2.view.widget.dialog.dialogs import MessageDialog, MessageType
+from never2.view.widget.misc import LoggerTextBox
 
 
 class NeVerWindow(QtWidgets.QDialog):
@@ -33,6 +36,8 @@ class NeVerWindow(QtWidgets.QDialog):
     ----------
     render_layout()
         Procedure to display the window layout.
+    create_widget_layout(str, dict, Callable, Callable)
+        Procedure to display widgets from a dictionary.
 
     """
 
@@ -41,8 +46,6 @@ class NeVerWindow(QtWidgets.QDialog):
         self.layout = QVBoxLayout()
         self.title = title
         self.widgets = dict()
-        self.gui_params = dict()
-        self.grid_layout = QGridLayout()
 
         self.setWindowTitle(self.title)
         self.setModal(True)
@@ -57,6 +60,62 @@ class NeVerWindow(QtWidgets.QDialog):
 
         self.setLayout(self.layout)
 
+    def create_widget_layout(self, layout_name: str, widget_dict: dict,
+                             cb_f: Callable = None, line_f: Callable = None) -> QHBoxLayout:
+        """
+        This method sets up the parameters layout by reading
+        the JSON-based dict of train_params and building
+        the corresponding graphic objects.
+
+        Parameters
+        ----------
+        layout_name : str
+            The name of the layout to be shown in the label.
+        widget_dict : dict
+            The dictionary of widgets to build.
+        cb_f : Callable, optional
+            The activation function for combo boxes.
+        line_f : Callable, optional
+            The activation function for text boxes.
+
+        Returns
+        ----------
+        QHBoxLayout
+            The layout with all the widgets loaded.
+
+        """
+
+        widget_layout = QHBoxLayout()
+        left_layout = QGridLayout()
+        left_layout.setAlignment(Qt.AlignTop)
+
+        title = QLabel(layout_name)
+        title.setAlignment(Qt.AlignCenter)
+        left_layout.addWidget(title, 0, 0, 1, 2)
+
+        counter = 1
+        for first_level in widget_dict.keys():
+            sub_key = next(iter(widget_dict[first_level]))
+            if type(widget_dict[first_level][sub_key]) == dict:
+                self.widgets[first_level] = QComboBox()
+                for second_level in widget_dict[first_level].keys():
+                    self.widgets[first_level].addItem(second_level)
+                self.widgets[first_level].setCurrentIndex(-1)
+                self.widgets[first_level].activated.connect(cb_f(first_level))
+            else:
+                self.widgets[first_level] = QLineEdit()
+                self.widgets[first_level].setText(str(widget_dict[first_level].get("value", "")))
+                self.widgets[first_level].textChanged.connect(line_f(first_level))
+
+            w_label = QLabel(first_level)
+            w_label.setToolTip(widget_dict[first_level].get("description"))
+            left_layout.addWidget(w_label, counter, 0)
+            left_layout.addWidget(self.widgets[first_level], counter, 1)
+            counter += 1
+
+        widget_layout.addLayout(left_layout)
+        return widget_layout
+
 
 class TrainingWindow(NeVerWindow):
     """
@@ -69,11 +128,16 @@ class TrainingWindow(NeVerWindow):
     nn : NeuralNetwork
         The current network used in the main window, to be
         trained with the parameters selected here.
-    dataset : Dataset
-        The dataset on which the network is trained.
+    dataset_path : str
+        The dataset path to train the network.
     train_params : dict
         The parameters required by pyNeVer to correctly
         train the network.
+    gui_params : dict
+        The dictionary of secondary parameters displayed
+        based on the selection.
+    grid_layout : QGridLayout
+        The layout to display the GUI parameters on.
 
     Methods
     ----------
@@ -95,6 +159,9 @@ class TrainingWindow(NeVerWindow):
         self.nn = nn
         self.dataset_path = ""
         self.train_params = dict()
+        self.gui_params = dict()
+        self.grid_layout = QGridLayout()
+
         with open('never2/res/json/training.json') as json_file:
             # Init dict with default values
             self.train_params = json.loads(json_file.read())
@@ -119,7 +186,17 @@ class TrainingWindow(NeVerWindow):
         self.layout.addWidget(sep_label)
 
         # Main body
-        body_layout = self.create_widget_layout()
+        # Activation functions for dynamic widgets
+        def activation_combo(key: str):
+            return lambda: self.update_grid_view(f"{key}:{self.widgets[key].currentText()}")
+
+        def activation_line(key: str):
+            return lambda: self.update_dict_value(key, "", self.widgets[key].text())
+
+        body_layout = self.create_widget_layout("Training parameters", self.train_params,
+                                                activation_combo, activation_line)
+        body_layout.addLayout(self.grid_layout)
+        self.grid_layout.setAlignment(Qt.AlignTop)
         self.layout.addLayout(body_layout)
 
         # Separator
@@ -139,60 +216,6 @@ class TrainingWindow(NeVerWindow):
         self.layout.addLayout(btn_layout)
 
         self.render_layout()
-
-    def create_widget_layout(self) -> QHBoxLayout:
-        """
-        This method sets up the parameters layout by reading
-        the JSON-based dict of train_params and building
-        the corresponding graphic objects.
-
-        Returns
-        -------
-        QHBoxLayout
-            The layout with all the widgets loaded.
-
-        """
-
-        body_layout = QHBoxLayout()
-        params_layout = QGridLayout()
-        params_layout.setAlignment(Qt.AlignTop)
-
-        title = QLabel("Training parameters")
-        title.setAlignment(Qt.AlignCenter)
-        params_layout.addWidget(title, 0, 0, 1, 2)
-
-        counter = 1
-        for first_level in self.train_params.keys():
-            # Activation functions for dynamic widgets
-            def activation_combo(key: str):
-                return lambda: self.update_grid_view(f"{key}:{self.widgets[key].currentText()}")
-
-            def activation_line(key: str):
-                return lambda: self.update_dict_value(key, "", self.widgets[key].text())
-
-            sub_key = next(iter(self.train_params[first_level]))
-            if type(self.train_params[first_level][sub_key]) == dict:
-                self.widgets[first_level] = QComboBox()
-                for second_level in self.train_params[first_level].keys():
-                    self.widgets[first_level].addItem(second_level)
-                self.widgets[first_level].setCurrentIndex(-1)
-                self.widgets[first_level].activated.connect(activation_combo(first_level))
-            else:
-                self.widgets[first_level] = QLineEdit()
-                self.widgets[first_level].setText(str(self.train_params[first_level].get("value", "")))
-                self.widgets[first_level].textChanged.connect(activation_line(first_level))
-
-            w_label = QLabel(first_level)
-            w_label.setToolTip(self.train_params[first_level].get("description"))
-            params_layout.addWidget(w_label, counter, 0)
-            params_layout.addWidget(self.widgets[first_level], counter, 1)
-            counter += 1
-
-        body_layout.addLayout(params_layout)
-        body_layout.addLayout(self.grid_layout)
-        self.grid_layout.setAlignment(Qt.AlignTop)
-
-        return body_layout
 
     def clear_grid(self) -> None:
         """
@@ -320,6 +343,17 @@ class TrainingWindow(NeVerWindow):
             self.train_params[name]["value"] = value
 
     def setup_dataset(self, name: str):
+        """
+        This method loads the dataset path in order to
+        use it in the training function.
+
+        Parameters
+        ----------
+        name : str
+            The dataset name.
+
+        """
+
         if name == "MNIST":
             self.dataset_path = "data/MNIST/"
         elif name == "Fashion MNIST":
@@ -352,9 +386,23 @@ class TrainingWindow(NeVerWindow):
             err_dialog.show()
             return
 
+        # Add logger text box
+        log_textbox = LoggerTextBox(self)
+        logger = logging.getLogger("pynever.strategies.training")
+        logger.addHandler(log_textbox)
+        logger.setLevel(logging.INFO)
+        self.layout.addWidget(log_textbox.widget)
+
+        logger.info("***** NeVer 2 - TRAINING *****")
+
         train = PytorchTraining(opt.Adam, self.gui_params["Optimizer:Adam"],
                                 fun.cross_entropy,
                                 3, 0.2, 512, 64,
                                 opt.lr_scheduler.ReduceLROnPlateau,
                                 self.gui_params["Scheduler:ReduceLROnPlateau"],
                                 PytorchMetrics.inaccuracy)
+
+
+class VerificationWindow(NeVerWindow):
+    def __init__(self):
+        super().__init__("Verify network")

@@ -792,6 +792,8 @@ class Canvas(QWidget):
                 if node.identifier == n:
                     new_p = self.draw_property(copy=p, pos=QPoint(350, tot_height))
                     new_p.set_smt_label()
+                    new_p.pre_condition = False
+                    new_p.update_condition_label()
                     tot_height += (new_p.rect.rect().height() + 50)
                     self.draw_line_between(new_p.block_id, n)
                     break
