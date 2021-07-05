@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Callable
 
 import torch.nn.functional as fun
@@ -13,6 +14,7 @@ import never2.view.util.utility as u
 from never2.core.controller.pynevertemp.networks import NeuralNetwork
 from never2.core.controller.pynevertemp.strategies.training import PytorchTraining, PytorchMetrics
 from never2.view.widget.dialog.dialogs import MessageDialog, MessageType
+from never2.view.widget.misc import LoggerTextBox
 
 
 class NeVerWindow(QtWidgets.QDialog):
@@ -35,7 +37,7 @@ class NeVerWindow(QtWidgets.QDialog):
     render_layout()
         Procedure to display the window layout.
     create_widget_layout(str, dict, Callable, Callable)
-
+        Procedure to display widgets from a dictionary.
 
     """
 
@@ -383,6 +385,15 @@ class TrainingWindow(NeVerWindow):
         if err_dialog is not None:
             err_dialog.show()
             return
+
+        # Add logger text box
+        log_textbox = LoggerTextBox(self)
+        logger = logging.getLogger("pynever.strategies.training")
+        logger.addHandler(log_textbox)
+        logger.setLevel(logging.INFO)
+        self.layout.addWidget(log_textbox.widget)
+
+        logger.info("***** NeVer 2 - TRAINING *****")
 
         train = PytorchTraining(opt.Adam, self.gui_params["Optimizer:Adam"],
                                 fun.cross_entropy,

@@ -12,7 +12,7 @@ import never2.view.util.utility as u
 from never2.core.controller.pynevertemp.tensor import Tensor
 from never2.core.model.network import NetworkNode
 from never2.view.drawing.element import PropertyBlock, NodeBlock
-from never2.view.widget.loading import ProgressBar
+from never2.view.widget.misc import ProgressBar
 
 UNEDITABLE = ["weight", "bias", "in_features"]
 

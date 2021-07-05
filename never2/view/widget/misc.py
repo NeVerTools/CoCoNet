@@ -1,7 +1,41 @@
+import logging
 from random import randint
 
+from PyQt5 import QtWidgets
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QProgressBar
+
+
+class LoggerTextBox(logging.Handler):
+    """
+    This class represents a QPlainTextEdit widget
+    used to display logging info. By extending
+    logging.Handler it can be used for any logging
+    purpose.
+
+    Credits: Todd Vanyo https://stackoverflow.com/users/2623625/todd-vanyo
+
+    Attributes
+    ----------
+    widget : QPlainTextEdit
+        The widget on which the logs are displayed.
+
+    Methods
+    ----------
+    emit(LogRecord)
+        Override of emit() method.
+
+    """
+
+    def __init__(self, parent):
+        super().__init__()
+        self.widget = QtWidgets.QPlainTextEdit(parent)
+        self.widget.setReadOnly(True)
+        self.widget.setFixedHeight(150)
+
+    def emit(self, record):
+        msg = self.format(record)
+        self.widget.appendPlainText(msg)
 
 
 class ProgressBar(QProgressBar):
