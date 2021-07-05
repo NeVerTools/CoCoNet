@@ -459,7 +459,7 @@ class OutputHandler:
             # Variables
             for p in properties.values():
                 for v in p.variables:
-                    f.write("(declare-const " + v + " Real)\n")
+                    f.write("(declare-fun () " + v + " Real)\n")
             f.write("\n")
 
             # Constraints
