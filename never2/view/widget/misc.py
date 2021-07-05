@@ -1,12 +1,12 @@
 import logging
 from random import randint
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QProgressBar
 
 
-class LoggerTextBox(logging.Handler):
+class LoggerTextBox(logging.Handler, QtCore.QObject):
     """
     This class represents a QPlainTextEdit widget
     used to display logging info. By extending
@@ -27,15 +27,19 @@ class LoggerTextBox(logging.Handler):
 
     """
 
+    append = QtCore.pyqtSignal(str)
+
     def __init__(self, parent):
         super().__init__()
+        QtCore.QObject.__init__(self)
         self.widget = QtWidgets.QPlainTextEdit(parent)
         self.widget.setReadOnly(True)
         self.widget.setFixedHeight(150)
+        self.append.connect(self.widget.appendPlainText)
 
     def emit(self, record):
         msg = self.format(record)
-        self.widget.appendPlainText(msg)
+        self.append.emit(msg)
 
 
 class ProgressBar(QProgressBar):

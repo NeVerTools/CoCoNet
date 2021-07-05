@@ -9,8 +9,10 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLayout, QLineEdit, QPushButton, \
     QFileDialog
 
+import never2.core.controller.pynevertemp.datasets as dt
 import never2.view.styles as style
 import never2.view.util.utility as u
+from never2.core.controller.pynevertemp.datasets import Dataset
 from never2.core.controller.pynevertemp.networks import NeuralNetwork
 from never2.core.controller.pynevertemp.strategies.training import PytorchTraining, PytorchMetrics
 from never2.view.widget.dialog.dialogs import MessageDialog, MessageType
@@ -362,7 +364,17 @@ class TrainingWindow(NeVerWindow):
             datapath = QFileDialog.getOpenFileName(None, "Select data source...", "")
             self.dataset_path = datapath[0]
 
+    def load_dataset(self) -> Dataset:
+        if self.dataset_path == "data/MNIST/":
+            return dt.TorchMNIST(self.dataset_path, True)
+        elif self.dataset_path == "data/fMNIST/":
+            return dt.TorchFMNIST(self.dataset_path, True)
+        elif self.dataset_path != "":
+            # TODO GET FIRST INDEX & OTHER PARAMS
+            return dt.GenericFileDataset(self.dataset_path, 0)
+
     def train_network(self):
+        # TODO MOVE CHECKS?
         err_dialog = None
         if self.dataset_path == "":
             err_dialog = MessageDialog("No dataset selected.", MessageType.ERROR)
@@ -393,8 +405,13 @@ class TrainingWindow(NeVerWindow):
         logger.setLevel(logging.INFO)
         self.layout.addWidget(log_textbox.widget)
 
-        logger.info("***** NeVer 2 - TRAINING *****")
+        # Load dataset
+        logger.info("***** NeVer 2 - GET DATASET *****")
+        logger.info("Collecting data...")
+        data = self.load_dataset()
+        logger.info("Done.\n\n")
 
+        logger.info("***** NeVer 2 - TRAINING *****")
         train = PytorchTraining(opt.Adam, self.gui_params["Optimizer:Adam"],
                                 fun.cross_entropy,
                                 3, 0.2, 512, 64,
