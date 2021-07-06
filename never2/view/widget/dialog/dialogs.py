@@ -78,7 +78,10 @@ class NeVerDialog(QtWidgets.QDialog):
         self.title = title
         self.content = message
 
-        self.setWindowTitle("\u26a0")
+        if self.title == "":
+            self.setWindowTitle("\u26a0")
+        else:
+            self.setWindowTitle(self.title)
         self.setModal(True)
         self.setStyleSheet("background-color: " + style.GREY_1 + ";")
 
@@ -94,6 +97,7 @@ class NeVerDialog(QtWidgets.QDialog):
         """
 
         self.title = title
+        self.setWindowTitle(self.title)
 
     def set_content(self, content: str) -> None:
         """
@@ -376,182 +380,77 @@ class LoadingDialog(NeVerDialog):
         self.setWindowFlags(Qt.FramelessWindowHint)
 
 
-class EditSmtPropertyDialog(NeVerDialog):
+class GenericDatasetDialog(NeVerDialog):
     """
-    This dialog allows to define a generic SMT property
-    by writing directly in the SMT-LIB language.
+    This class is a simple dialog asking for additional
+    parameters of a generic file dataset.
 
     Attributes
     ----------
-    property_block : PropertyBlock
-        Current property to edit.
-    new_property : str
-        New SMT-LIB property string.
-    smt_box : QPlainTextEdit
-        Input box.
-    has_edits : bool
-        Flag signaling if the property was edited.
+    params : dict
+        Dictionary of parameters to ask.
 
     Methods
     ----------
-    save_data()
-        Procedure to return the new property.
+    update_dict(str, str)
+        Procedure to read the given input and save it.
 
     """
 
-    def __init__(self, property_block: PropertyBlock):
-        super().__init__("", "Edit property")
-        self.property_block = property_block
-        self.new_property = self.property_block.smt_string
-        self.has_edits = False
+    def __init__(self):
+        super().__init__("Dataset - additional parameters", "")
         self.layout = QGridLayout()
+        self.params = {"target_idx": 0,
+                       "data_type": float,
+                       "delimiter": ","}
 
-        # Build main_layout
-        title_label = QLabel("SMT property")
-        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
-        title_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(title_label, 0, 0, 1, 2)
+        target_label = QLabel("Target index")
+        target_label.setStyleSheet(style.PARAM_LABEL_STYLE)
+        target_edit = QLineEdit()
+        target_edit.textChanged.connect(lambda: self.update_dict("target_idx", target_edit.text()))
+        self.layout.addWidget(target_label, 0, 0)
+        self.layout.addWidget(target_edit, 0, 1)
 
-        # Input box
-        smt_label = QLabel("SMT-LIB definition")
-        smt_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
-        smt_label.setAlignment(Qt.AlignRight)
-        self.layout.addWidget(smt_label, 1, 0)
+        data_type_label = QLabel("Data type")
+        data_type_label.setStyleSheet(style.PARAM_LABEL_STYLE)
+        data_type_edit = QLineEdit()
+        data_type_edit.setText("float")
+        data_type_edit.textChanged.connect(lambda: self.update_dict("data_type", data_type_edit.text()))
+        self.layout.addWidget(data_type_label, 1, 0)
+        self.layout.addWidget(data_type_edit, 1, 1)
 
-        self.smt_box = QPlainTextEdit()
-        self.smt_box.setStyleSheet(style.VALUE_LABEL_STYLE)
-        self.smt_box.insertPlainText(self.new_property)
-        self.layout.addWidget(self.smt_box, 1, 1)
+        delimiter_label = QLabel("Delimiter character")
+        delimiter_label.setStyleSheet(style.PARAM_LABEL_STYLE)
+        delimiter_edit = QLineEdit()
+        delimiter_edit.setText(",")
+        delimiter_edit.textChanged.connect(lambda: self.update_dict("delimiter", delimiter_edit.text()))
+        self.layout.addWidget(delimiter_label, 2, 0)
+        self.layout.addWidget(delimiter_edit, 2, 1)
 
-        # "Apply" button which saves changes
-        apply_button = QPushButton("Apply")
-        apply_button.setStyleSheet(style.BUTTON_STYLE)
-        apply_button.clicked.connect(self.save_data)
-        self.layout.addWidget(apply_button, 2, 0)
-
-        # "Cancel" button which closes the dialog without saving
-        cancel_button = QPushButton("Cancel")
-        cancel_button.setStyleSheet(style.BUTTON_STYLE)
-        cancel_button.clicked.connect(self.close)
-        self.layout.addWidget(cancel_button, 2, 1)
-
-        self.layout.setColumnStretch(0, 1)
-        self.layout.setColumnStretch(1, 1)
+        # Buttons
+        ok_btn = QPushButton("Ok")
+        ok_btn.clicked.connect(self.ok)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.exit)
+        self.layout.addWidget(ok_btn, 3, 0)
+        self.layout.addWidget(cancel_btn, 3, 1)
 
         self.render_layout()
 
-    def save_data(self):
-        self.has_edits = True
-        self.new_property = self.smt_box.toPlainText()
+    def update_dict(self, key: str, value: str):
+        if key in self.params.keys():
+            if key == "delimiter":
+                self.params[key] = value
+            else:
+                self.params[key] = eval(value)
+
+    def ok(self):
         self.close()
 
-
-class EditPolyhedralPropertyDialog(NeVerDialog):
-    """
-    This dialog allows to define a polyhedral property
-    within a controlled environment.
-
-    Attributes
-    ----------
-    property_block : PropertyBlock
-        Current property to edit.
-    property_list : list
-        List of given properties.
-    has_edits : bool
-        Flag signaling if the property was edited.
-
-    Methods
-    ----------
-    add_entry(str, str, str)
-        Procedure to append the current constraint to the property list.
-    save_property()
-        Procedure to return the defined property.
-
-    """
-
-    def __init__(self, property_block: PropertyBlock):
-        super().__init__("", "Edit property")
-        self.property_block = property_block
-        self.has_edits = False
-        self.property_list = []
-        self.layout = QGridLayout()
-
-        # Build main_layout
-        title_label = QLabel("Polyhedral property")
-        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
-        title_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(title_label, 0, 0, 1, 3)
-
-        # Labels
-        var_label = QLabel("Variable")
-        var_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
-        var_label.setAlignment(Qt.AlignRight)
-        self.layout.addWidget(var_label, 1, 0)
-
-        relop_label = QLabel("Operator")
-        relop_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
-        relop_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(relop_label, 1, 1)
-
-        value_label = QLabel("Value")
-        value_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
-        value_label.setAlignment(Qt.AlignLeft)
-        self.layout.addWidget(value_label, 1, 2)
-
-        self.var_cb = QComboBox()
-        for v in property_block.variables:
-            self.var_cb.addItem(v)
-        self.var_cb.setStyleSheet(style.VALUE_LABEL_STYLE)
-        self.layout.addWidget(self.var_cb, 2, 0)
-
-        self.op_cb = QComboBox()
-        operators = ["<=", "<", ">", ">="]
-        for o in operators:
-            self.op_cb.addItem(o)
-        self.op_cb.setStyleSheet(style.VALUE_LABEL_STYLE)
-        self.layout.addWidget(self.op_cb, 2, 1)
-
-        self.val = QLineEdit()
-        self.val.setStyleSheet(style.VALUE_LABEL_STYLE)
-        self.val.setValidator(ArithmeticValidator.FLOAT)
-        self.layout.addWidget(self.val, 2, 2)
-
-        # "Add" button which adds the constraint
-        add_button = QPushButton("Add")
-        add_button.setStyleSheet(style.BUTTON_STYLE)
-        add_button.clicked.connect(
-            lambda: self.add_entry(str(self.var_cb.currentText()), str(self.op_cb.currentText()), self.val.text()))
-        self.layout.addWidget(add_button, 3, 0)
-
-        # "Save" button which saves the state
-        save_button = QPushButton("Save")
-        save_button.setStyleSheet(style.BUTTON_STYLE)
-        save_button.clicked.connect(self.save_property)
-        self.layout.addWidget(save_button, 3, 1)
-
-        # "Cancel" button which closes the dialog without saving
-        cancel_button = QPushButton("Cancel")
-        cancel_button.setStyleSheet(style.BUTTON_STYLE)
-        cancel_button.clicked.connect(self.close)
-        self.layout.addWidget(cancel_button, 3, 2)
-
-        self.layout.setColumnStretch(0, 1)
-        self.layout.setColumnStretch(1, 1)
-        self.layout.setColumnStretch(2, 1)
-
-        self.render_layout()
-
-    def add_entry(self, var: str, op: str, val: str) -> None:
-        self.property_list.append((var, op, val))
-        self.var_cb.setCurrentIndex(0)
-        self.op_cb.setCurrentIndex(0)
-        self.val.setText("")
-
-    def save_property(self) -> None:
-        self.has_edits = True
-        self.add_entry(str(self.var_cb.currentText()),
-                       str(self.op_cb.currentText()),
-                       self.val.text())
+    def exit(self):
+        self.params = {"target_idx": 0,
+                       "data_type": float,
+                       "delimiter": ","}
         self.close()
 
 
@@ -583,8 +482,8 @@ class EditNodeDialog(NeVerDialog):
     """
 
     def __init__(self, node_block: NodeBlock):
-        super().__init__("", "Edit parameters.")
-        self.setWindowTitle(node_block.node.name)
+        super().__init__("", "")
+        self.set_title(node_block.node.name)
         self.layout = QGridLayout()
 
         # Connect node
@@ -761,4 +660,183 @@ class EditNodeDialog(NeVerDialog):
                 error_dialog = MessageDialog("Please check data format.", MessageType.ERROR)
                 error_dialog.show()
 
+        self.close()
+
+
+class EditSmtPropertyDialog(NeVerDialog):
+    """
+    This dialog allows to define a generic SMT property
+    by writing directly in the SMT-LIB language.
+
+    Attributes
+    ----------
+    property_block : PropertyBlock
+        Current property to edit.
+    new_property : str
+        New SMT-LIB property string.
+    smt_box : QPlainTextEdit
+        Input box.
+    has_edits : bool
+        Flag signaling if the property was edited.
+
+    Methods
+    ----------
+    save_data()
+        Procedure to return the new property.
+
+    """
+
+    def __init__(self, property_block: PropertyBlock):
+        super().__init__("Edit property", "")
+        self.property_block = property_block
+        self.new_property = self.property_block.smt_string
+        self.has_edits = False
+        self.layout = QGridLayout()
+
+        # Build main_layout
+        title_label = QLabel("SMT property")
+        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
+        title_label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(title_label, 0, 0, 1, 2)
+
+        # Input box
+        smt_label = QLabel("SMT-LIB definition")
+        smt_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
+        smt_label.setAlignment(Qt.AlignRight)
+        self.layout.addWidget(smt_label, 1, 0)
+
+        self.smt_box = QPlainTextEdit()
+        self.smt_box.setStyleSheet(style.VALUE_LABEL_STYLE)
+        self.smt_box.insertPlainText(self.new_property)
+        self.layout.addWidget(self.smt_box, 1, 1)
+
+        # "Apply" button which saves changes
+        apply_button = QPushButton("Apply")
+        apply_button.setStyleSheet(style.BUTTON_STYLE)
+        apply_button.clicked.connect(self.save_data)
+        self.layout.addWidget(apply_button, 2, 0)
+
+        # "Cancel" button which closes the dialog without saving
+        cancel_button = QPushButton("Cancel")
+        cancel_button.setStyleSheet(style.BUTTON_STYLE)
+        cancel_button.clicked.connect(self.close)
+        self.layout.addWidget(cancel_button, 2, 1)
+
+        self.layout.setColumnStretch(0, 1)
+        self.layout.setColumnStretch(1, 1)
+
+        self.render_layout()
+
+    def save_data(self):
+        self.has_edits = True
+        self.new_property = self.smt_box.toPlainText()
+        self.close()
+
+
+class EditPolyhedralPropertyDialog(NeVerDialog):
+    """
+    This dialog allows to define a polyhedral property
+    within a controlled environment.
+
+    Attributes
+    ----------
+    property_block : PropertyBlock
+        Current property to edit.
+    property_list : list
+        List of given properties.
+    has_edits : bool
+        Flag signaling if the property was edited.
+
+    Methods
+    ----------
+    add_entry(str, str, str)
+        Procedure to append the current constraint to the property list.
+    save_property()
+        Procedure to return the defined property.
+
+    """
+
+    def __init__(self, property_block: PropertyBlock):
+        super().__init__("Edit property", "")
+        self.property_block = property_block
+        self.has_edits = False
+        self.property_list = []
+        self.layout = QGridLayout()
+
+        # Build main_layout
+        title_label = QLabel("Polyhedral property")
+        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
+        title_label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(title_label, 0, 0, 1, 3)
+
+        # Labels
+        var_label = QLabel("Variable")
+        var_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
+        var_label.setAlignment(Qt.AlignRight)
+        self.layout.addWidget(var_label, 1, 0)
+
+        relop_label = QLabel("Operator")
+        relop_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
+        relop_label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(relop_label, 1, 1)
+
+        value_label = QLabel("Value")
+        value_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
+        value_label.setAlignment(Qt.AlignLeft)
+        self.layout.addWidget(value_label, 1, 2)
+
+        self.var_cb = QComboBox()
+        for v in property_block.variables:
+            self.var_cb.addItem(v)
+        self.var_cb.setStyleSheet(style.VALUE_LABEL_STYLE)
+        self.layout.addWidget(self.var_cb, 2, 0)
+
+        self.op_cb = QComboBox()
+        operators = ["<=", "<", ">", ">="]
+        for o in operators:
+            self.op_cb.addItem(o)
+        self.op_cb.setStyleSheet(style.VALUE_LABEL_STYLE)
+        self.layout.addWidget(self.op_cb, 2, 1)
+
+        self.val = QLineEdit()
+        self.val.setStyleSheet(style.VALUE_LABEL_STYLE)
+        self.val.setValidator(ArithmeticValidator.FLOAT)
+        self.layout.addWidget(self.val, 2, 2)
+
+        # "Add" button which adds the constraint
+        add_button = QPushButton("Add")
+        add_button.setStyleSheet(style.BUTTON_STYLE)
+        add_button.clicked.connect(
+            lambda: self.add_entry(str(self.var_cb.currentText()), str(self.op_cb.currentText()), self.val.text()))
+        self.layout.addWidget(add_button, 3, 0)
+
+        # "Save" button which saves the state
+        save_button = QPushButton("Save")
+        save_button.setStyleSheet(style.BUTTON_STYLE)
+        save_button.clicked.connect(self.save_property)
+        self.layout.addWidget(save_button, 3, 1)
+
+        # "Cancel" button which closes the dialog without saving
+        cancel_button = QPushButton("Cancel")
+        cancel_button.setStyleSheet(style.BUTTON_STYLE)
+        cancel_button.clicked.connect(self.close)
+        self.layout.addWidget(cancel_button, 3, 2)
+
+        self.layout.setColumnStretch(0, 1)
+        self.layout.setColumnStretch(1, 1)
+        self.layout.setColumnStretch(2, 1)
+
+        self.render_layout()
+
+    def add_entry(self, var: str, op: str, val: str) -> None:
+        self.property_list.append((var, op, val))
+        self.var_cb.setCurrentIndex(0)
+        self.op_cb.setCurrentIndex(0)
+        self.val.setText("")
+
+    def save_property(self) -> None:
+        self.has_edits = True
+        self.add_entry(str(self.var_cb.currentText()),
+                       str(self.op_cb.currentText()),
+                       self.val.text())
         self.close()

@@ -15,7 +15,7 @@ import never2.view.util.utility as u
 from never2.core.controller.pynevertemp.datasets import Dataset
 from never2.core.controller.pynevertemp.networks import NeuralNetwork
 from never2.core.controller.pynevertemp.strategies.training import PytorchTraining, PytorchMetrics
-from never2.view.widget.dialog.dialogs import MessageDialog, MessageType
+from never2.view.widget.dialog.dialogs import MessageDialog, MessageType, GenericDatasetDialog
 from never2.view.widget.misc import LoggerTextBox
 
 
@@ -132,6 +132,8 @@ class TrainingWindow(NeVerWindow):
         trained with the parameters selected here.
     dataset_path : str
         The dataset path to train the network.
+    dataset_params : dict
+        Additional parameters for generic datasets.
     train_params : dict
         The parameters required by pyNeVer to correctly
         train the network.
@@ -160,6 +162,7 @@ class TrainingWindow(NeVerWindow):
         # Training elements
         self.nn = nn
         self.dataset_path = ""
+        self.dataset_params = dict()
         self.train_params = dict()
         self.gui_params = dict()
         self.grid_layout = QGridLayout()
@@ -344,10 +347,11 @@ class TrainingWindow(NeVerWindow):
         else:
             self.train_params[name]["value"] = value
 
-    def setup_dataset(self, name: str):
+    def setup_dataset(self, name: str) -> None:
         """
-        This method loads the dataset path in order to
-        use it in the training function.
+        This method reacts to the selection of a dataset in the
+        dataset combo box. Depending on the selection, the correct
+        path is saved and any additional parameters are asked.
 
         Parameters
         ----------
@@ -364,14 +368,31 @@ class TrainingWindow(NeVerWindow):
             datapath = QFileDialog.getOpenFileName(None, "Select data source...", "")
             self.dataset_path = datapath[0]
 
+            # Get additional parameters via dialog
+            dialog = GenericDatasetDialog()
+            dialog.exec()
+            self.dataset_params = dialog.params
+
     def load_dataset(self) -> Dataset:
+        """
+        This method initializes the selected dataset object,
+        given the path loaded before.
+
+        Returns
+        -------
+        Dataset
+            The dataset object.
+
+        """
         if self.dataset_path == "data/MNIST/":
             return dt.TorchMNIST(self.dataset_path, True)
         elif self.dataset_path == "data/fMNIST/":
             return dt.TorchFMNIST(self.dataset_path, True)
         elif self.dataset_path != "":
-            # TODO GET FIRST INDEX & OTHER PARAMS
-            return dt.GenericFileDataset(self.dataset_path, 0)
+            return dt.GenericFileDataset(self.dataset_path,
+                                         self.dataset_params["target_idx"],
+                                         self.dataset_params["data_type"],
+                                         self.dataset_params["delimiter"])
 
     def train_network(self):
         # TODO MOVE CHECKS?
