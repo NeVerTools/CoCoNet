@@ -433,11 +433,24 @@ class TrainingWindow(NeVerWindow):
         logger.info("Done.\n\n")
 
         logger.info("***** NeVer 2 - TRAINING *****")
-        train = PytorchTraining(opt.Adam, self.gui_params["Optimizer:Adam"],
+        # Create optimizer dictionary of parameters
+        opt_params = dict()
+        for k, v in self.gui_params["Optimizer:Adam"].items():
+            opt_params[v["name"]] = v["value"]
+
+        # Create scheduler dictionary of parameters
+        sched_params = dict()
+        for k, v in self.gui_params["Scheduler:ReduceLROnPlateau"].items():
+            sched_params[v["name"]] = v["value"]
+
+        train = PytorchTraining(opt.Adam, opt_params,
                                 fun.cross_entropy,
-                                3, 0.2, 512, 64,
+                                self.train_params["Epochs"]["value"],
+                                self.train_params["Validation percentage"]["value"],
+                                self.train_params["Training batch size"]["value"],
+                                self.train_params["Validation batch size"]["value"],
                                 opt.lr_scheduler.ReduceLROnPlateau,
-                                self.gui_params["Scheduler:ReduceLROnPlateau"],
+                                sched_params,
                                 PytorchMetrics.inaccuracy)
 
 
