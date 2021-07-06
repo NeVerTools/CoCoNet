@@ -1,4 +1,5 @@
 import itertools
+import json
 from typing import Optional
 
 from PyQt5 import QtCore, QtWidgets, QtGui
@@ -138,139 +139,55 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.nav_menu_bar.setStyleSheet(style.MENU_BAR_STYLE)
         self.setContextMenuPolicy(Qt.PreventContextMenu)
+        actions_dict = dict()
 
-        # Create top-level menu
-        menu_file = self.nav_menu_bar.addMenu("File")
-        menu_file.setStyleSheet(style.MENU_BAR_STYLE)
-        menu_edit = self.nav_menu_bar.addMenu("Edit")
-        menu_edit.setStyleSheet(style.MENU_BAR_STYLE)
-        menu_view = self.nav_menu_bar.addMenu("View")
-        menu_view.setStyleSheet(style.MENU_BAR_STYLE)
-        menu_learn = self.nav_menu_bar.addMenu("Learning")
-        menu_learn.setStyleSheet(style.MENU_BAR_STYLE)
-        menu_verify = self.nav_menu_bar.addMenu("Verification")
-        menu_verify.setStyleSheet(style.MENU_BAR_STYLE)
+        with open('never2/res/json/menu.json') as json_menu:
+            menu = json.loads(json_menu.read())
 
-        # File actions
-        new_action = QAction("New...", self)
-        new_action.setShortcut("Ctrl+N")
-        new_action.triggered.connect(lambda: self.reset())
-        open_action = QAction("Open...", self)
-        open_action.setShortcut("Ctrl+O")
-        open_action.triggered.connect(lambda: self.open())
-        load_p_action = QAction("Load property...", self)
-        load_p_action.triggered.connect(lambda: self.canvas.project.open_property())
-        save_action = QAction("Save", self)
-        save_action.setShortcut("Ctrl+S")
-        save_action.triggered.connect(lambda: self.save(False))
-        save_as_action = QAction("Save as...", self)
-        save_as_action.setShortcut("Ctrl+Shift+S")
-        save_as_action.triggered.connect(lambda: self.save())
+        for menu_item, actions in menu.items():
+            entry = self.nav_menu_bar.addMenu(menu_item)
+            entry.setStyleSheet(style.MENU_BAR_STYLE)
 
-        # Edit actions
-        copy_action = QAction("Copy", self)
-        copy_action.setShortcut("Ctrl+C")
-        copy_action.triggered.connect(lambda: self.canvas.copy_selected())
-        paste_action = QAction("Paste", self)
-        paste_action.setShortcut("Ctrl+V")
-        paste_action.triggered.connect(lambda: self.canvas.paste_selected())
-        cut_action = QAction("Cut", self)
-        cut_action.setShortcut("Ctrl+X")
-        cut_action.triggered.connect(lambda: self.canvas.cut_selected())
-        del_action = QAction("Delete", self)
-        del_action.setShortcut("DEL")
-        del_action.triggered.connect(lambda: self.canvas.delete_selected())
-        clear_action = QAction("Clear", self)
-        clear_action.setShortcut("Ctrl+Shift+C")
-        clear_action.triggered.connect(lambda: self.clear())
-        draw_line_action = QAction("Draw connection", self)
-        draw_line_action.setShortcut("Ctrl+D")
-        draw_line_action.triggered.connect(lambda: self.change_draw_mode(DrawingMode.DRAW_LINE))
-        insert_block_action = QAction("Insert block in connection", self)
-        insert_block_action.setShortcut("Ctrl+I")
-        insert_block_action.triggered.connect(lambda: self.change_draw_mode(DrawingMode.DRAW_BLOCK))
-        prop_action = QAction("Edit", self)
-        prop_action.setShortcut("Ctrl+E")
-        prop_action.triggered.connect(lambda: self.canvas.scene.edit_node(self.edit_action_validation()))
+            for a, v in actions.items():
+                action_item = QAction(a, self)
+                if "Shortcut" in v.keys():
+                    action_item.setShortcut(v["Shortcut"])
+                if v["checkable"] == "True":
+                    action_item.setCheckable(True)
+                    action_item.setChecked(True)
+                entry.addAction(action_item)
+                actions_dict[f"{menu_item}:{a}"] = action_item
 
-        # View actions
-        z_in_action = QAction("Zoom in", self)
-        z_in_action.setShortcut("Ctrl+")
-        z_in_action.triggered.connect(lambda: self.canvas.zoom_in())
-        z_out_action = QAction("Zoom out", self)
-        z_out_action.setShortcut("Ctrl-")
-        z_out_action.triggered.connect(lambda: self.canvas.zoom_out())
-        dims_action = QAction("Dimensions", self)
-        dims_action.setCheckable(True)
-        dims_action.setChecked(True)
-        dims_action.toggled.connect(lambda: self.canvas.scene.switch_dim_visibility())
-        toolbar_action = QAction("Tools", self)
-        toolbar_action.setCheckable(True)
-        toolbar_action.setChecked(True)
-        toolbar_action.toggled.connect(lambda: self.toolbar.change_tools_mode())
-        blocks_action = QAction("Blocks library", self)
-        blocks_action.setCheckable(True)
-        blocks_action.setChecked(True)
-        blocks_action.toggled.connect(lambda: self.toolbar.change_blocks_mode())
-        details_action = QAction("Parameters", self)
-        details_action.setShortcut("Ctrl+P")
-        details_action.triggered.connect(lambda: self.canvas.show_parameters(self.parameters_action_validation()))
+        # Triggers connection
+        actions_dict["File:New..."].triggered.connect(lambda: self.reset())
+        actions_dict["File:Open..."].triggered.connect(lambda: self.open())
+        actions_dict["File:Load property..."].triggered.connect(lambda: self.canvas.project.open_property())
+        actions_dict["File:Save"].triggered.connect(lambda: self.save(False))
+        actions_dict["File:Save as..."].triggered.connect(lambda: self.save())
 
-        # Learning actions
-        train_action = QAction("Train...", self)
-        train_action.triggered.connect(lambda: self.canvas.train_network())
-        prune_action = QAction("Pruning...", self)
-        prune_action.triggered.connect(lambda: self.temp_window())
+        actions_dict["Edit:Copy"].triggered.connect(lambda: self.canvas.copy_selected())
+        actions_dict["Edit:Paste"].triggered.connect(lambda: self.canvas.paste_selected())
+        actions_dict["Edit:Cut"].triggered.connect(lambda: self.canvas.cut_selected())
+        actions_dict["Edit:Delete"].triggered.connect(lambda: self.canvas.delete_selected())
+        actions_dict["Edit:Clear canvas"].triggered.connect(lambda: self.clear())
+        actions_dict["Edit:Draw connection"].triggered.connect(lambda: self.change_draw_mode(DrawingMode.DRAW_LINE))
+        actions_dict["Edit:Edit node"].triggered.connect(lambda: self.canvas.scene.edit_node(self.edit_action_validation()))
 
-        # Verification actions
-        verify_action = QAction("Verify...", self)
-        verify_action.triggered.connect(lambda: self.temp_window())
-        repair_action = QAction("Repair...", self)
-        repair_action.triggered.connect(lambda: self.temp_window())
+        actions_dict["View:Zoom in"].triggered.connect(lambda: self.canvas.zoom_in())
+        actions_dict["View:Zoom out"].triggered.connect(lambda: self.canvas.zoom_out())
+        actions_dict["View:Dimensions"].toggled.connect(lambda: self.canvas.scene.switch_dim_visibility())
+        actions_dict["View:Tools"].toggled.connect(lambda: self.toolbar.change_tools_mode())
+        actions_dict["View:Blocks"].toggled.connect(lambda: self.toolbar.change_blocks_mode())
+        actions_dict["View:Parameters"].triggered.connect(
+            lambda: self.canvas.show_parameters(self.parameters_action_validation()))
 
-        # Build File menu
-        menu_file.addAction(new_action)
-        menu_file.addAction(open_action)
-        menu_file.addAction(load_p_action)
-        menu_file.addSeparator()
-        menu_file.addAction(save_action)
-        menu_file.addAction(save_as_action)
+        actions_dict["Learning:Train..."].triggered.connect(lambda: self.canvas.train_network())
+        actions_dict["Learning:Prune..."].triggered.connect(lambda: self.temp_window())
 
-        # Build Edit menu
-        menu_edit.addSeparator()
-        menu_edit.addAction(copy_action)
-        menu_edit.addAction(paste_action)
-        menu_edit.addAction(cut_action)
-        menu_edit.addAction(del_action)
-        menu_edit.addSeparator()
-        menu_edit.addAction(clear_action)
-        menu_edit.addSeparator()
-        menu_edit.addAction(draw_line_action)
-        menu_edit.addAction(insert_block_action)
-        menu_edit.addSeparator()
-        menu_edit.addAction(prop_action)
+        actions_dict["Verification:Verify..."].triggered.connect(lambda: self.temp_window())
+        actions_dict["Verification:Repair..."].triggered.connect(lambda: self.temp_window())
 
-        # Build View menu
-        menu_view.addAction(z_in_action)
-        menu_view.addAction(z_out_action)
-        menu_view.addSeparator()
-        toolbars_menu = menu_view.addMenu("Show")
-        toolbars_menu.addAction(toolbar_action)
-        toolbars_menu.addAction(blocks_action)
-        toolbars_menu.addAction(dims_action)
-        menu_view.addSeparator()
-        menu_view.addAction(details_action)
-
-        # Build learning menu
-        menu_learn.addAction(train_action)
-        menu_learn.addAction(prune_action)
-
-        # Build verification menu
-        menu_verify.addAction(verify_action)
-        menu_verify.addAction(repair_action)
-
-        # Help menu
-        self.nav_menu_bar.addAction("Help", self.show_help)
+        actions_dict["Help:Show guide"].triggered.connect(lambda: self.show_help())
 
     @staticmethod
     def temp_window():

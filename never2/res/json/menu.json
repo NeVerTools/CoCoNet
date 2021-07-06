@@ -1,80 +1,102 @@
 {
-  "Navigation": {
-    "File": {
-      "New...": {
-        "Shortcut": "Ctrl+N"
-      },
-      "Open": {
-        "Network...": {
-          "Shortcut": "Ctrl+O"
-        },
-        "Properties...": {
-          "Shortcut": "Ctrl+Shift+O"
-        }
-      },
-      "Save": {
-        "Shortcut": "Ctrl+S"
-      },
-      "Save as...": {
-        "Shortcut": "Ctrl+Shift+S"
-      }
+  "File": {
+    "New...": {
+      "Shortcut": "Ctrl+N",
+      "checkable": "False"
     },
-    "Edit": {
-      "Draw connection": {
-        "Shortcut": "Ctrl+D"
-      },
-      "Edit node": {
-        "Shortcut": "Ctrl+E"
-      },
-      "Copy element": {
-        "Shortcut": "Ctrl+C"
-      },
-      "Paste element": {
-        "Shortcut": "Ctrl+V"
-      },
-      "Cut element": {
-        "Shortcut": "Ctrl+X"
-      },
-      "Delete element": {
-        "Shortcut": "DEL"
-      },
-      "Clear canvas": {
-        "Shortcut": "Ctrl+Shift+C"
-      }
+    "Open...": {
+      "Shortcut": "Ctrl+O",
+      "checkable": "False"
     },
-    "View": {
-      "Zoom in": {
-        "Shortcut": "Ctrl+"
-      },
-      "Zoom out": {
-        "Shortcut": "Ctrl-"
-      },
-      "Dimensions": {
-      },
-      "Tools": {
-      },
-      "Blocks": {
-      },
-      "Properties": {
-      },
-      "Parameters": {
-        "Shortcut": "Ctrl+P"
-      }
+    "Load property...": {
+      "Shortcut": "Ctrl+Shift+O",
+      "checkable": "False"
     },
-    "Learning": {
-      "Train...": {
-      },
-      "Prune...": {
-      }
+    "Save": {
+      "Shortcut": "Ctrl+S",
+      "checkable": "False"
     },
-    "Verification": {
-      "Verify...": {
-      },
-      "Repair...": {
-      }
+    "Save as...": {
+      "Shortcut": "Ctrl+Shift+S",
+      "checkable": "False"
+    }
+  },
+  "Edit": {
+    "Draw connection": {
+      "Shortcut": "Ctrl+D",
+      "checkable": "False"
     },
-    "Help": {
-      "Shortcut": "Ctrl+H"
+    "Edit node": {
+      "Shortcut": "Ctrl+E",
+      "checkable": "False"
+    },
+    "Copy": {
+      "Shortcut": "Ctrl+C",
+      "checkable": "False"
+    },
+    "Paste": {
+      "Shortcut": "Ctrl+V",
+      "checkable": "False"
+    },
+    "Cut": {
+      "Shortcut": "Ctrl+X",
+      "checkable": "False"
+    },
+    "Delete": {
+      "Shortcut": "DEL",
+      "checkable": "False"
+    },
+    "Clear canvas": {
+      "Shortcut": "Ctrl+Shift+C",
+      "checkable": "False"
+    }
+  },
+  "View": {
+    "Zoom in": {
+      "Shortcut": "Ctrl+",
+      "checkable": "False"
+    },
+    "Zoom out": {
+      "Shortcut": "Ctrl-",
+      "checkable": "False"
+    },
+    "Dimensions": {
+      "checkable": "True"
+    },
+    "Tools": {
+      "checkable": "True"
+    },
+    "Blocks": {
+      "checkable": "True"
+    },
+    "Properties": {
+      "checkable": "True"
+    },
+    "Parameters": {
+      "Shortcut": "Ctrl+P",
+      "checkable": "False"
+    }
+  },
+  "Learning": {
+    "Train...": {
+      "checkable": "False"
+    },
+    "Prune...": {
+      "checkable": "False"
+    }
+  },
+  "Verification": {
+    "Verify...": {
+      "checkable": "False"
+    },
+    "Repair...": {
+      "checkable": "False"
+    }
+  },
+  "Help": {
+    "Show guide": {
+      "Shortcut": "Ctrl+H",
+      "checkable": "False"
     }
   }
 }
