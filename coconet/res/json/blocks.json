@@ -185,6 +185,54 @@
     },
     "description": "Consumes an input tensor and a filter, and computes the output."
   },
+  "Dropout": {
+    "name": "DropoutNode",
+    "input": {
+      "data": {
+        "type": "Tensor",
+        "description": "The input data as Tensor."
+      }
+    },
+    "parameters": {
+      "p": {
+        "type": "float",
+        "description": "The probability of an element to be zeroed",
+        "required": "false",
+        "default": "0.5"
+      }
+    },
+    "output": {
+      "output": {
+        "type": "Tensor",
+        "description": "Output tensor."
+      }
+    },
+    "description": "It takes an input floating-point tensor, an optional input ratio (floating-point scalar) and an optional input training_mode (boolean scalar). It produces two tensor outputs, output (floating-point tensor) and mask (optional Tensor<bool>). If training_mode is true then the output Y will be a random dropout."
+  },
+  "Flatten": {
+    "name": "FlattenNode",
+    "input": {
+      "A": {
+        "type": "Tensor",
+        "description": "A tensor of rank >= axis."
+      }
+    },
+    "parameters": {
+      "axis": {
+        "type": "int",
+        "description": "Indicate up to which input dimensions (exclusive) should be flattened to the outer dimension of the output.",
+        "required": "false",
+        "default": "0"
+      }
+    },
+    "output": {
+      "output": {
+        "type": "Tensor",
+        "description": "A 2D tensor with the contents of the input tensor, with input dimensions up to axis flattened to the outer dimension of the output and remaining input dimensions flattened into the inner dimension of the output."
+      }
+    },
+    "description": "Flattens the input tensor into a 2D matrix. If input tensor has shape (d_0, d_1, ... d_n),\nthen the output will have shape (d_0 X d_1 ... d_(axis-1), d_axis X d_(axis+1) ... X dn)."
+  },
   "Fully Connected": {
     "name": "FullyConnectedNode",
     "input": {
@@ -220,6 +268,47 @@
       }
     },
     "description": "Matrix product that computes alpha * A' * B' + bias"
+  },
+  "LRN": {
+    "name": "LRNNode",
+    "input": {
+      "X": {
+        "type": "Tensor",
+        "description": "Input data tensor from the previous operator; dimensions for image case are (N x C x H x W), where N is the batch size, C is the number of channels, and H and W are the height and the width of the data. For non image case, the dimensions are in the form of (N x C x D1 x D2 ... Dn), where N is the batch size. Optionally, if dimension denotation is in effect, the operation expects the input data tensor to arrive with the dimension denotation of [DATA_BATCH, DATA_CHANNEL, DATA_FEATURE, DATA_FEATURE ...]."
+      }
+    },
+    "parameters": {
+      "alpha": {
+        "type": "float",
+        "description": "Scaling parameter.",
+        "required": "false",
+        "default": "0.0001"
+      },
+      "beta": {
+        "type": "float",
+        "description": "The exponent.",
+        "required": "false",
+        "default": "0.75"
+      },
+      "size": {
+        "type": "int",
+        "description": "The number of channels to sum over.",
+        "required": "true"
+      },
+      "k": {
+        "type": "float",
+        "description": "Additive factor",
+        "required": "false",
+        "default": "1.0"
+      }
+    },
+    "output": {
+      "Y": {
+        "type": "Tensor",
+        "description": "Output tensor, which has the shape and type as input tensor."
+      }
+    },
+    "description": "Local Response Normalization proposed in the AlexNet paper. It normalizes over local input regions. The local region is defined across the channels. For an element X[n, c, d1, ..., dk] in a tensor of shape (N x C x D1 x D2, ..., Dk), its region is {X[n, i, d1, ..., dk] | max(0, c - floor((size - 1) / 2)) <= i <= min(C - 1, c + ceil((size - 1) / 2))}."
   },
   "MaxPool": {
     "name": "MaxPoolNode",
@@ -278,47 +367,6 @@
     },
     "description": "MaxPool consumes an input tensor X and applies max pooling across the tensor according to kernel sizes, stride sizes, and pad lengths. max pooling consisting of computing the max on all values of a subset of the input tensor according to the kernel size and downsampling the data into the output tensor Y for further processing. "
   },
-  "LRN": {
-    "name": "LRNNode",
-    "input": {
-      "X": {
-        "type": "Tensor",
-        "description": "Input data tensor from the previous operator; dimensions for image case are (N x C x H x W), where N is the batch size, C is the number of channels, and H and W are the height and the width of the data. For non image case, the dimensions are in the form of (N x C x D1 x D2 ... Dn), where N is the batch size. Optionally, if dimension denotation is in effect, the operation expects the input data tensor to arrive with the dimension denotation of [DATA_BATCH, DATA_CHANNEL, DATA_FEATURE, DATA_FEATURE ...]."
-      }
-    },
-    "parameters": {
-      "alpha": {
-        "type": "float",
-        "description": "Scaling parameter.",
-        "required": "false",
-        "default": "0.0001"
-      },
-      "beta": {
-        "type": "float",
-        "description": "The exponent.",
-        "required": "false",
-        "default": "0.75"
-      },
-      "size": {
-        "type": "int",
-        "description": "The number of channels to sum over.",
-        "required": "true"
-      },
-      "k": {
-        "type": "float",
-        "description": "Additive factor",
-        "required": "false",
-        "default": "1.0"
-      }
-    },
-    "output": {
-      "Y": {
-        "type": "Tensor",
-        "description": "Output tensor, which has the shape and type as input tensor."
-      }
-    },
-    "description": "Local Response Normalization proposed in the AlexNet paper. It normalizes over local input regions. The local region is defined across the channels. For an element X[n, c, d1, ..., dk] in a tensor of shape (N x C x D1 x D2, ..., Dk), its region is {X[n, i, d1, ..., dk] | max(0, c - floor((size - 1) / 2)) <= i <= min(C - 1, c + ceil((size - 1) / 2))}."
-  },
   "ReLu": {
     "name": "ReLUNode",
     "input": {
@@ -336,6 +384,54 @@
       }
     },
     "description": "Relu takes one input data (Tensor) and produces one output data (Tensor) where\nthe rectified linear function, y = max(0, x), is applied to the tensor elementwise."
+  },
+  "Reshape": {
+    "name": "ReshapeNode",
+    "input": {
+      "data": {
+        "type": "Tensor",
+        "description": "An input tensor."
+      }
+    },
+    "parameters": {
+      "shape": {
+        "type": "list of ints",
+        "description": "Specified shape for output.",
+        "required": "true",
+        "default": "1, 1"
+      },
+      "allow_zero": {
+        "type": "boolean",
+        "description": "allowzero=1 indicates that if any value in the 'shape' input is set to zero.",
+        "required": "false",
+        "default": "0"
+      }
+    },
+    "output": {
+      "reshaped": {
+        "type": "Tensor",
+        "description": "Reshaped data."
+      }
+    },
+    "description": "Reshape the input tensor similar to numpy.reshape. First input is the data tensor, second input is a shape tensor which specifies the output shape. It outputs the reshaped tensor. At most one dimension of the new shape can be -1. In this case, the value is inferred from the size of the tensor and the remaining dimensions. A dimension could also be 0, in which case the actual dimension value is unchanged (i.e. taken from the input tensor)."
+  },
+  "Sigmoid": {
+    "name": "SigmoidNode",
+    "input": {
+      "X": {
+        "type": "Tensor",
+        "description": "Input tensor."
+      }
+    },
+    "parameters": {
+    },
+    "output": {
+      "Y": {
+        "type": "Tensor",
+        "description": "Output tensor."
+      }
+    },
+    "description": "Sigmoid takes one input data (Tensor) and produces one output data (Tensor) where\nthe rectified linear function, y = max(0, x), is applied to the tensor elementwise."
   },
   "SoftMax": {
     "name": "SoftMaxNode",
@@ -383,83 +479,5 @@
       }
     },
     "description": "Insert single-dimensional entries to the shape of an input tensor (data). Takes one required input axes - which contains a list of dimension indices and this operator will insert a dimension of value 1 into the corresponding index of the output tensor (expanded)."
-  },
-  "Flatten": {
-    "name": "FlattenNode",
-    "input": {
-      "A": {
-        "type": "Tensor",
-        "description": "A tensor of rank >= axis."
-      }
-    },
-    "parameters": {
-      "axis": {
-        "type": "int",
-        "description": "Indicate up to which input dimensions (exclusive) should be flattened to the outer dimension of the output.",
-        "required": "false",
-        "default": "0"
-      }
-    },
-    "output": {
-      "output": {
-        "type": "Tensor",
-        "description": "A 2D tensor with the contents of the input tensor, with input dimensions up to axis flattened to the outer dimension of the output and remaining input dimensions flattened into the inner dimension of the output."
-      }
-    },
-    "description": "Flattens the input tensor into a 2D matrix. If input tensor has shape (d_0, d_1, ... d_n),\nthen the output will have shape (d_0 X d_1 ... d_(axis-1), d_axis X d_(axis+1) ... X dn)."
-  },
-  "Dropout": {
-    "name": "DropoutNode",
-    "input": {
-      "data": {
-        "type": "Tensor",
-        "description": "The input data as Tensor."
-      }
-    },
-    "parameters": {
-      "p": {
-        "type": "float",
-        "description": "The probability of an element to be zeroed",
-        "required": "false",
-        "default": "0.5"
-      }
-    },
-    "output": {
-      "output": {
-        "type": "Tensor",
-        "description": "Output tensor."
-      }
-    },
-    "description": "It takes an input floating-point tensor, an optional input ratio (floating-point scalar) and an optional input training_mode (boolean scalar). It produces two tensor outputs, output (floating-point tensor) and mask (optional Tensor<bool>). If training_mode is true then the output Y will be a random dropout."
-  },
-  "Reshape": {
-    "name": "ReshapeNode",
-    "input": {
-      "data": {
-        "type": "Tensor",
-        "description": "An input tensor."
-      }
-    },
-    "parameters": {
-      "shape": {
-        "type": "list of ints",
-        "description": "Specified shape for output.",
-        "required": "true",
-        "default": "1, 1"
-      },
-      "allow_zero": {
-        "type": "boolean",
-        "description": "allowzero=1 indicates that if any value in the 'shape' input is set to zero.",
-        "required": "false",
-        "default": "0"
-      }
-    },
-    "output": {
-      "reshaped": {
-        "type": "Tensor",
-        "description": "Reshaped data."
-      }
-    },
-    "description": "Reshape the input tensor similar to numpy.reshape. First input is the data tensor, second input is a shape tensor which specifies the output shape. It outputs the reshaped tensor. At most one dimension of the new shape can be -1. In this case, the value is inferred from the size of the tensor and the remaining dimensions. A dimension could also be 0, in which case the actual dimension value is unchanged (i.e. taken from the input tensor)."
   }
 }

@@ -1,5 +1,6 @@
 from coconet.core.controller.pynevertemp.nodes import LayerNode, ReLUNode, FullyConnectedNode, BatchNormNode, \
-    AveragePoolNode, ConvNode, MaxPoolNode, LRNNode, SoftMaxNode, UnsqueezeNode, FlattenNode, DropoutNode, ReshapeNode
+    AveragePoolNode, ConvNode, MaxPoolNode, LRNNode, SoftMaxNode, UnsqueezeNode, FlattenNode, DropoutNode, ReshapeNode, \
+    SigmoidNode
 from coconet.core.controller.pynevertemp.tensor import Tensor
 
 
@@ -33,6 +34,9 @@ class NodeOps:
         if class_name == 'ReLUNode':
             node = ReLUNode(node_id,
                             in_dim)
+        elif class_name == 'SigmoidNode':
+            node = SigmoidNode(node_id,
+                               in_dim)
         elif class_name == 'FullyConnectedNode':
             node = FullyConnectedNode(node_id,
                                       in_dim,
