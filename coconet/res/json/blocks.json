@@ -8,16 +8,22 @@
       }
     },
     "parameters": {
+      "kernel_size": {
+        "type": "list of ints",
+        "description": "The size of the kernel along each axis.",
+        "required": "true",
+        "default": "1, 1"
+      },
       "stride": {
         "type": "list of ints",
         "description": "Stride along each spatial axis. If not present, the stride defaults to 1 along each spatial axis.",
         "required": "false",
         "default": "1, 1"
       },
-      "kernel_size": {
+      "padding": {
         "type": "list of ints",
-        "description": "The size of the kernel along each axis.",
-        "required": "true",
+        "description": "Padding for the beginning and ending along each spatial axis, it can take any value greater than or equal to 0. The value represent the number of pixels added to the beginning and end part of the corresponding axis. `pads` format should be as follow [x1_begin, x2_begin...x1_end, x2_end,...], where xi_begin the number of pixels added at the beginning of axis `i` and xi_end, the number of pixels added at the end of axis `i`. This attribute cannot be used simultaneously with auto_pad attribute. If not present, the padding defaults to 0 along start and end of each spatial axis.",
+        "required": "false",
         "default": "1, 1"
       },
       "ceil_mode": {
@@ -25,12 +31,6 @@
         "description": "Whether to use ceil or floor (default) to compute the output shape.",
         "required": "false",
         "default": "false"
-      },
-      "padding": {
-        "type": "list of ints",
-        "description": "Padding for the beginning and ending along each spatial axis, it can take any value greater than or equal to 0. The value represent the number of pixels added to the beginning and end part of the corresponding axis. `pads` format should be as follow [x1_begin, x2_begin...x1_end, x2_end,...], where xi_begin the number of pixels added at the beginning of axis `i` and xi_end, the number of pixels added at the end of axis `i`. This attribute cannot be used simultaneously with auto_pad attribute. If not present, the padding defaults to 0 along start and end of each spatial axis.",
-        "required": "false",
-        "default": "1, 1"
       },
       "count_include_pad": {
         "type": "boolean",
@@ -126,6 +126,14 @@
       }
     },
     "parameters": {
+      "in_channels": {
+        "type": "int",
+        "description": "Number of input channels in Conv Layer."
+      },
+      "out_channels": {
+        "type": "int",
+        "description": "Number of output channels in Conv Layer."
+      },
       "kernel_size": {
         "type": "list of ints",
         "description": "The shape of the convolution kernel. If not present, should be inferred from input W.",
@@ -155,14 +163,6 @@
         "description": "number of groups input channels and output channels are divided into.",
         "required": "true",
         "default": "1"
-      },
-      "in_channels": {
-        "type": "int",
-        "description": "Number of input channels in Conv Layer."
-      },
-      "out_channels": {
-        "type": "int",
-        "description": "Number of output channels in Conv Layer."
       },
       "bias": {
         "type": "Tensor",
@@ -278,6 +278,11 @@
       }
     },
     "parameters": {
+      "size": {
+        "type": "int",
+        "description": "The number of channels to sum over.",
+        "required": "true"
+      },
       "alpha": {
         "type": "float",
         "description": "Scaling parameter.",
@@ -289,11 +294,6 @@
         "description": "The exponent.",
         "required": "false",
         "default": "0.75"
-      },
-      "size": {
-        "type": "int",
-        "description": "The number of channels to sum over.",
-        "required": "true"
       },
       "k": {
         "type": "float",
@@ -319,12 +319,6 @@
       }
     },
     "parameters": {
-      "ceil_mode": {
-        "type": "boolean",
-        "description": "Whether to use ceil or floor (default) to compute the output shape.",
-        "required": "false",
-        "default": "0"
-      },
       "kernel_size": {
         "type": "list of ints",
         "description": "The size of the kernel along each axis.",
@@ -341,17 +335,23 @@
         "description": "Padding for the beginning and ending along each spatial axis, it can take any value greater than or equal to 0. The value represent the number of pixels added to the beginning and end part of the corresponding axis. `pads` format should be as follow [x1_begin, x2_begin...x1_end, x2_end,...], where xi_begin the number of pixels added at the beginning of axis `i` and xi_end, the number of pixels added at the end of axis `i`. This attribute cannot be used simultaneously with auto_pad attribute. If not present, the padding defaults to 0 along start and end of each spatial axis.",
         "default": "1, 1"
       },
-      "return_indices": {
+      "ceil_mode": {
         "type": "boolean",
-        "description": "Determines if the operator has to return indices output.",
+        "description": "Whether to use ceil or floor (default) to compute the output shape.",
         "required": "false",
-        "default": "false"
+        "default": "0"
       },
       "dilation": {
         "type": "int",
         "description": "Dilation value along each spatial axis of filter. If not present, the dilation defaults to 1 along each spatial axis.",
         "required": "false",
         "default": "1"
+      },
+      "return_indices": {
+        "type": "boolean",
+        "description": "Determines if the operator has to return indices output.",
+        "required": "false",
+        "default": "false"
       }
     },
     "output": {
