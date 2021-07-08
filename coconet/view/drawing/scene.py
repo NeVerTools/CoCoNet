@@ -16,8 +16,8 @@ from coconet.core.controller.pynevertemp.tensor import Tensor
 from coconet.core.model.network import NetworkNode
 from coconet.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock, GraphicBlock
 from coconet.view.drawing.renderer import SequentialNetworkRenderer
-from coconet.view.widget.dialog.dialogs import EditNodeDialog, MessageDialog, MessageType, EditSmtPropertyDialog, \
-    EditPolyhedralPropertyDialog
+from coconet.view.widget.dialog.dialogs import MessageDialog, MessageType, EditSmtPropertyDialog, \
+    EditPolyhedralPropertyDialog, EditNodeInputDialog
 
 
 class DrawingMode(Enum):
@@ -594,11 +594,13 @@ class Canvas(QWidget):
         edits = block.edits
         if edits is not None and block.block_id in self.renderer.disconnected_network.keys():
             edit_node_id = edits[0]
-            edit_data = edits[1]
+            new_in_dim = edits[1]
+            edit_data = dict()
+            edit_data["in_dim"] = new_in_dim
 
             # If in_dim changes to fully connected, update in_features
-            if "in_dim" in edit_data and block.node.name == "Fully Connected":
-                edit_data["in_features"] = edit_data["in_dim"][-1]
+            if block.node.name == "Fully Connected":
+                edit_data["in_features"] = new_in_dim[-1]
 
             for block_par, info in block.node.param.items():
                 if "shape" in info:
@@ -1166,12 +1168,12 @@ class NetworkScene(QGraphicsScene):
                 item = self.blocks[item_rect]
 
             if isinstance(item, NodeBlock):
-                dialog = EditNodeDialog(item)
+                dialog = EditNodeInputDialog(item)
                 dialog.exec()
                 # Catch new parameters
                 if dialog.has_edits:
                     # The block emits a signal
-                    item.edits = item.block_id, dialog.edited_data
+                    item.edits = item.block_id, dialog.new_in_dim
                     item.edited.emit()
             else:
                 Canvas.define_property(item)

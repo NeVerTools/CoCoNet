@@ -259,6 +259,12 @@
         "type": "Tensor",
         "description": "Bias tensor.",
         "shape": "out_features"
+      },
+      "has_bias": {
+        "type": "boolean",
+        "description": "True if the layer has a bias.",
+        "required": "false",
+        "default": "true"
       }
     },
     "output": {
