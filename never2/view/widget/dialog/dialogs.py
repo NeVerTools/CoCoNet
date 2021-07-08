@@ -454,6 +454,71 @@ class GenericDatasetDialog(NeVerDialog):
         self.close()
 
 
+class EditNodeInputDialog(NeVerDialog):
+    def __init__(self, node_block: NodeBlock):
+        super().__init__(node_block.node.name, "")
+        self.layout = QGridLayout()
+
+        # Connect node
+        self.node = node_block
+        self.new_in_dim = ','.join(map(str, node_block.in_dim))
+        self.in_dim_box = QLineEdit()
+        self.has_edits = False
+
+        # Build main_layout
+        title_label = QLabel("Edit network input")
+        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
+        title_label.setAlignment(Qt.AlignCenter)
+        self.layout.addWidget(title_label, 0, 0, 1, 2)
+
+        # Input box
+        in_dim_label = QLabel("Input shape")
+        in_dim_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
+        in_dim_label.setAlignment(Qt.AlignRight)
+        self.layout.addWidget(in_dim_label, 1, 0)
+
+        self.in_dim_box.setStyleSheet(style.VALUE_LABEL_STYLE)
+        self.in_dim_box.setText(self.new_in_dim)
+        self.in_dim_box.setValidator(ArithmeticValidator.TENSOR)
+
+        self.layout.addWidget(self.in_dim_box, 1, 1)
+
+        if not node_block.is_head:
+            self.in_dim_box.setReadOnly(True)
+
+        # "Apply" button which saves changes
+        apply_button = QPushButton("Apply")
+        apply_button.setStyleSheet(style.BUTTON_STYLE)
+        apply_button.clicked.connect(lambda: self.save_data())
+        self.layout.addWidget(apply_button, 2, 0)
+
+        # "Cancel" button which closes the dialog without saving
+        cancel_button = QPushButton("Cancel")
+        cancel_button.setStyleSheet(style.BUTTON_STYLE)
+        cancel_button.clicked.connect(lambda: self.close())
+        self.layout.addWidget(cancel_button, 2, 1)
+
+        self.layout.setColumnStretch(0, 1)
+        self.layout.setColumnStretch(1, 1)
+
+        self.render_layout()
+
+    def save_data(self) -> None:
+        """
+        This method saves the new in_dim, returning
+        it to the caller.
+
+        """
+
+        self.has_edits = True
+
+        if len(self.in_dim_box.text()) != 0:
+            self.new_in_dim = tuple(map(int, self.in_dim_box.text().split(',')))
+
+        self.close()
+
+
+# deprecated
 class EditNodeDialog(NeVerDialog):
     """
     This dialog allows to edit the selected node in the canvas.
@@ -482,8 +547,7 @@ class EditNodeDialog(NeVerDialog):
     """
 
     def __init__(self, node_block: NodeBlock):
-        super().__init__("", "")
-        self.set_title(node_block.node.name)
+        super().__init__(node_block.node.name, "")
         self.layout = QGridLayout()
 
         # Connect node
