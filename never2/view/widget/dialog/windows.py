@@ -15,7 +15,7 @@ import never2.view.util.utility as u
 from never2.core.controller.pynevertemp.datasets import Dataset
 from never2.core.controller.pynevertemp.networks import NeuralNetwork
 from never2.core.controller.pynevertemp.strategies.training import PytorchTraining, PytorchMetrics
-from never2.view.widget.dialog.dialogs import MessageDialog, MessageType, GenericDatasetDialog
+from never2.view.widget.dialog.dialogs import MessageDialog, MessageType, GenericDatasetDialog, ArithmeticValidator
 from never2.view.widget.misc import LoggerTextBox
 
 
@@ -108,6 +108,13 @@ class NeVerWindow(QtWidgets.QDialog):
                 self.widgets[first_level] = QLineEdit()
                 self.widgets[first_level].setText(str(widget_dict[first_level].get("value", "")))
                 self.widgets[first_level].textChanged.connect(line_f(first_level))
+                if widget_dict[first_level]["type"] == "int":
+                    self.widgets[first_level].setValidator(ArithmeticValidator.INT)
+                elif widget_dict[first_level]["type"] == "float":
+                    self.widgets[first_level].setValidator(ArithmeticValidator.FLOAT)
+                elif widget_dict[first_level]["type"] == "tensor" or \
+                        widget_dict[first_level]["type"] == "tuple":
+                    self.widgets[first_level].setValidator(ArithmeticValidator.TENSOR)
 
             w_label = QLabel(first_level)
             w_label.setToolTip(widget_dict[first_level].get("description"))
@@ -276,15 +283,15 @@ class TrainingWindow(NeVerWindow):
         count = 1
         for k, v in self.gui_params[name].items():
             # Activation functions for dynamic widgets
-            def activation_combo(superkey: str, key: str):
+            def activation_combo(super_key: str, key: str):
                 return lambda: self.update_dict_value(name,
                                                       key,
-                                                      widgets_2level[f"{superkey}-{key}"][1].currentText())
+                                                      widgets_2level[f"{super_key}:{key}"][1].currentText())
 
-            def activation_line(superkey: str, key: str):
+            def activation_line(super_key: str, key: str):
                 return lambda: self.update_dict_value(name,
                                                       key,
-                                                      widgets_2level[f"{superkey}-{key}"][1].text())
+                                                      widgets_2level[f"{super_key}:{key}"][1].text())
 
             w_label = QLabel(k)
             w_label.setToolTip(v.get("description"))
@@ -301,6 +308,13 @@ class TrainingWindow(NeVerWindow):
             else:
                 widgets_2level[f"{name}:{k}"] = (w_label, QLineEdit(str(v["value"])))
                 widgets_2level[f"{name}:{k}"][1].textChanged.connect(activation_line(name, k))
+                if v["type"] == "int":
+                    widgets_2level[f"{name}:{k}"][1].setValidator(ArithmeticValidator.INT)
+                elif v["type"] == "float":
+                    widgets_2level[f"{name}:{k}"][1].setValidator(ArithmeticValidator.FLOAT)
+                elif v["type"] == "tensor" or \
+                        v["type"] == "tuple":
+                    widgets_2level[f"{name}:{k}"][1].setValidator(ArithmeticValidator.TENSOR)
 
             self.grid_layout.addWidget(widgets_2level[f"{name}:{k}"][0], count, 0)
             self.grid_layout.addWidget(widgets_2level[f"{name}:{k}"][1], count, 1)
@@ -333,11 +347,11 @@ class TrainingWindow(NeVerWindow):
 
         if gui_param["type"] == "bool":
             value = value == "True"
-        elif gui_param["type"] == "int":
+        elif gui_param["type"] == "int" and value != "":
             value = int(value)
-        elif gui_param["type"] == "float":
+        elif gui_param["type"] == "float" and value != "":
             value = float(value)
-        elif gui_param["type"] == "tuple":
+        elif gui_param["type"] == "tuple" and value != "":
             value = eval(value)
 
         # Apply changes
