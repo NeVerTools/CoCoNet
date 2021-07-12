@@ -10,7 +10,7 @@ from coconet.view.widget.loading import ProgressBar
 
 import coconet.view.styles as style
 import coconet.view.util.utility as u
-from coconet.core.controller.pynevertemp.tensor import Tensor
+from pynever.tensor import Tensor
 from coconet.core.model.network import NetworkNode
 from coconet.view.drawing.element import PropertyBlock, NodeBlock
 

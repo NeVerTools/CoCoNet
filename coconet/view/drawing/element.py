@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsRectItem, QGraphicsTextI
 
 import coconet.view.styles as style
 import coconet.view.util.utility as u
-from coconet.core.controller.pynevertemp.tensor import Tensor
+from pynever.tensor import Tensor
 
 MAX_FLOAT_LABEL_LENGTH = 5
 
