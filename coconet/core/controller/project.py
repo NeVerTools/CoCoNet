@@ -242,10 +242,10 @@ class InputHandler:
                 # it is converted in the internal representation
                 if isinstance(self.alt_repr, ONNXNetwork):
                     self.strategy = ONNXConverter()
-                    return self.strategy.to_neural_network(self.alt_repr)
                 else:
-                    self.network_input = self.read_input_dialog()
-                    return self.set_input_shape(self.network_input)
+                    self.strategy = PyTorchConverter()
+
+                return self.strategy.to_neural_network(self.alt_repr)
 
             except Exception as e:
                 # Even in case of conversion_exception, the signal of the ending of the
