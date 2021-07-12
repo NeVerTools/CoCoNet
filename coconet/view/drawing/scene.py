@@ -11,8 +11,8 @@ from PyQt5.QtWidgets import QGraphicsRectItem, QWidget, QGraphicsScene, QApplica
 import coconet.view.styles as style
 from coconet.core.controller.nodewrapper import NodeOps
 from coconet.core.controller.project import Project
-from coconet.core.controller.pynevertemp.networks import SequentialNetwork, NeuralNetwork
-from coconet.core.controller.pynevertemp.tensor import Tensor
+from pynever.networks import SequentialNetwork, NeuralNetwork
+from pynever.tensor import Tensor
 from coconet.core.model.network import NetworkNode
 from coconet.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock, GraphicBlock
 from coconet.view.drawing.renderer import SequentialNetworkRenderer

@@ -1,7 +1,7 @@
-from coconet.core.controller.pynevertemp.nodes import LayerNode, ReLUNode, FullyConnectedNode, BatchNormNode, \
+from pynever.nodes import LayerNode, ReLUNode, FullyConnectedNode, BatchNormNode, \
     AveragePoolNode, ConvNode, MaxPoolNode, LRNNode, SoftMaxNode, UnsqueezeNode, FlattenNode, DropoutNode, ReshapeNode, \
     SigmoidNode
-from coconet.core.controller.pynevertemp.tensor import Tensor
+from pynever.tensor import Tensor
 
 
 class NodeOps:

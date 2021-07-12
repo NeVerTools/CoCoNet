@@ -4,8 +4,8 @@ from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from PyQt5.QtWidgets import QFileDialog, QApplication
 from pysmt.smtlib.parser import SmtLibParser
 
-import coconet.core.controller.pynevertemp.networks as pynn
-from coconet.core.controller.pynevertemp.strategies.conversion import ONNXNetwork, \
+import pynever.networks as pynn
+from pynever.strategies.conversion import ONNXNetwork, \
     ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork, AlternativeRepresentation
 from coconet.view.drawing.element import PropertyBlock
 from coconet.view.widget.dialog.dialogs import MessageDialog, MessageType, InputDialog

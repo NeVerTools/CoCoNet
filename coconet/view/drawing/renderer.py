@@ -1,7 +1,7 @@
 import copy
 
 from coconet.core.controller.nodewrapper import NodeOps
-from coconet.core.controller.pynevertemp.networks import SequentialNetwork
+from pynever.networks import SequentialNetwork
 from coconet.view.drawing.element import NodeBlock, PropertyBlock
 
 
