@@ -414,12 +414,16 @@ class OutputHandler:
 
         """
 
-        self.extension = filename[0].split(".")[-1]
         if '.' not in filename[0]:  # If no explicit extension
+            if 'VNNLIB' in filename[1]:
+                self.extension = 'vnnlib'
             if self.extension == 'vnnlib':
                 filename = (f"{filename[0]}.onnx", filename[1])
             else:
+                self.extension = filename[0].split(".")[-1]
                 filename = (f"{filename[0]}.{self.extension}", filename[1])
+        else:
+            self.extension = filename[0].split('.')[-1]
 
         try:
             # The network is converted in the alternative representation
@@ -427,7 +431,7 @@ class OutputHandler:
 
             # Saving the network on file depending on the format
             if isinstance(self.alt_repr, ONNXNetwork):
-                onnx.save(self.alt_repr.onnx_network, filename[0])
+                onnx.save(self.alt_repr.onnx_network.onnx_network, filename[0])
             elif isinstance(self.alt_repr, PyTorchNetwork):
                 torch.save(self.alt_repr.pytorch_network, filename[0])
 
