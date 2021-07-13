@@ -474,7 +474,7 @@ class Canvas(QWidget):
         return block
 
     def draw_property(self, property_type: str = "", copy: PropertyBlock = None,
-                      pos: QPoint = None) -> PropertyBlock:
+                      pos: QPoint = None, add_dict_entry: bool = True) -> PropertyBlock:
         """
         This method creates a graphic PropertyBlock for representing
         the property to draw. If the property is legal, the PropertyBlock
@@ -488,6 +488,9 @@ class Canvas(QWidget):
             The property to copy in the canvas.
         pos : QPoint, optional
             The position to draw the property.
+        add_dict_entry : boolean, optional
+            Flag that allows to add an entry in the
+            properties dictionary.
 
         Returns
         -------
@@ -523,7 +526,8 @@ class Canvas(QWidget):
             .connect(lambda: Canvas.define_property(block))
         self.num_props += 1
         block.variables = self.get_input_variables()
-        self.project.properties[f"PRE{self.num_props}"] = block
+        if add_dict_entry:
+            self.project.properties[f"PRE{self.num_props}"] = block
         self.renderer.add_property_block(block)
 
         return block
@@ -794,8 +798,16 @@ class Canvas(QWidget):
         tot_height = 0
         for n, p in self.project.properties.items():
             for node in self.project.network.nodes.values():
-                if node.identifier == n:
-                    new_p = self.draw_property(copy=p, pos=QPoint(350, tot_height))
+                if n == self.project.network.input_id:
+                    new_p = self.draw_property(copy=p, pos=QPoint(350, tot_height), add_dict_entry=False)
+                    new_p.set_smt_label()
+                    new_p.pre_condition = True
+                    new_p.update_condition_label()
+                    tot_height += (new_p.rect.rect().height() + 50)
+                    self.draw_line_between(new_p.block_id, n)
+                    break
+                if n == node.identifier:
+                    new_p = self.draw_property(copy=p, pos=QPoint(350, tot_height), add_dict_entry=False)
                     new_p.set_smt_label()
                     new_p.pre_condition = False
                     new_p.update_condition_label()
