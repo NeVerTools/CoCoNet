@@ -328,6 +328,7 @@ class Canvas(QWidget):
 
                     self.scene.blocks[origin_item].out_dim = out_dim
                     self.scene.blocks[destination_item].in_dim = out_dim
+                    self.scene.blocks[destination_item].out_dim = out_dim
                     return
 
                 except Exception as e:
