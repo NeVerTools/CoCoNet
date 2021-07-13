@@ -2,6 +2,7 @@ import onnx
 import torch
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from PyQt5.QtWidgets import QFileDialog, QApplication
+from pynever.strategies.processing import ExpressionTreeConverter
 from pysmt.smtlib.parser import SmtLibParser
 
 import pynever.networks as pynn
@@ -287,14 +288,14 @@ class InputHandler:
 
         for a in assertions:
             line = str(a.args[0]).replace('\'', '')
-            tokens = line.replace('(', '').replace(')', '').split()
             for v in var_list:
                 if f" {v}" in line or f"({v}" in line:  # Either '(v ...' or '... v)'
                     if v not in properties.keys():
                         properties[v] = PropertyBlock(f"{counter}Pr", "Generic SMT")
                         properties[v].smt_string = ''
                         counter += 1
-                    wrap = '(assert ' + f"({tokens[1]} {tokens[0]} {tokens[2]})" + ')'
+                    conv = ExpressionTreeConverter()
+                    wrap = conv.build_from_infix(line).as_prefix()
                     properties[v].smt_string += f"{wrap}\n"
                     break
 
