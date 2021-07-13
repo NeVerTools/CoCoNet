@@ -1,13 +1,13 @@
 import onnx
+import pynever.networks as pynn
 import torch
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from PyQt5.QtWidgets import QFileDialog, QApplication
+from pynever.strategies.conversion import ONNXNetwork, \
+    ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork, AlternativeRepresentation
 from pynever.strategies.processing import ExpressionTreeConverter
 from pysmt.smtlib.parser import SmtLibParser
 
-import pynever.networks as pynn
-from pynever.strategies.conversion import ONNXNetwork, \
-    ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork, AlternativeRepresentation
 from coconet.view.drawing.element import PropertyBlock
 from coconet.view.widget.dialog.dialogs import MessageDialog, MessageType, InputDialog
 
@@ -58,7 +58,7 @@ class Project(QObject):
         super(QObject, self).__init__()
         self.file_name = ("", "")
 
-        self.network = pynn.SequentialNetwork("", "")
+        self.network = pynn.SequentialNetwork("", "X")
         self.properties = dict()
 
         self.input_handler = None
@@ -82,6 +82,9 @@ class Project(QObject):
             # A "wait cursor" appears
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.network = self.input_handler.read_network(self.file_name[0])
+            if isinstance(self.network, pynn.SequentialNetwork) and \
+                    self.network.input_id == '':
+                self.network.input_id = 'X'
             QApplication.restoreOverrideCursor()
 
             # At the end of the loading, the main thread looks for potential

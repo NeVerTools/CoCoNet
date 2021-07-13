@@ -246,7 +246,7 @@ class Canvas(QWidget):
                     else:
                         for i in range(k):
                             for p in temp_list:
-                                p = f"{p}{i}"
+                                p = f"{p}-{i}"
                                 ped_list.append(p)
                         temp_list = ped_list
                         ped_list = []
@@ -740,7 +740,7 @@ class Canvas(QWidget):
         """
 
         self.renderer.disconnected_network = {}
-        self.renderer.NN = SequentialNetwork("", "")
+        self.renderer.NN = SequentialNetwork("", "X")
 
         # Recreate the scene
         self.scene = NetworkScene(self)
