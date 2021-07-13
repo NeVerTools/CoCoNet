@@ -264,6 +264,7 @@ class Canvas(QWidget):
                     # Draw dimensions
                     in_dim = self.renderer.NN.nodes[destination.block_id].in_dim
                     self.scene.blocks[conn_nodes[0]].out_dim = in_dim
+                    self.scene.blocks[conn_nodes[1]].out_dim = in_dim
                     destination.in_dim = in_dim
                     destination.is_head = False
 
