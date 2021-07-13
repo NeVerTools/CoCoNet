@@ -15,7 +15,7 @@ from coconet.view.widget.dialog.dialogs import MessageDialog, MessageType, Input
 NETWORK_FORMATS_OPENING = "All supported formats (*.onnx *.pt *.pth);;\
                             ONNX(*.onnx);;\
                             PyTorch(*.pt *.pth)"
-NETWORK_FORMATS_SAVE = "VNNLIB (*.vnnlib);;\
+NETWORK_FORMATS_SAVE = "VNNLIB (*.onnx + *.smt2);;\
                         ONNX(*.onnx);;\
                         PyTorch(*.pt *.pth)"
 PROPERTY_FORMATS = "SMT-LIB files (*.smt *.smt2);;\
