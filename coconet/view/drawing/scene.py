@@ -7,6 +7,7 @@ from PyQt5.QtCore import Qt, QPoint, QRectF, pyqtSignal, QRect
 from PyQt5.QtGui import QBrush, QColor, QPen, QPainter
 from PyQt5.QtWidgets import QGraphicsRectItem, QWidget, QGraphicsScene, QApplication, QGraphicsItem, \
     QGraphicsSceneMouseEvent
+from pynever import nodes
 from pynever.networks import SequentialNetwork, NeuralNetwork
 from pynever.tensor import Tensor
 
@@ -263,8 +264,14 @@ class Canvas(QWidget):
 
                     # Draw dimensions
                     in_dim = self.renderer.NN.nodes[destination.block_id].in_dim
+
+                    if isinstance(self.renderer.NN.nodes[destination.block_id], nodes.FullyConnectedNode):
+                        out_dim = self.renderer.NN.nodes[destination.block_id].out_features
+                    else:
+                        out_dim = self.renderer.NN.nodes[destination.block_id].out_dim
+
                     self.scene.blocks[conn_nodes[0]].out_dim = in_dim
-                    self.scene.blocks[conn_nodes[1]].out_dim = in_dim
+                    self.scene.blocks[conn_nodes[1]].out_dim = out_dim
                     destination.in_dim = in_dim
                     destination.is_head = False
 
@@ -328,7 +335,8 @@ class Canvas(QWidget):
 
                     self.scene.blocks[origin_item].out_dim = out_dim
                     self.scene.blocks[destination_item].in_dim = out_dim
-                    self.scene.blocks[destination_item].out_dim = out_dim
+                    self.scene.blocks[destination_item].out_dim = self.renderer.NN.nodes[
+                                      self.scene.blocks[destination_item].block_id].out_dim
                     return
 
                 except Exception as e:
