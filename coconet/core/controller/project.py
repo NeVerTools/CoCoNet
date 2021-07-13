@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QFileDialog, QApplication
 from pynever.strategies.conversion import ONNXNetwork, \
     ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork, AlternativeRepresentation
 from pynever.strategies.processing import ExpressionTreeConverter
+
 from pysmt.smtlib.parser import SmtLibParser
 
 from coconet.view.drawing.element import PropertyBlock
@@ -13,11 +14,15 @@ from coconet.view.widget.dialog.dialogs import MessageDialog, MessageType, Input
 
 # Formats available for opening and saving networks
 NETWORK_FORMATS_OPENING = "All supported formats (*.onnx *.pt *.pth);;\
-            ONNX(*.onnx);;\
-            PyTorch(*.pt *.pth)"
-PROPERTY_FORMATS_OPENING = "SMT-LIB files (*.smt *.smt2);;\
+                            ONNX(*.onnx);;\
+                            PyTorch(*.pt *.pth)"
+NETWORK_FORMATS_SAVE = "VNNLIB (*.vnnlib);;\
+                        ONNX(*.onnx);;\
+                        PyTorch(*.pt *.pth)"
+PROPERTY_FORMATS = "SMT-LIB files (*.smt *.smt2);;\
                            SMT(*.smt *.smt2)"
-SUPPORTED_NETWORK_FORMATS = {'ONNX': ['onnx'],
+SUPPORTED_NETWORK_FORMATS = {'VNNLIB': ['vnnlib'],
+                             'ONNX': ['onnx'],
                              'PyTorch': ['pt', 'pth']}
 SUPPORTED_PROPERTY_FORMATS = {'SMT': ['smt', 'smt2']}
 
@@ -117,7 +122,7 @@ class Project(QObject):
             return
 
         # Select file
-        property_file_name = QFileDialog.getOpenFileName(None, "Open property file", "", PROPERTY_FORMATS_OPENING)
+        property_file_name = QFileDialog.getOpenFileName(None, "Open property file", "", PROPERTY_FORMATS)
 
         if property_file_name != ("", ""):
             self.input_handler = InputHandler()
@@ -144,7 +149,7 @@ class Project(QObject):
         # If the user picked "save as" option or there isn't a current file,
         # a dialog is opened to chose where to save the net
         if _as or self.file_name == ("", ""):
-            self.file_name = QFileDialog.getSaveFileName(None, 'Save File', "", NETWORK_FORMATS_OPENING)
+            self.file_name = QFileDialog.getSaveFileName(None, 'Save File', "", NETWORK_FORMATS_SAVE)
 
         if self.file_name != ("", ""):
             self.output_handler = OutputHandler()
@@ -152,7 +157,8 @@ class Project(QObject):
             # A  "wait cursor" appears locking the interface
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.output_handler.save(self.network, self.file_name)
-            self.output_handler.save_properties(self.properties, self.file_name)
+            if self.properties:
+                self.output_handler.save_properties(self.properties, self.file_name)
             QApplication.restoreOverrideCursor()
 
             # At the end of the loading, the main thread looks for eventual
@@ -410,6 +416,11 @@ class OutputHandler:
         """
 
         self.extension = filename[1].split(".")[-1].replace(")", "")
+        if '.' not in filename[0]:  # If no explicit extension
+            if self.extension == 'vnnlib':
+                filename = (f"{filename[0]}.onnx", filename[1])
+            else:
+                filename = (f"{filename[0]}.{self.extension}", filename[1])
 
         try:
             # The network is converted in the alternative representation
@@ -478,7 +489,8 @@ class OutputHandler:
         # Getting the filename
         net_id = filename.split("/")[-1]
 
-        if self.extension in SUPPORTED_NETWORK_FORMATS['ONNX']:
+        if self.extension in SUPPORTED_NETWORK_FORMATS['ONNX'] or \
+                self.extension in SUPPORTED_NETWORK_FORMATS['VNNLIB']:
             self.strategy = ONNXConverter()
             model = self.strategy.from_neural_network(network)
             self.alt_repr = ONNXNetwork(net_id + "_onnx", model, True)
