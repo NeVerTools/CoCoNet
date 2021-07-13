@@ -6,7 +6,6 @@ from PyQt5.QtWidgets import QFileDialog, QApplication
 from pynever.strategies.conversion import ONNXNetwork, \
     ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork, AlternativeRepresentation
 from pynever.strategies.processing import ExpressionTreeConverter
-
 from pysmt.smtlib.parser import SmtLibParser
 
 from coconet.view.drawing.element import PropertyBlock
@@ -451,6 +450,8 @@ class OutputHandler:
         """
 
         path = filename[0].replace("." + self.extension, ".smt2")
+        if '.' not in path:
+            path = path + '.smt2'
 
         # Update extension
         self.extension = "smt2"
@@ -460,7 +461,7 @@ class OutputHandler:
             # Variables
             for p in properties.values():
                 for v in p.variables:
-                    f.write("(declare-const " + v + " Real)\n")
+                    f.write("(declare-fun " + v + " () Real)\n")
             f.write("\n")
 
             # Constraints

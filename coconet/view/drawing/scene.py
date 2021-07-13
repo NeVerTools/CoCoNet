@@ -7,15 +7,16 @@ from PyQt5.QtCore import Qt, QPoint, QRectF, pyqtSignal, QRect
 from PyQt5.QtGui import QBrush, QColor, QPen, QPainter
 from PyQt5.QtWidgets import QGraphicsRectItem, QWidget, QGraphicsScene, QApplication, QGraphicsItem, \
     QGraphicsSceneMouseEvent
+from pynever.networks import SequentialNetwork, NeuralNetwork
+from pynever.tensor import Tensor
 
 import coconet.view.styles as style
 from coconet.core.controller.nodewrapper import NodeOps
 from coconet.core.controller.project import Project
-from pynever.networks import SequentialNetwork, NeuralNetwork
-from pynever.tensor import Tensor
 from coconet.core.model.network import NetworkNode
 from coconet.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock, GraphicBlock
 from coconet.view.drawing.renderer import SequentialNetworkRenderer
+from coconet.view.util import utility
 from coconet.view.widget.dialog.dialogs import MessageDialog, MessageType, EditSmtPropertyDialog, \
     EditPolyhedralPropertyDialog, EditNodeInputDialog
 
@@ -135,6 +136,10 @@ class Canvas(QWidget):
         self.scene.addWidget(self)
         self.setStyleSheet(style.CANVAS_STYLE)
 
+    def get_input_variables(self) -> list:
+        head = self.renderer.NN.get_first_node()
+        return utility.create_variables_from(self.renderer.NN.input_id, head.in_dim)
+
     def update_scene(self):
         """
         This method calls a drawing method according to the current mode.
@@ -235,28 +240,16 @@ class Canvas(QWidget):
                 return
 
             if isinstance(origin, PropertyBlock) and isinstance(destination, NodeBlock):
-                v_name = destination.block_id + "_"
-                temp_list = []
-                ped_list = []
-
-                for k in destination.out_dim:
-                    if len(temp_list) == 0:
-                        for i in range(k):
-                            temp_list.append(str(i))
-                    else:
-                        for i in range(k):
-                            for p in temp_list:
-                                p = f"{p}-{i}"
-                                ped_list.append(p)
-                        temp_list = ped_list
-                        ped_list = []
-
-                for p in temp_list:
-                    origin.variables.append(f"{v_name}{p}")
-
-                # Properties dict is {node_id: property}
+                origin.variables = utility.create_variables_from(destination.block_id, destination.out_dim)
                 origin.pre_condition = False
                 origin.condition_label.setText("POST")
+
+                # Properties dict is {node_id: property}
+                if origin in self.project.properties.values():
+                    # Find key of origin
+                    key = list(self.project.properties.keys())[list(self.project.properties.values()).index(origin)]
+                    del self.project.properties[key]
+
                 self.project.properties[destination.block_id] = origin
                 return
 
@@ -527,6 +520,8 @@ class Canvas(QWidget):
         block.context_actions["Define"].triggered \
             .connect(lambda: Canvas.define_property(block))
         self.num_props += 1
+        block.variables = self.get_input_variables()
+        self.project.properties[f"PRE{self.num_props}"] = block
         self.renderer.add_property_block(block)
 
         return block
@@ -687,7 +682,14 @@ class Canvas(QWidget):
                     # Deleting an edge makes the network non sequential
                     block_before = self.scene.blocks[item.origin]
                     block_after = self.scene.blocks[item.destination]
-                    block_after.is_head = True
+
+                    if isinstance(block_before, PropertyBlock):
+                        if block_after.block_id in self.project.properties.keys():
+                            del self.project.properties[block_after.block_id]
+                        self.scene.removeItem(block_before.rect)
+                        self.scene.blocks.pop(block_before.rect)
+                    else:
+                        block_after.is_head = True
 
                     self.renderer.delete_edge_from(block_before.block_id)
                     item.remove_self()
