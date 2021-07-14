@@ -334,7 +334,7 @@ class InputDialog(NeVerDialog):
             except TypeError:
                 self.input = None
                 error_dialog = MessageDialog("Please check your data format.", MessageType.ERROR)
-                error_dialog.show()
+                error_dialog.exec()
         self.close()
 
     def cancel(self) -> None:
@@ -722,7 +722,7 @@ class EditNodeDialog(NeVerDialog):
             except Exception:
                 # If there are errors in data format
                 error_dialog = MessageDialog("Please check data format.", MessageType.ERROR)
-                error_dialog.show()
+                error_dialog.exec()
 
         self.close()
 

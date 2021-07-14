@@ -96,7 +96,7 @@ class Project(QObject):
                 error_dialog = MessageDialog("Error in network reading: \n"
                                              + str(self.input_handler.conversion_exception),
                                              MessageType.ERROR)
-                error_dialog.show()
+                error_dialog.exec()
             else:
                 self.opened_net.emit()
 
@@ -114,7 +114,7 @@ class Project(QObject):
         # Check project
         if not self.network.nodes:
             err = MessageDialog("No network loaded!", MessageType.ERROR)
-            err.show()
+            err.exec()
             return
 
         # Select file
@@ -162,7 +162,7 @@ class Project(QObject):
                 error_dialog = MessageDialog("Error in network saving: \n"
                                              + str(self.output_handler.exception),
                                              MessageType.ERROR)
-                error_dialog.show()
+                error_dialog.exec()
 
 
 class InputHandler:

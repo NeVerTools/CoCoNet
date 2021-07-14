@@ -18,7 +18,7 @@ from never2.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock, G
 from never2.view.drawing.renderer import SequentialNetworkRenderer
 from never2.view.widget.dialog.dialogs import MessageDialog, MessageType, EditSmtPropertyDialog, \
     EditPolyhedralPropertyDialog, EditNodeInputDialog
-from never2.view.widget.dialog.windows import TrainingWindow
+from never2.view.widget.dialog.windows import TrainingWindow, VerificationWindow
 
 
 class DrawingMode(Enum):
@@ -803,10 +803,18 @@ class Canvas(QWidget):
     def train_network(self):
         if not self.renderer.NN.nodes:
             dialog = MessageDialog("No network to train.", MessageType.ERROR)
-            dialog.show()
+            dialog.exec()
         else:
             window = TrainingWindow(self.renderer.NN)
-            window.show()
+            window.exec()
+
+    def verify_network(self):
+        if not self.renderer.NN.nodes:
+            dialog = MessageDialog("No network to verify.", MessageType.ERROR)
+            dialog.exec()
+        else:
+            window = VerificationWindow(self.renderer.NN)
+            window.exec()
 
     @QtCore.pyqtSlot()
     def zoom_in(self):

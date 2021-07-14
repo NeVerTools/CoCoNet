@@ -64,8 +64,7 @@ class NeVerWindow(QtWidgets.QDialog):
 
         self.setLayout(self.layout)
 
-    def create_widget_layout(self, layout_name: str, widget_dict: dict,
-                             cb_f: Callable = None, line_f: Callable = None) -> QHBoxLayout:
+    def create_widget_layout(self, widget_dict: dict, cb_f: Callable = None, line_f: Callable = None) -> QHBoxLayout:
         """
         This method sets up the parameters layout by reading
         the JSON-based dict of train_params and building
@@ -73,8 +72,6 @@ class NeVerWindow(QtWidgets.QDialog):
 
         Parameters
         ----------
-        layout_name : str
-            The name of the layout to be shown in the label.
         widget_dict : dict
             The dictionary of widgets to build.
         cb_f : Callable, optional
@@ -93,28 +90,39 @@ class NeVerWindow(QtWidgets.QDialog):
         left_layout = QGridLayout()
         left_layout.setAlignment(Qt.AlignTop)
 
-        title = QLabel(layout_name)
-        title.setAlignment(Qt.AlignCenter)
-        left_layout.addWidget(title, 0, 0, 1, 2)
+        # title = QLabel(layout_name)
+        # title.setAlignment(Qt.AlignCenter)
+        # left_layout.addWidget(title, 0, 0, 1, 2)
 
-        counter = 1
+        counter = 0
         for first_level in widget_dict.keys():
+
             sub_key = next(iter(widget_dict[first_level]))
+
             if type(widget_dict[first_level][sub_key]) == dict:
+
                 self.widgets[first_level] = QComboBox()
                 for second_level in widget_dict[first_level].keys():
                     self.widgets[first_level].addItem(second_level)
                 self.widgets[first_level].setCurrentIndex(-1)
-                self.widgets[first_level].activated.connect(cb_f(first_level))
+
+                if cb_f is not None:
+                    self.widgets[first_level].activated.connect(cb_f(first_level))
             else:
+
                 if widget_dict[first_level]["type"] == "bool":
+
                     self.widgets[first_level] = QComboBox()
                     self.widgets[first_level].addItems([str(widget_dict[first_level]["value"]),
                                                         str(not widget_dict[first_level]["value"])])
                 else:
+
                     self.widgets[first_level] = QLineEdit()
                     self.widgets[first_level].setText(str(widget_dict[first_level].get("value", "")))
-                    self.widgets[first_level].textChanged.connect(line_f(first_level))
+
+                    if line_f is not None:
+                        self.widgets[first_level].textChanged.connect(line_f(first_level))
+
                     if widget_dict[first_level]["type"] == "int":
                         self.widgets[first_level].setValidator(ArithmeticValidator.INT)
                     elif widget_dict[first_level]["type"] == "float":
@@ -227,8 +235,7 @@ class TrainingWindow(NeVerWindow):
         def activation_line(key: str):
             return lambda: self.update_dict_value(key, "", self.widgets[key].text())
 
-        body_layout = self.create_widget_layout("", self.train_params,
-                                                activation_combo, activation_line)
+        body_layout = self.create_widget_layout(self.train_params, activation_combo, activation_line)
         body_layout.addLayout(self.grid_layout)
         self.grid_layout.setAlignment(Qt.AlignTop)
         self.layout.addLayout(body_layout)
@@ -453,7 +460,7 @@ class TrainingWindow(NeVerWindow):
         elif "value" not in self.train_params["Validation batch size"].keys():
             err_dialog = MessageDialog("No validation batch size selected.", MessageType.ERROR)
         if err_dialog is not None:
-            err_dialog.show()
+            err_dialog.exec()
             return
 
         # Add logger text box
@@ -490,12 +497,40 @@ class TrainingWindow(NeVerWindow):
                                 self.train_params["Validation batch size"]["value"],
                                 opt.lr_scheduler.ReduceLROnPlateau,
                                 sched_params,
-                                PytorchMetrics.inaccuracy)
+                                PytorchMetrics.inaccuracy,
+                                cuda=self.train_params["Cuda"]["value"],
+                                train_patience=self.train_params["Train patience"].get("value", None),
+                                checkpoints_root=self.train_params["Checkpoints root"].get("value", None),
+                                verbose_rate=self.train_params["Verbosity level"].get("value", None))
         train.train(self.nn, data)
         self.train_btn.setEnabled(False)
         self.cancel_btn.setText("Close")
 
 
 class VerificationWindow(NeVerWindow):
-    def __init__(self):
+    def __init__(self, network: NeuralNetwork):
         super().__init__("Verify network")
+
+        self.nn = network
+
+        with open('never2/res/json/verification.json') as json_file:
+            # Init dict with default values
+            self.ver_params = json.loads(json_file.read())
+            # Update dict with types
+            self.ver_params = u.allow_list_in_dict(self.ver_params)
+            self.ver_params = u.force_types(self.ver_params)
+
+        body_layout = self.create_widget_layout(self.ver_params)
+        self.layout.addLayout(body_layout)
+
+        # Buttons
+        btn_layout = QHBoxLayout()
+        self.train_btn = QPushButton("Verify network")
+        self.train_btn.clicked.connect(self.verify_network)
+        self.cancel_btn = QPushButton("Cancel")
+        self.cancel_btn.clicked.connect(self.close)
+        btn_layout.addWidget(self.train_btn)
+        btn_layout.addWidget(self.cancel_btn)
+        self.layout.addLayout(btn_layout)
+
+        self.render_layout()

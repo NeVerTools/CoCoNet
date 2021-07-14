@@ -184,7 +184,7 @@ class MainWindow(QtWidgets.QMainWindow):
         actions_dict["Learning:Train..."].triggered.connect(lambda: self.canvas.train_network())
         actions_dict["Learning:Prune..."].triggered.connect(lambda: self.temp_window())
 
-        actions_dict["Verification:Verify..."].triggered.connect(lambda: self.temp_window())
+        actions_dict["Verification:Verify..."].triggered.connect(lambda: self.canvas.verify_network())
         actions_dict["Verification:Repair..."].triggered.connect(lambda: self.temp_window())
 
         actions_dict["Help:Show guide"].triggered.connect(lambda: self.show_help())
@@ -192,7 +192,7 @@ class MainWindow(QtWidgets.QMainWindow):
     @staticmethod
     def temp_window():
         dialog = MessageDialog("Work in progress...", MessageType.MESSAGE)
-        dialog.show()
+        dialog.exec()
 
     def create_from(self, button: QPushButton):
         """
@@ -423,10 +423,10 @@ class MainWindow(QtWidgets.QMainWindow):
             elif type(self.canvas.scene.selectedItems()[0]) is GraphicLine:
                 msg_dialog = MessageDialog("Can't edit edges, please select a block instead.",
                                            MessageType.ERROR)
-                msg_dialog.show()
+                msg_dialog.exec()
         else:
             err_dialog = MessageDialog("No block selected.", MessageType.MESSAGE)
-            err_dialog.show()
+            err_dialog.exec()
 
     def parameters_action_validation(self) -> Optional[NodeBlock]:
         """
@@ -446,10 +446,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 return self.canvas.scene.blocks[self.canvas.scene.selectedItems()[0]]
             elif type(self.canvas.scene.selectedItems()[0]) is GraphicLine:
                 msg_dialog = MessageDialog("No parameters available for connections.", MessageType.ERROR)
-                msg_dialog.show()
+                msg_dialog.exec()
         else:
             err_dialog = MessageDialog("No block selected.", MessageType.MESSAGE)
-            err_dialog.show()
+            err_dialog.exec()
 
     @staticmethod
     def show_help():
