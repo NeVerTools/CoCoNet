@@ -3,8 +3,10 @@ import logging
 from typing import Callable
 
 import pynever.datasets as dt
+import torch
 import torch.nn.functional as fun
 import torch.optim as opt
+import torchvision.transforms as tr
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLayout, QLineEdit, QPushButton, \
@@ -105,16 +107,21 @@ class NeVerWindow(QtWidgets.QDialog):
                 self.widgets[first_level].setCurrentIndex(-1)
                 self.widgets[first_level].activated.connect(cb_f(first_level))
             else:
-                self.widgets[first_level] = QLineEdit()
-                self.widgets[first_level].setText(str(widget_dict[first_level].get("value", "")))
-                self.widgets[first_level].textChanged.connect(line_f(first_level))
-                if widget_dict[first_level]["type"] == "int":
-                    self.widgets[first_level].setValidator(ArithmeticValidator.INT)
-                elif widget_dict[first_level]["type"] == "float":
-                    self.widgets[first_level].setValidator(ArithmeticValidator.FLOAT)
-                elif widget_dict[first_level]["type"] == "tensor" or \
-                        widget_dict[first_level]["type"] == "tuple":
-                    self.widgets[first_level].setValidator(ArithmeticValidator.TENSOR)
+                if widget_dict[first_level]["type"] == "bool":
+                    self.widgets[first_level] = QComboBox()
+                    self.widgets[first_level].addItems([str(widget_dict[first_level]["value"]),
+                                                        str(not widget_dict[first_level]["value"])])
+                else:
+                    self.widgets[first_level] = QLineEdit()
+                    self.widgets[first_level].setText(str(widget_dict[first_level].get("value", "")))
+                    self.widgets[first_level].textChanged.connect(line_f(first_level))
+                    if widget_dict[first_level]["type"] == "int":
+                        self.widgets[first_level].setValidator(ArithmeticValidator.INT)
+                    elif widget_dict[first_level]["type"] == "float":
+                        self.widgets[first_level].setValidator(ArithmeticValidator.FLOAT)
+                    elif widget_dict[first_level]["type"] == "tensor" or \
+                            widget_dict[first_level]["type"] == "tuple":
+                        self.widgets[first_level].setValidator(ArithmeticValidator.TENSOR)
 
             w_label = QLabel(first_level)
             w_label.setToolTip(widget_dict[first_level].get("description"))
@@ -141,6 +148,8 @@ class TrainingWindow(NeVerWindow):
         The dataset path to train the network.
     dataset_params : dict
         Additional parameters for generic datasets.
+    dataset_transform : Transform
+        Transform on the dataset.
     train_params : dict
         The parameters required by pyNeVer to correctly
         train the network.
@@ -170,6 +179,7 @@ class TrainingWindow(NeVerWindow):
         self.nn = nn
         self.dataset_path = ""
         self.dataset_params = dict()
+        self.dataset_transform = None
         self.train_params = dict()
         self.gui_params = dict()
         self.grid_layout = QGridLayout()
@@ -186,10 +196,22 @@ class TrainingWindow(NeVerWindow):
         self.widgets["dataset"] = QComboBox()
         self.widgets["dataset"].addItems(["MNIST", "Fashion MNIST", "Custom data source..."])
         self.widgets["dataset"].setCurrentIndex(-1)
-        self.widgets["dataset"].activated.connect(lambda: self.setup_dataset(self.widgets["dataset"].currentText()))
+        self.widgets["dataset"].activated \
+            .connect(lambda: self.setup_dataset(self.widgets["dataset"].currentText()))
         dataset_layout.addWidget(QLabel("Dataset"))
         dataset_layout.addWidget(self.widgets["dataset"])
         self.layout.addLayout(dataset_layout)
+
+        transform_layout = QHBoxLayout()
+        self.widgets["transform"] = QComboBox()
+        self.widgets["transform"] \
+            .addItem("Compose(ToTensor, Normalize(1, 0.5), Flatten)")
+        self.widgets["transform"].setCurrentIndex(-1)
+        self.widgets["transform"].activated \
+            .connect(lambda: self.setup_transform(self.widgets["transform"].currentText()))
+        transform_layout.addWidget(QLabel("Dataset transform"))
+        transform_layout.addWidget(self.widgets["transform"])
+        self.layout.addLayout(transform_layout)
 
         # Separator
         sep_label = QLabel("Training parameters")
@@ -381,6 +403,12 @@ class TrainingWindow(NeVerWindow):
             dialog.exec()
             self.dataset_params = dialog.params
 
+    def setup_transform(self, sel_t: str) -> None:
+        if sel_t != '':
+            self.dataset_transform = tr.Compose([tr.ToTensor(),
+                                                 tr.Normalize(1, 0.5),
+                                                 tr.Lambda(lambda x: torch.flatten(x))])
+
     def load_dataset(self) -> Dataset:
         """
         This method initializes the selected dataset object,
@@ -393,14 +421,15 @@ class TrainingWindow(NeVerWindow):
 
         """
         if self.dataset_path == "data/MNIST/":
-            return dt.TorchMNIST(self.dataset_path, True)
+            return dt.TorchMNIST(self.dataset_path, True, self.dataset_transform)
         elif self.dataset_path == "data/fMNIST/":
-            return dt.TorchFMNIST(self.dataset_path, True)
+            return dt.TorchFMNIST(self.dataset_path, True, self.dataset_transform)
         elif self.dataset_path != "":
             return dt.GenericFileDataset(self.dataset_path,
                                          self.dataset_params["target_idx"],
                                          self.dataset_params["data_type"],
-                                         self.dataset_params["delimiter"])
+                                         self.dataset_params["delimiter"],
+                                         self.dataset_transform)
 
     def train_network(self):
         # TODO MOVE CHECKS?
@@ -462,7 +491,7 @@ class TrainingWindow(NeVerWindow):
                                 opt.lr_scheduler.ReduceLROnPlateau,
                                 sched_params,
                                 PytorchMetrics.inaccuracy)
-        # train.train(self.nn, data)
+        train.train(self.nn, data)
         self.train_btn.setEnabled(False)
         self.cancel_btn.setText("Close")
 

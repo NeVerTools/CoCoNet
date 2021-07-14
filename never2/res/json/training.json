@@ -156,5 +156,26 @@
     "name": "validation_batch_size",
     "type": "int",
     "description": "Dimension for the validation batch size for the\ntraining procedure."
+  },
+  "Cuda": {
+    "name": "cuda",
+    "type": "bool",
+    "value": "False",
+    "description": "Whether to use the cuda library for the procedure."
+  },
+  "Train patience": {
+    "name": "train_patience",
+    "type": "int",
+    "description": "The number of epochs in which the loss may not\ndecrease before the training procedure is interrupted\nwith early stopping."
+  },
+  "Checkpoints root": {
+    "name": "checkpoints_root",
+    "type": "str",
+    "description": "Where to store the checkpoints of the training strategy."
+  },
+  "Verbosity level": {
+    "name": "verbose_rate",
+    "type": "int",
+    "description": "After how many batch the strategy prints information about\nhow the training is going."
   }
 }
