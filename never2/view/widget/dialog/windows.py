@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import Callable
 
@@ -16,7 +15,7 @@ from pynever.networks import NeuralNetwork
 from pynever.strategies.training import PytorchTraining, PytorchMetrics
 
 import never2.view.styles as style
-import never2.view.util.utility as u
+from never2.view.util import utility
 from never2.view.widget.dialog.dialogs import MessageDialog, MessageType, GenericDatasetDialog, ArithmeticValidator
 from never2.view.widget.misc import LoggerTextBox
 
@@ -49,6 +48,7 @@ class NeVerWindow(QtWidgets.QDialog):
         super().__init__(parent)
         self.layout = QVBoxLayout()
         self.title = title
+        self.params = dict()
         self.widgets = dict()
 
         self.setWindowTitle(self.title)
@@ -67,7 +67,7 @@ class NeVerWindow(QtWidgets.QDialog):
     def create_widget_layout(self, widget_dict: dict, cb_f: Callable = None, line_f: Callable = None) -> QHBoxLayout:
         """
         This method sets up the parameters layout by reading
-        the JSON-based dict of train_params and building
+        the JSON-based dict of params and building
         the corresponding graphic objects.
 
         Parameters
@@ -89,10 +89,6 @@ class NeVerWindow(QtWidgets.QDialog):
         widget_layout = QHBoxLayout()
         left_layout = QGridLayout()
         left_layout.setAlignment(Qt.AlignTop)
-
-        # title = QLabel(layout_name)
-        # title.setAlignment(Qt.AlignCenter)
-        # left_layout.addWidget(title, 0, 0, 1, 2)
 
         counter = 0
         for first_level in widget_dict.keys():
@@ -158,9 +154,6 @@ class TrainingWindow(NeVerWindow):
         Additional parameters for generic datasets.
     dataset_transform : Transform
         Transform on the dataset.
-    train_params : dict
-        The parameters required by pyNeVer to correctly
-        train the network.
     gui_params : dict
         The dictionary of secondary parameters displayed
         based on the selection.
@@ -188,16 +181,9 @@ class TrainingWindow(NeVerWindow):
         self.dataset_path = ""
         self.dataset_params = dict()
         self.dataset_transform = None
-        self.train_params = dict()
+        self.params = utility.read_json('never2/res/json/training.json')
         self.gui_params = dict()
         self.grid_layout = QGridLayout()
-
-        with open('never2/res/json/training.json') as json_file:
-            # Init dict with default values
-            self.train_params = json.loads(json_file.read())
-            # Update dict with types
-            self.train_params = u.allow_list_in_dict(self.train_params)
-            self.train_params = u.force_types(self.train_params)
 
         # Dataset
         dataset_layout = QHBoxLayout()
@@ -235,7 +221,7 @@ class TrainingWindow(NeVerWindow):
         def activation_line(key: str):
             return lambda: self.update_dict_value(key, "", self.widgets[key].text())
 
-        body_layout = self.create_widget_layout(self.train_params, activation_combo, activation_line)
+        body_layout = self.create_widget_layout(self.params, activation_combo, activation_line)
         body_layout.addLayout(self.grid_layout)
         self.grid_layout.setAlignment(Qt.AlignTop)
         self.layout.addLayout(body_layout)
@@ -277,11 +263,11 @@ class TrainingWindow(NeVerWindow):
 
         self.clear_grid()
 
-        for first_level in self.train_params.keys():
-            if type(self.train_params[first_level]) == dict:
-                for second_level in self.train_params[first_level].keys():
+        for first_level in self.params.keys():
+            if type(self.params[first_level]) == dict:
+                for second_level in self.params[first_level].keys():
                     if caller == f"{first_level}:{second_level}" and caller not in self.gui_params:
-                        self.gui_params[caller] = self.train_params[first_level][second_level]
+                        self.gui_params[caller] = self.params[first_level][second_level]
 
         self.show_layout(caller)
 
@@ -364,7 +350,7 @@ class TrainingWindow(NeVerWindow):
 
         # Cast type
         if name not in self.gui_params.keys():
-            gui_param = self.train_params[name]
+            gui_param = self.params[name]
         else:
             gui_param = self.gui_params[name][key]
 
@@ -380,9 +366,9 @@ class TrainingWindow(NeVerWindow):
         # Apply changes
         if ":" in name:
             first_level, second_level = name.split(":")
-            self.train_params[first_level][second_level][key]["value"] = value
+            self.params[first_level][second_level][key]["value"] = value
         else:
-            self.train_params[name]["value"] = value
+            self.params[name]["value"] = value
 
     def setup_dataset(self, name: str) -> None:
         """
@@ -439,7 +425,13 @@ class TrainingWindow(NeVerWindow):
                                          self.dataset_transform)
 
     def train_network(self):
-        # TODO MOVE CHECKS?
+        """
+        This method reads the inout from the window widgets and
+        launches the training procedure on the selected dataset.
+
+
+        """
+
         err_dialog = None
         if self.dataset_path == "":
             err_dialog = MessageDialog("No dataset selected.", MessageType.ERROR)
@@ -451,13 +443,13 @@ class TrainingWindow(NeVerWindow):
             err_dialog = MessageDialog("No loss function selected.", MessageType.ERROR)
         elif self.widgets["Metrics"].currentIndex() == -1:
             err_dialog = MessageDialog("No metrics selected.", MessageType.ERROR)
-        elif "value" not in self.train_params["Epochs"].keys():
+        elif "value" not in self.params["Epochs"].keys():
             err_dialog = MessageDialog("No epochs selected.", MessageType.ERROR)
-        elif "value" not in self.train_params["Validation percentage"].keys():
+        elif "value" not in self.params["Validation percentage"].keys():
             err_dialog = MessageDialog("No validation percentage selected.", MessageType.ERROR)
-        elif "value" not in self.train_params["Training batch size"].keys():
+        elif "value" not in self.params["Training batch size"].keys():
             err_dialog = MessageDialog("No training batch size selected.", MessageType.ERROR)
-        elif "value" not in self.train_params["Validation batch size"].keys():
+        elif "value" not in self.params["Validation batch size"].keys():
             err_dialog = MessageDialog("No validation batch size selected.", MessageType.ERROR)
         if err_dialog is not None:
             err_dialog.exec()
@@ -491,17 +483,17 @@ class TrainingWindow(NeVerWindow):
         # Init train strategy
         train = PytorchTraining(opt.Adam, opt_params,
                                 fun.cross_entropy,
-                                self.train_params["Epochs"]["value"],
-                                self.train_params["Validation percentage"]["value"],
-                                self.train_params["Training batch size"]["value"],
-                                self.train_params["Validation batch size"]["value"],
+                                self.params["Epochs"]["value"],
+                                self.params["Validation percentage"]["value"],
+                                self.params["Training batch size"]["value"],
+                                self.params["Validation batch size"]["value"],
                                 opt.lr_scheduler.ReduceLROnPlateau,
                                 sched_params,
                                 PytorchMetrics.inaccuracy,
-                                cuda=self.train_params["Cuda"]["value"],
-                                train_patience=self.train_params["Train patience"].get("value", None),
-                                checkpoints_root=self.train_params["Checkpoints root"].get("value", None),
-                                verbose_rate=self.train_params["Verbosity level"].get("value", None))
+                                cuda=self.params["Cuda"]["value"],
+                                train_patience=self.params["Train patience"].get("value", None),
+                                checkpoints_root=self.params["Checkpoints root"].get("value", None),
+                                verbose_rate=self.params["Verbosity level"].get("value", None))
         train.train(self.nn, data)
         self.train_btn.setEnabled(False)
         self.cancel_btn.setText("Close")
@@ -512,15 +504,9 @@ class VerificationWindow(NeVerWindow):
         super().__init__("Verify network")
 
         self.nn = network
+        self.params = utility.read_json('never2/res/json/verification.json')
 
-        with open('never2/res/json/verification.json') as json_file:
-            # Init dict with default values
-            self.ver_params = json.loads(json_file.read())
-            # Update dict with types
-            self.ver_params = u.allow_list_in_dict(self.ver_params)
-            self.ver_params = u.force_types(self.ver_params)
-
-        body_layout = self.create_widget_layout(self.ver_params)
+        body_layout = self.create_widget_layout(self.params)
         self.layout.addLayout(body_layout)
 
         # Buttons
@@ -534,3 +520,6 @@ class VerificationWindow(NeVerWindow):
         self.layout.addLayout(btn_layout)
 
         self.render_layout()
+
+    def verify_network(self):
+        pass
