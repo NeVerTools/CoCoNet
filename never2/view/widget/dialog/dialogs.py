@@ -6,10 +6,10 @@ from PyQt5.QtCore import QRegExp, Qt, QSize
 from PyQt5.QtGui import QIntValidator, QRegExpValidator, QDoubleValidator
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QWidget, QLineEdit, QGridLayout, QComboBox, \
     QTextEdit, QPlainTextEdit
+from pynever.tensor import Tensor
 
 import never2.view.styles as style
 import never2.view.util.utility as u
-from never2.core.controller.pynevertemp.tensor import Tensor
 from never2.core.model.network import NetworkNode
 from never2.view.drawing.element import PropertyBlock, NodeBlock
 from never2.view.widget.misc import ProgressBar

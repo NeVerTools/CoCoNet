@@ -1,16 +1,15 @@
 import os
 
 import onnx
+import pynever.networks as pynn
 import torch
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from PyQt5.QtWidgets import QFileDialog, QApplication
+from pynever.strategies.conversion import ONNXNetwork, \
+    ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork, AlternativeRepresentation
 from pysmt.smtlib.parser import SmtLibParser
-from pysmt.environment import get_env
 from tensorflow import keras
 
-import never2.core.controller.pynevertemp.networks as pynn
-from never2.core.controller.pynevertemp.strategies.conversion import ONNXNetwork, \
-    ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork, AlternativeRepresentation
 from never2.view.drawing.element import PropertyBlock
 from never2.view.widget.dialog.dialogs import MessageDialog, MessageType, InputDialog
 

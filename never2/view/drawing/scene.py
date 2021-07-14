@@ -7,12 +7,12 @@ from PyQt5.QtCore import Qt, QPoint, QRectF, pyqtSignal, QRect
 from PyQt5.QtGui import QBrush, QColor, QPen, QPainter
 from PyQt5.QtWidgets import QGraphicsRectItem, QWidget, QGraphicsScene, QApplication, QGraphicsItem, \
     QGraphicsSceneMouseEvent
+from pynever.networks import SequentialNetwork, NeuralNetwork
+from pynever.tensor import Tensor
 
 import never2.view.styles as style
 from never2.core.controller.nodewrapper import NodeOps
 from never2.core.controller.project import Project
-from never2.core.controller.pynevertemp.networks import SequentialNetwork, NeuralNetwork
-from never2.core.controller.pynevertemp.tensor import Tensor
 from never2.core.model.network import NetworkNode
 from never2.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock, GraphicBlock
 from never2.view.drawing.renderer import SequentialNetworkRenderer
