@@ -41,13 +41,12 @@ class NodeOps:
             node = FullyConnectedNode(node_id,
                                       in_dim,
                                       data["out_features"],
-                                      Tensor((data["out_features"], in_dim[-1])),
-                                      Tensor((data["out_features"],)))
+                                      data["weight"], data["bias"],
+                                      data["has_bias"])
         elif class_name == 'BatchNormNode':
             node = BatchNormNode(node_id,
-                                 in_dim, data["num_features"],
-                                 Tensor((data["num_features"],)),
-                                 Tensor((data["num_features"],)),
+                                 in_dim, data["weight"],
+                                 data["bias"],
                                  data["running_mean"],
                                  data["running_var"], data["eps"],
                                  data["momentum"], data["affine"],
@@ -63,7 +62,6 @@ class NodeOps:
         elif class_name == 'ConvNode':
             node = ConvNode(node_id,
                             in_dim,
-                            data["in_channels"],
                             data["out_channels"],
                             data["kernel_size"],
                             data["stride"],
@@ -294,3 +292,4 @@ class NodeOps:
             data["allow_zero"] = node.allow_zero
 
         return data, node.in_dim
+

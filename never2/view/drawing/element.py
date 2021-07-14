@@ -171,7 +171,7 @@ class GraphicLine(QGraphicsLineItem):
         This method changes the arrow style: if the connection 
         is not valid the arrow becomes red, otherwise it 
         remains grey with dimensions displayed. 
-        
+
         Parameters
         ----------
         valid : bool
@@ -195,7 +195,7 @@ class GraphicLine(QGraphicsLineItem):
     def update_dims(self, dims: tuple) -> None:
         """
         This method updates the input & output dimensions.
-        
+
         Parameters
         ----------
         dims : tuple
@@ -250,7 +250,7 @@ class GraphicLine(QGraphicsLineItem):
 class GraphicBlock(QtWidgets.QWidget):
     """
     This class works as a base class for graphical block objects in
-    NeVer. It provides a rectangle widget that can be customized
+    CoCoNet. It provides a rectangle widget that can be customized
     by inheriting from this class.
 
     Attributes
@@ -613,7 +613,7 @@ class NodeBlock(GraphicBlock):
 class PropertyBlock(GraphicBlock):
     """
     This class represents the widget associated to a
-    SMTLIB property in NeVer.
+    SMTLIB property in CoCoNet.
 
     Attributes
     ----------

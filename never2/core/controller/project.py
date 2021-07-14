@@ -1,5 +1,3 @@
-import os
-
 import onnx
 import pynever.networks as pynn
 import torch
@@ -7,22 +5,24 @@ from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from PyQt5.QtWidgets import QFileDialog, QApplication
 from pynever.strategies.conversion import ONNXNetwork, \
     ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork, AlternativeRepresentation
+from pynever.strategies.processing import ExpressionTreeConverter
 from pysmt.smtlib.parser import SmtLibParser
-from tensorflow import keras
 
 from never2.view.drawing.element import PropertyBlock
 from never2.view.widget.dialog.dialogs import MessageDialog, MessageType, InputDialog
 
 # Formats available for opening and saving networks
-NETWORK_FORMATS_OPENING = "All supported formats (*.onnx *.pt *.pth *.pb);;\
-            ONNX(*.onnx);;\
-            PyTorch(*.pt *.pth);;\
-            TensorFlow(*.pb)"
-PROPERTY_FORMATS_OPENING = "SMT-LIB files (*.smt *.smt2);;\
+NETWORK_FORMATS_OPENING = "All supported formats (*.onnx *.pt *.pth);;\
+                            ONNX(*.onnx);;\
+                            PyTorch(*.pt *.pth)"
+NETWORK_FORMATS_SAVE = "VNNLIB (*.onnx + *.smt2);;\
+                        ONNX(*.onnx);;\
+                        PyTorch(*.pt *.pth)"
+PROPERTY_FORMATS = "SMT-LIB files (*.smt *.smt2);;\
                            SMT(*.smt *.smt2)"
-SUPPORTED_NETWORK_FORMATS = {'ONNX': ['onnx'],
-                             'PyTorch': ['pt', 'pth'],
-                             'TensorFlow': ['pb']}
+SUPPORTED_NETWORK_FORMATS = {'VNNLIB': ['vnnlib'],
+                             'ONNX': ['onnx'],
+                             'PyTorch': ['pt', 'pth']}
 SUPPORTED_PROPERTY_FORMATS = {'SMT': ['smt', 'smt2']}
 
 
@@ -62,7 +62,7 @@ class Project(QObject):
         super(QObject, self).__init__()
         self.file_name = ("", "")
 
-        self.network = pynn.SequentialNetwork("", "")
+        self.network = pynn.SequentialNetwork("", "X")
         self.properties = dict()
 
         self.input_handler = None
@@ -86,6 +86,9 @@ class Project(QObject):
             # A "wait cursor" appears
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.network = self.input_handler.read_network(self.file_name[0])
+            if isinstance(self.network, pynn.SequentialNetwork) and \
+                    self.network.input_id == '':
+                self.network.input_id = 'X'
             QApplication.restoreOverrideCursor()
 
             # At the end of the loading, the main thread looks for potential
@@ -96,7 +99,7 @@ class Project(QObject):
                 error_dialog = MessageDialog("Error in network reading: \n"
                                              + str(self.input_handler.conversion_exception),
                                              MessageType.ERROR)
-                error_dialog.exec()
+                error_dialog.show()
             else:
                 self.opened_net.emit()
 
@@ -114,11 +117,11 @@ class Project(QObject):
         # Check project
         if not self.network.nodes:
             err = MessageDialog("No network loaded!", MessageType.ERROR)
-            err.exec()
+            err.show()
             return
 
         # Select file
-        property_file_name = QFileDialog.getOpenFileName(None, "Open property file", "", PROPERTY_FORMATS_OPENING)
+        property_file_name = QFileDialog.getOpenFileName(None, "Open property file", "", PROPERTY_FORMATS)
 
         if property_file_name != ("", ""):
             self.input_handler = InputHandler()
@@ -145,7 +148,7 @@ class Project(QObject):
         # If the user picked "save as" option or there isn't a current file,
         # a dialog is opened to chose where to save the net
         if _as or self.file_name == ("", ""):
-            self.file_name = QFileDialog.getSaveFileName(None, 'Save File', "", NETWORK_FORMATS_OPENING)
+            self.file_name = QFileDialog.getSaveFileName(None, 'Save File', "", NETWORK_FORMATS_SAVE)
 
         if self.file_name != ("", ""):
             self.output_handler = OutputHandler()
@@ -153,7 +156,8 @@ class Project(QObject):
             # A  "wait cursor" appears locking the interface
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.output_handler.save(self.network, self.file_name)
-            self.output_handler.save_properties(self.properties, self.file_name)
+            if self.properties:
+                self.output_handler.save_properties(self.properties, self.file_name)
             QApplication.restoreOverrideCursor()
 
             # At the end of the loading, the main thread looks for eventual
@@ -162,7 +166,7 @@ class Project(QObject):
                 error_dialog = MessageDialog("Error in network saving: \n"
                                              + str(self.output_handler.exception),
                                              MessageType.ERROR)
-                error_dialog.exec()
+                error_dialog.show()
 
 
 class InputHandler:
@@ -239,12 +243,6 @@ class InputHandler:
             module = torch.load(path)
             self.alt_repr = PyTorchNetwork(net_id + "_pytorch", module, True)
 
-        elif self.extension in SUPPORTED_NETWORK_FORMATS['TensorFlow']:
-            head = os.path.split(path)[0]
-            module = keras.models.load_model(head)
-            # self.alt_repr = TensorflowNetwork(net_id + "_tensorflow", module, True)
-            self.alt_repr = TensorflowNetwork(net_id + "_tensorflow", True)
-
         # Convert the network
         if self.alt_repr is not None:
             try:
@@ -253,10 +251,10 @@ class InputHandler:
                 # it is converted in the internal representation
                 if isinstance(self.alt_repr, ONNXNetwork):
                     self.strategy = ONNXConverter()
-                    return self.strategy.to_neural_network(self.alt_repr)
                 else:
-                    self.network_input = self.read_input_dialog()
-                    return self.set_input_shape(self.network_input)
+                    self.strategy = PyTorchConverter()
+
+                return self.strategy.to_neural_network(self.alt_repr)
 
             except Exception as e:
                 # Even in case of conversion_exception, the signal of the ending of the
@@ -298,14 +296,14 @@ class InputHandler:
 
         for a in assertions:
             line = str(a.args[0]).replace('\'', '')
-            tokens = line.replace('(', '').replace(')', '').split()
             for v in var_list:
                 if f" {v}" in line or f"({v}" in line:  # Either '(v ...' or '... v)'
                     if v not in properties.keys():
                         properties[v] = PropertyBlock(f"{counter}Pr", "Generic SMT")
                         properties[v].smt_string = ''
                         counter += 1
-                    wrap = '(assert ' + f"({tokens[1]} {tokens[0]} {tokens[2]})" + ')'
+                    conv = ExpressionTreeConverter()
+                    wrap = conv.build_from_infix(line).as_prefix()
                     properties[v].smt_string += f"{wrap}\n"
                     break
 
@@ -416,7 +414,16 @@ class OutputHandler:
 
         """
 
-        self.extension = filename[1].split(".")[-1].replace(")", "")
+        if '.' not in filename[0]:  # If no explicit extension
+            if 'VNNLIB' in filename[1]:
+                self.extension = 'vnnlib'
+            if self.extension == 'vnnlib':
+                filename = (f"{filename[0]}.onnx", filename[1])
+            else:
+                self.extension = filename[0].split(".")[-1]
+                filename = (f"{filename[0]}.{self.extension}", filename[1])
+        else:
+            self.extension = filename[0].split('.')[-1]
 
         try:
             # The network is converted in the alternative representation
@@ -426,9 +433,7 @@ class OutputHandler:
             if isinstance(self.alt_repr, ONNXNetwork):
                 onnx.save(self.alt_repr.onnx_network.onnx_network, filename[0])
             elif isinstance(self.alt_repr, PyTorchNetwork):
-                torch.save(self.alt_repr.pytorch_network.pytorch_network, filename[0])
-            elif isinstance(self.alt_repr, TensorflowNetwork):
-                keras.models.save(self.alt_repr, filename)
+                torch.save(self.alt_repr.pytorch_network, filename[0])
 
         except Exception as e:
             self.exception = e
@@ -449,6 +454,8 @@ class OutputHandler:
         """
 
         path = filename[0].replace("." + self.extension, ".smt2")
+        if '.' not in path:
+            path = path + '.smt2'
 
         # Update extension
         self.extension = "smt2"
@@ -458,7 +465,7 @@ class OutputHandler:
             # Variables
             for p in properties.values():
                 for v in p.variables:
-                    f.write("(declare-fun () " + v + " Real)\n")
+                    f.write("(declare-fun " + v + " () Real)\n")
             f.write("\n")
 
             # Constraints
@@ -487,20 +494,17 @@ class OutputHandler:
         # Getting the filename
         net_id = filename.split("/")[-1]
 
-        if self.extension in SUPPORTED_NETWORK_FORMATS['ONNX']:
+        if self.extension in SUPPORTED_NETWORK_FORMATS['ONNX'] or \
+                self.extension in SUPPORTED_NETWORK_FORMATS['VNNLIB']:
             self.strategy = ONNXConverter()
             model = self.strategy.from_neural_network(network)
             self.alt_repr = ONNXNetwork(net_id + "_onnx", model, True)
 
         elif self.extension in SUPPORTED_NETWORK_FORMATS['PyTorch']:
             self.strategy = PyTorchConverter()
-            model = self.strategy.from_neural_network(network)
-            self.alt_repr = PyTorchNetwork(net_id + "_pytorch", model, True)
-
-        elif self.extension in SUPPORTED_NETWORK_FORMATS['TensorFlow']:
-            self.strategy = TensorflowConverter()
-            model = self.strategy.from_neural_network(network)
-            self.alt_repr = TensorflowNetwork(net_id + "_tensorflow", True)
+            self.alt_repr = self.strategy.from_neural_network(network)
+            self.alt_repr.identifier = net_id + "_pytorch"
+            self.alt_repr.up_to_date = True
         else:
             raise Exception("Format not supported")
 
