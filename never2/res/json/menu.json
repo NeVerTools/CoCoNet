@@ -19,6 +19,9 @@
     "Save as...": {
       "Shortcut": "Ctrl+Shift+S",
       "checkable": "False"
+    },
+    "Exit": {
+      "checkable": "False"
     }
   },
   "Edit": {

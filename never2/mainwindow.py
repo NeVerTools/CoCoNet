@@ -164,6 +164,7 @@ class MainWindow(QtWidgets.QMainWindow):
         actions_dict["File:Load property..."].triggered.connect(lambda: self.canvas.project.open_property())
         actions_dict["File:Save"].triggered.connect(lambda: self.save(False))
         actions_dict["File:Save as..."].triggered.connect(lambda: self.save())
+        actions_dict["File:Exit"].triggered.connect(lambda: self.close())
 
         actions_dict["Edit:Copy"].triggered.connect(lambda: self.canvas.copy_selected())
         actions_dict["Edit:Paste"].triggered.connect(lambda: self.canvas.paste_selected())
