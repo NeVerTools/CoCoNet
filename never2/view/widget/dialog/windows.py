@@ -192,7 +192,7 @@ class TrainingWindow(NeVerWindow):
         self.layout.addLayout(dataset_layout)
 
         # Separator
-        sep_label = QLabel("***")
+        sep_label = QLabel("Training parameters")
         sep_label.setAlignment(Qt.AlignCenter)
         sep_label.setStyleSheet(style.NODE_LABEL_STYLE)
         self.layout.addWidget(sep_label)
@@ -205,26 +205,20 @@ class TrainingWindow(NeVerWindow):
         def activation_line(key: str):
             return lambda: self.update_dict_value(key, "", self.widgets[key].text())
 
-        body_layout = self.create_widget_layout("Training parameters", self.train_params,
+        body_layout = self.create_widget_layout("", self.train_params,
                                                 activation_combo, activation_line)
         body_layout.addLayout(self.grid_layout)
         self.grid_layout.setAlignment(Qt.AlignTop)
         self.layout.addLayout(body_layout)
 
-        # Separator
-        sep_label = QLabel("***")
-        sep_label.setAlignment(Qt.AlignCenter)
-        sep_label.setStyleSheet(style.NODE_LABEL_STYLE)
-        self.layout.addWidget(sep_label)
-
         # Buttons
         btn_layout = QHBoxLayout()
-        train_btn = QPushButton("Train network")
-        train_btn.clicked.connect(self.train_network)
-        cancel_btn = QPushButton("Cancel")
-        cancel_btn.clicked.connect(self.close)
-        btn_layout.addWidget(train_btn)
-        btn_layout.addWidget(cancel_btn)
+        self.train_btn = QPushButton("Train network")
+        self.train_btn.clicked.connect(self.train_network)
+        self.cancel_btn = QPushButton("Cancel")
+        self.cancel_btn.clicked.connect(self.close)
+        btn_layout.addWidget(self.train_btn)
+        btn_layout.addWidget(self.cancel_btn)
         self.layout.addLayout(btn_layout)
 
         self.render_layout()
@@ -447,6 +441,7 @@ class TrainingWindow(NeVerWindow):
         logger.info("Done.\n\n")
 
         logger.info("***** NeVer 2 - TRAINING *****")
+
         # Create optimizer dictionary of parameters
         opt_params = dict()
         for k, v in self.gui_params["Optimizer:Adam"].items():
@@ -457,6 +452,7 @@ class TrainingWindow(NeVerWindow):
         for k, v in self.gui_params["Scheduler:ReduceLROnPlateau"].items():
             sched_params[v["name"]] = v["value"]
 
+        # Init train strategy
         train = PytorchTraining(opt.Adam, opt_params,
                                 fun.cross_entropy,
                                 self.train_params["Epochs"]["value"],
@@ -466,6 +462,9 @@ class TrainingWindow(NeVerWindow):
                                 opt.lr_scheduler.ReduceLROnPlateau,
                                 sched_params,
                                 PytorchMetrics.inaccuracy)
+        # train.train(self.nn, data)
+        self.train_btn.setEnabled(False)
+        self.cancel_btn.setText("Close")
 
 
 class VerificationWindow(NeVerWindow):
