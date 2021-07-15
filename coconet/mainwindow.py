@@ -267,7 +267,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if isinstance(button, NodeButton):
                 self.canvas.draw_node(button.node_type)
             elif isinstance(button, PropertyButton):
-                self.canvas.draw_property(button.name)
+                if self.canvas.project.network.nodes:
+                    self.canvas.draw_property(button.name)
 
         return pressed
 

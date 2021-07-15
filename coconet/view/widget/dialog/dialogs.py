@@ -6,13 +6,13 @@ from PyQt5.QtCore import QRegExp, Qt, QSize
 from PyQt5.QtGui import QIntValidator, QRegExpValidator, QDoubleValidator
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QWidget, QLineEdit, QGridLayout, QComboBox, \
     QTextEdit, QPlainTextEdit
-from coconet.view.widget.loading import ProgressBar
+from pynever.tensor import Tensor
 
 import coconet.view.styles as style
 import coconet.view.util.utility as u
-from pynever.tensor import Tensor
 from coconet.core.model.network import NetworkNode
 from coconet.view.drawing.element import PropertyBlock, NodeBlock
+from coconet.view.widget.loading import ProgressBar
 
 UNEDITABLE = ["weight", "bias", "in_features"]
 
@@ -378,80 +378,6 @@ class LoadingDialog(CoCoNetDialog):
         # Disable the dialog frame and close button
         self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
         self.setWindowFlags(Qt.FramelessWindowHint)
-
-
-class GenericDatasetDialog(CoCoNetDialog):
-    """
-    This class is a simple dialog asking for additional
-    parameters of a generic file dataset.
-
-    Attributes
-    ----------
-    params : dict
-        Dictionary of parameters to ask.
-
-    Methods
-    ----------
-    update_dict(str, str)
-        Procedure to read the given input and save it.
-
-    """
-
-    def __init__(self):
-        super().__init__("Dataset - additional parameters", "")
-        self.layout = QGridLayout()
-        self.params = {"target_idx": 0,
-                       "data_type": float,
-                       "delimiter": ","}
-
-        target_label = QLabel("Target index")
-        target_label.setStyleSheet(style.PARAM_LABEL_STYLE)
-        target_edit = QLineEdit()
-        target_edit.textChanged.connect(lambda: self.update_dict("target_idx", target_edit.text()))
-        self.layout.addWidget(target_label, 0, 0)
-        self.layout.addWidget(target_edit, 0, 1)
-
-        data_type_label = QLabel("Data type")
-        data_type_label.setStyleSheet(style.PARAM_LABEL_STYLE)
-        data_type_edit = QLineEdit()
-        data_type_edit.setText("float")
-        data_type_edit.textChanged.connect(lambda: self.update_dict("data_type", data_type_edit.text()))
-        self.layout.addWidget(data_type_label, 1, 0)
-        self.layout.addWidget(data_type_edit, 1, 1)
-
-        delimiter_label = QLabel("Delimiter character")
-        delimiter_label.setStyleSheet(style.PARAM_LABEL_STYLE)
-        delimiter_edit = QLineEdit()
-        delimiter_edit.setText(",")
-        delimiter_edit.textChanged.connect(lambda: self.update_dict("delimiter", delimiter_edit.text()))
-        self.layout.addWidget(delimiter_label, 2, 0)
-        self.layout.addWidget(delimiter_edit, 2, 1)
-
-        # Buttons
-        ok_btn = QPushButton("Ok")
-        ok_btn.clicked.connect(self.ok)
-        cancel_btn = QPushButton("Cancel")
-        cancel_btn.clicked.connect(self.exit)
-        self.layout.addWidget(ok_btn, 3, 0)
-        self.layout.addWidget(cancel_btn, 3, 1)
-
-        self.render_layout()
-
-    def update_dict(self, key: str, value: str):
-        if key in self.params.keys():
-            if key == "delimiter":
-                self.params[key] = value
-            else:
-                self.params[key] = eval(value)
-
-    def ok(self):
-        self.close()
-
-    def exit(self):
-        self.params = {"target_idx": 0,
-                       "data_type": float,
-                       "delimiter": ","}
-        self.close()
 
 
 class EditNodeInputDialog(CoCoNetDialog):
@@ -825,82 +751,89 @@ class EditPolyhedralPropertyDialog(CoCoNetDialog):
         self.property_block = property_block
         self.has_edits = False
         self.property_list = []
-        self.layout = QGridLayout()
+        self.viewer = QPlainTextEdit()
+        self.viewer.setReadOnly(True)
+        self.viewer.setFixedHeight(100)
+        grid = QGridLayout()
 
         # Build main_layout
         title_label = QLabel("Polyhedral property")
         title_label.setStyleSheet(style.NODE_LABEL_STYLE)
         title_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(title_label, 0, 0, 1, 3)
+        grid.addWidget(title_label, 0, 0, 1, 3)
 
         # Labels
         var_label = QLabel("Variable")
         var_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
         var_label.setAlignment(Qt.AlignRight)
-        self.layout.addWidget(var_label, 1, 0)
+        grid.addWidget(var_label, 1, 0)
 
         relop_label = QLabel("Operator")
         relop_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
         relop_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(relop_label, 1, 1)
+        grid.addWidget(relop_label, 1, 1)
 
         value_label = QLabel("Value")
         value_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
         value_label.setAlignment(Qt.AlignLeft)
-        self.layout.addWidget(value_label, 1, 2)
+        grid.addWidget(value_label, 1, 2)
 
         self.var_cb = QComboBox()
         for v in property_block.variables:
             self.var_cb.addItem(v)
         self.var_cb.setStyleSheet(style.VALUE_LABEL_STYLE)
-        self.layout.addWidget(self.var_cb, 2, 0)
+        grid.addWidget(self.var_cb, 2, 0)
 
         self.op_cb = QComboBox()
         operators = ["<=", "<", ">", ">="]
         for o in operators:
             self.op_cb.addItem(o)
         self.op_cb.setStyleSheet(style.VALUE_LABEL_STYLE)
-        self.layout.addWidget(self.op_cb, 2, 1)
+        grid.addWidget(self.op_cb, 2, 1)
 
         self.val = QLineEdit()
         self.val.setStyleSheet(style.VALUE_LABEL_STYLE)
         self.val.setValidator(ArithmeticValidator.FLOAT)
-        self.layout.addWidget(self.val, 2, 2)
+        grid.addWidget(self.val, 2, 2)
 
         # "Add" button which adds the constraint
         add_button = QPushButton("Add")
         add_button.setStyleSheet(style.BUTTON_STYLE)
         add_button.clicked.connect(
             lambda: self.add_entry(str(self.var_cb.currentText()), str(self.op_cb.currentText()), self.val.text()))
-        self.layout.addWidget(add_button, 3, 0)
+        grid.addWidget(add_button, 3, 0)
 
         # "Save" button which saves the state
         save_button = QPushButton("Save")
         save_button.setStyleSheet(style.BUTTON_STYLE)
         save_button.clicked.connect(self.save_property)
-        self.layout.addWidget(save_button, 3, 1)
+        grid.addWidget(save_button, 3, 1)
 
         # "Cancel" button which closes the dialog without saving
         cancel_button = QPushButton("Cancel")
         cancel_button.setStyleSheet(style.BUTTON_STYLE)
         cancel_button.clicked.connect(self.close)
-        self.layout.addWidget(cancel_button, 3, 2)
+        grid.addWidget(cancel_button, 3, 2)
 
-        self.layout.setColumnStretch(0, 1)
-        self.layout.setColumnStretch(1, 1)
-        self.layout.setColumnStretch(2, 1)
+        grid.setColumnStretch(0, 1)
+        grid.setColumnStretch(1, 1)
+        grid.setColumnStretch(2, 1)
 
+        self.layout.addLayout(grid)
+        self.layout.addWidget(self.viewer, 3)
         self.render_layout()
 
     def add_entry(self, var: str, op: str, val: str) -> None:
         self.property_list.append((var, op, val))
+        self.viewer.appendPlainText(f"{var} {op} {val}")
         self.var_cb.setCurrentIndex(0)
         self.op_cb.setCurrentIndex(0)
         self.val.setText("")
 
     def save_property(self) -> None:
         self.has_edits = True
-        self.add_entry(str(self.var_cb.currentText()),
-                       str(self.op_cb.currentText()),
-                       self.val.text())
+        if self.val.text() != '':
+            self.add_entry(str(self.var_cb.currentText()),
+                           str(self.op_cb.currentText()),
+                           self.val.text())
         self.close()
