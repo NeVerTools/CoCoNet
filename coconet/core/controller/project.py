@@ -1,22 +1,27 @@
 import onnx
+import pynever.networks as pynn
 import torch
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from PyQt5.QtWidgets import QFileDialog, QApplication
+from pynever.strategies.conversion import ONNXNetwork, \
+    ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork, AlternativeRepresentation
+from pynever.strategies.processing import ExpressionTreeConverter
 from pysmt.smtlib.parser import SmtLibParser
 
-import coconet.core.controller.pynevertemp.networks as pynn
-from coconet.core.controller.pynevertemp.strategies.conversion import ONNXNetwork, \
-    ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork, AlternativeRepresentation
 from coconet.view.drawing.element import PropertyBlock
 from coconet.view.widget.dialog.dialogs import MessageDialog, MessageType, InputDialog
 
 # Formats available for opening and saving networks
 NETWORK_FORMATS_OPENING = "All supported formats (*.onnx *.pt *.pth);;\
-            ONNX(*.onnx);;\
-            PyTorch(*.pt *.pth)"
-PROPERTY_FORMATS_OPENING = "SMT-LIB files (*.smt *.smt2);;\
+                            ONNX(*.onnx);;\
+                            PyTorch(*.pt *.pth)"
+NETWORK_FORMATS_SAVE = "VNNLIB (*.onnx + *.smt2);;\
+                        ONNX(*.onnx);;\
+                        PyTorch(*.pt *.pth)"
+PROPERTY_FORMATS = "SMT-LIB files (*.smt *.smt2);;\
                            SMT(*.smt *.smt2)"
-SUPPORTED_NETWORK_FORMATS = {'ONNX': ['onnx'],
+SUPPORTED_NETWORK_FORMATS = {'VNNLIB': ['vnnlib'],
+                             'ONNX': ['onnx'],
                              'PyTorch': ['pt', 'pth']}
 SUPPORTED_PROPERTY_FORMATS = {'SMT': ['smt', 'smt2']}
 
@@ -57,7 +62,7 @@ class Project(QObject):
         super(QObject, self).__init__()
         self.file_name = ("", "")
 
-        self.network = pynn.SequentialNetwork("", "")
+        self.network = pynn.SequentialNetwork("", "X")
         self.properties = dict()
 
         self.input_handler = None
@@ -81,6 +86,9 @@ class Project(QObject):
             # A "wait cursor" appears
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.network = self.input_handler.read_network(self.file_name[0])
+            if isinstance(self.network, pynn.SequentialNetwork) and \
+                    self.network.input_id == '':
+                self.network.input_id = 'X'
             QApplication.restoreOverrideCursor()
 
             # At the end of the loading, the main thread looks for potential
@@ -113,7 +121,7 @@ class Project(QObject):
             return
 
         # Select file
-        property_file_name = QFileDialog.getOpenFileName(None, "Open property file", "", PROPERTY_FORMATS_OPENING)
+        property_file_name = QFileDialog.getOpenFileName(None, "Open property file", "", PROPERTY_FORMATS)
 
         if property_file_name != ("", ""):
             self.input_handler = InputHandler()
@@ -140,7 +148,7 @@ class Project(QObject):
         # If the user picked "save as" option or there isn't a current file,
         # a dialog is opened to chose where to save the net
         if _as or self.file_name == ("", ""):
-            self.file_name = QFileDialog.getSaveFileName(None, 'Save File', "", NETWORK_FORMATS_OPENING)
+            self.file_name = QFileDialog.getSaveFileName(None, 'Save File', "", NETWORK_FORMATS_SAVE)
 
         if self.file_name != ("", ""):
             self.output_handler = OutputHandler()
@@ -148,7 +156,8 @@ class Project(QObject):
             # A  "wait cursor" appears locking the interface
             QApplication.setOverrideCursor(Qt.WaitCursor)
             self.output_handler.save(self.network, self.file_name)
-            self.output_handler.save_properties(self.properties, self.file_name)
+            if self.properties:
+                self.output_handler.save_properties(self.properties, self.file_name)
             QApplication.restoreOverrideCursor()
 
             # At the end of the loading, the main thread looks for eventual
@@ -275,27 +284,30 @@ class InputHandler:
         script = parser.get_script_fname(path)
         declarations = script.filter_by_command_name(['declare-fun', 'declare-const'])
         assertions = script.filter_by_command_name('assert')
+        var_set = []
         var_list = []
         properties = dict()
 
         for d in declarations:
+            var_list.append(str(d.args[0]))
             varname = str(d.args[0]).split('_')[0].replace('\'', '')  # Variable format is <v_name>_<idx>
-            if varname not in var_list:
-                var_list.append(varname)
+            if varname not in var_set:
+                var_set.append(varname)
 
         counter = 0
 
         for a in assertions:
             line = str(a.args[0]).replace('\'', '')
-            tokens = line.replace('(', '').replace(')', '').split()
-            for v in var_list:
+            for v in var_set:
                 if f" {v}" in line or f"({v}" in line:  # Either '(v ...' or '... v)'
                     if v not in properties.keys():
                         properties[v] = PropertyBlock(f"{counter}Pr", "Generic SMT")
                         properties[v].smt_string = ''
+                        properties[v].variables = list(filter(lambda x: v in x, var_list))
                         counter += 1
-                    wrap = '(assert ' + f"({tokens[1]} {tokens[0]} {tokens[2]})" + ')'
-                    properties[v].smt_string += f"{wrap}\n"
+                    conv = ExpressionTreeConverter()
+                    wrap = conv.build_from_infix(line).as_prefix()
+                    properties[v].smt_string += f"(assert {wrap})\n"
                     break
 
         return properties
@@ -405,7 +417,16 @@ class OutputHandler:
 
         """
 
-        self.extension = filename[1].split(".")[-1].replace(")", "")
+        if '.' not in filename[0]:  # If no explicit extension
+            if 'VNNLIB' in filename[1]:
+                self.extension = 'vnnlib'
+            if self.extension == 'vnnlib':
+                filename = (f"{filename[0]}.onnx", filename[1])
+            else:
+                self.extension = filename[0].split(".")[-1]
+                filename = (f"{filename[0]}.{self.extension}", filename[1])
+        else:
+            self.extension = filename[0].split('.')[-1]
 
         try:
             # The network is converted in the alternative representation
@@ -415,7 +436,7 @@ class OutputHandler:
             if isinstance(self.alt_repr, ONNXNetwork):
                 onnx.save(self.alt_repr.onnx_network.onnx_network, filename[0])
             elif isinstance(self.alt_repr, PyTorchNetwork):
-                torch.save(self.alt_repr.pytorch_network.pytorch_network, filename[0])
+                torch.save(self.alt_repr.pytorch_network, filename[0])
 
         except Exception as e:
             self.exception = e
@@ -436,6 +457,8 @@ class OutputHandler:
         """
 
         path = filename[0].replace("." + self.extension, ".smt2")
+        if '.' not in path:
+            path = path + '.smt2'
 
         # Update extension
         self.extension = "smt2"
@@ -445,7 +468,7 @@ class OutputHandler:
             # Variables
             for p in properties.values():
                 for v in p.variables:
-                    f.write("(declare-const " + v + " Real)\n")
+                    f.write("(declare-fun " + v + " () Real)\n")
             f.write("\n")
 
             # Constraints
@@ -474,7 +497,8 @@ class OutputHandler:
         # Getting the filename
         net_id = filename.split("/")[-1]
 
-        if self.extension in SUPPORTED_NETWORK_FORMATS['ONNX']:
+        if self.extension in SUPPORTED_NETWORK_FORMATS['ONNX'] or \
+                self.extension in SUPPORTED_NETWORK_FORMATS['VNNLIB']:
             self.strategy = ONNXConverter()
             model = self.strategy.from_neural_network(network)
             self.alt_repr = ONNXNetwork(net_id + "_onnx", model, True)

@@ -1,7 +1,8 @@
 import copy
 
+from pynever.networks import SequentialNetwork
+
 from coconet.core.controller.nodewrapper import NodeOps
-from coconet.core.controller.pynevertemp.networks import SequentialNetwork
 from coconet.view.drawing.element import NodeBlock, PropertyBlock
 
 
@@ -366,6 +367,7 @@ class SequentialNetworkRenderer:
             True if the update has been done correctly, False otherwise.
 
         """
+
         in_dim = None
         if "in_dim" in data.keys():
             in_dim = data["in_dim"]

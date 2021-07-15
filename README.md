@@ -11,5 +11,6 @@ Python packages required for the correct execution of CoCoNet:
 <li><i>PyQt5</i></li>
 <li><i>onnx</i></li>
 <li><i>torch</i></li>
+<li><i>pyNeVer</i></li>
 <li><i>pySmt</i></li>
 </ul>

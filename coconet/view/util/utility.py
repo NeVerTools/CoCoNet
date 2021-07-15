@@ -1,7 +1,7 @@
 import numpy as np
 from PyQt5.QtCore import QRectF, QLineF, QPointF
 
-from coconet.core.controller.pynevertemp.tensor import Tensor
+from pynever.tensor import Tensor
 
 
 def truncate(f: float, n: int) -> str:
@@ -70,6 +70,50 @@ def get_midpoint(label: str, side: QLineF) -> (QPointF, QPointF):
         mid_x += 4
 
     return mid_x, mid_y
+
+
+def create_variables_from(v_name: str, v_dim: tuple) -> list:
+    """
+    This method creates a list of variables describing
+    the tuple v_dim with the name v_name.
+
+    Parameters
+    ----------
+    v_name : str
+        The variable main name.
+    v_dim : tuple
+        The variable shape.
+
+    Returns
+    ----------
+    list
+        The list of string variables.
+
+    """
+
+    temp_list = []
+    ped_list = []
+    var_list = []
+
+    # Add underscore
+    v_name += '_'
+
+    for k in v_dim:
+        if len(temp_list) == 0:
+            for i in range(k):
+                temp_list.append(str(i))
+        else:
+            for i in range(k):
+                for p in temp_list:
+                    p = f"{p}-{i}"
+                    ped_list.append(p)
+            temp_list = ped_list
+            ped_list = []
+
+    for p in temp_list:
+        var_list.append(f"{v_name}{p}")
+
+    return var_list
 
 
 def text_to_tensor(text: str) -> Tensor:
