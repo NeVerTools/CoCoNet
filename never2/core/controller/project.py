@@ -308,7 +308,7 @@ class InputHandler:
                         counter += 1
                     conv = ExpressionTreeConverter()
                     wrap = conv.build_from_infix(line).as_prefix()
-                    properties[v].smt_string += f"{wrap}\n"
+                    properties[v].smt_string += f"(assert {wrap})\n"
                     break
 
         return properties
