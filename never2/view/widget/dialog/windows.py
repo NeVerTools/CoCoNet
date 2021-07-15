@@ -541,18 +541,18 @@ class VerificationWindow(NeVerWindow):
         self.params = utility.read_json('never2/res/json/verification.json')
 
         def activation_cb(methodology: str):
-            return lambda: self.update_methodology(self.widgets["Methodology"].currentText())
+            return lambda: self.update_methodology(self.widgets["Verification methodology"].currentText())
 
         body_layout = self.create_widget_layout(self.params, cb_f=activation_cb)
         self.layout.addLayout(body_layout)
 
         # Buttons
         btn_layout = QHBoxLayout()
-        self.train_btn = QPushButton("Verify network")
-        self.train_btn.clicked.connect(self.verify_network)
+        self.verify_btn = QPushButton("Verify network")
+        self.verify_btn.clicked.connect(self.verify_network)
         self.cancel_btn = QPushButton("Cancel")
         self.cancel_btn.clicked.connect(self.close)
-        btn_layout.addWidget(self.train_btn)
+        btn_layout.addWidget(self.verify_btn)
         btn_layout.addWidget(self.cancel_btn)
         self.layout.addLayout(btn_layout)
 
@@ -588,6 +588,15 @@ class VerificationWindow(NeVerWindow):
         input_name = list(self.properties.keys())[0]
         output_name = list(self.properties.keys())[-1]
 
+        # Add logger text box
+        log_textbox = LoggerTextBox(self)
+        logger = logging.getLogger("pynever.strategies.verification")
+        logger.addHandler(log_textbox)
+        logger.setLevel(logging.INFO)
+        self.layout.addWidget(log_textbox.widget)
+
+        logger.info("***** NeVer 2 - VERIFICATION *****")
+
         # Load NeVerProperty from file
         parser = reading.SmtPropertyParser(verification.SMTLIBProperty(path), input_name, output_name)
         to_verify = parser.parse_property()
@@ -597,3 +606,5 @@ class VerificationWindow(NeVerWindow):
 
         # Launch verification
         self.strategy.verify(self.nn, to_verify)
+        self.verify_btn.setEnabled(False)
+        self.cancel_btn.setText("Close")
