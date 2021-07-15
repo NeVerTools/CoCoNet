@@ -210,7 +210,7 @@ class MainWindow(QtWidgets.QMainWindow):
         def pressed():
             if isinstance(button, NodeButton):
                 self.canvas.draw_node(button.node_type)
-            elif isinstance(button, PropertyButton):
+            elif isinstance(button, PropertyButton) and self.canvas.project.network.nodes:
                 self.canvas.draw_property(button.name)
 
         return pressed
