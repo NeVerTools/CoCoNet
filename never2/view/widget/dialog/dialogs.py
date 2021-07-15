@@ -454,6 +454,42 @@ class GenericDatasetDialog(NeVerDialog):
         self.close()
 
 
+class MixedVerificationDialog(NeVerDialog):
+    def __init__(self):
+        super().__init__("Mixed Verification", "")
+        self.layout = QGridLayout()
+        self.n_neurons = 0
+
+        target_label = QLabel("Neurons number")
+        target_label.setStyleSheet(style.PARAM_LABEL_STYLE)
+        target_edit = QLineEdit()
+        target_edit.textChanged.connect(lambda: self.update_neurons(target_edit.text()))
+        target_edit.setValidator(ArithmeticValidator.INT)
+        self.layout.addWidget(target_label, 0, 0)
+        self.layout.addWidget(target_edit, 0, 1)
+
+        # Buttons
+        ok_btn = QPushButton("Ok")
+        ok_btn.clicked.connect(self.ok)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.exit)
+        self.layout.addWidget(ok_btn, 1, 0)
+        self.layout.addWidget(cancel_btn, 1, 1)
+
+        self.render_layout()
+
+    def update_neurons(self, n: str) -> None:
+        if n != '':
+            self.n_neurons = int(n)
+
+    def ok(self):
+        self.close()
+
+    def exit(self):
+        self.n_neurons = 0
+        self.close()
+
+
 class EditNodeInputDialog(NeVerDialog):
     def __init__(self, node_block: NodeBlock):
         super().__init__(node_block.node.name, "")

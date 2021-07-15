@@ -18,7 +18,8 @@ from pynever.strategies.training import PytorchTraining, PytorchMetrics
 
 import never2.view.styles as style
 from never2.view.util import utility
-from never2.view.widget.dialog.dialogs import MessageDialog, MessageType, GenericDatasetDialog, ArithmeticValidator
+from never2.view.widget.dialog.dialogs import MessageDialog, MessageType, GenericDatasetDialog, ArithmeticValidator, \
+    MixedVerificationDialog
 from never2.view.widget.misc import LoggerTextBox
 
 
@@ -523,18 +524,26 @@ class TrainingWindow(NeVerWindow):
 
 
 class VerificationWindow(NeVerWindow):
+    """
+    This class is a Window for the verification of the network.
+    It features a combo box for choosing the verification
+    heuristic.
+
+    """
+
     def __init__(self, nn: NeuralNetwork, properties: dict):
         super().__init__("Verify network")
 
         self.nn = nn
         self.properties = properties
-        self.strategy = verification.NeverVerification(heuristic="best_n_neurons", params=[0])  # Overapprox
-        # mixed_ver = ver.NeverVerification(heuristic="best_n_neurons", params=dialog.n_neurons)
-        # complete_ver = ver.NeverVerification(heuristic="best_n_neurons", params=[10000])
+        self.strategy = None
 
         self.params = utility.read_json('never2/res/json/verification.json')
 
-        body_layout = self.create_widget_layout(self.params)
+        def activation_cb(methodology: str):
+            return lambda: self.update_methodology(self.widgets["Methodology"].currentText())
+
+        body_layout = self.create_widget_layout(self.params, cb_f=activation_cb)
         self.layout.addLayout(body_layout)
 
         # Buttons
@@ -549,7 +558,29 @@ class VerificationWindow(NeVerWindow):
 
         self.render_layout()
 
+    def update_methodology(self, methodology: str) -> None:
+        if methodology == 'Complete':
+            self.strategy = verification.NeverVerification(heuristic="best_n_neurons", params=[10000])
+        elif methodology == 'Over-approximated':
+            self.strategy = verification.NeverVerification(heuristic="best_n_neurons", params=[0])
+        else:
+            dialog = MixedVerificationDialog()
+            dialog.exec()
+            self.strategy = verification.NeverVerification(heuristic="best_n_neurons", params=dialog.n_neurons)
+
     def verify_network(self):
+        """
+        This class is a Window for the training of the network.
+        It features a file picker for choosing the dataset and
+        a grid of parameters for tuning the procedure.
+
+        """
+
+        if self.strategy is None:
+            err_dialog = MessageDialog("No verification methodology selected.", MessageType.ERROR)
+            err_dialog.exec()
+            return
+
         # Save properties
         path = 'never2/' + self.__repr__().split(' ')[-1].replace('>', '') + '.smt2'
         utility.write_smt_property(path, self.properties, 'Real')
