@@ -1,6 +1,7 @@
+import json
+
 import numpy as np
 from PyQt5.QtCore import QRectF, QLineF, QPointF
-
 from pynever.tensor import Tensor
 
 
@@ -174,6 +175,33 @@ def text_to_tensor_set(text: str) -> tuple:
             tensors += (Tensor(shape=temp, buffer=np.random.normal(size=temp)),)
 
     return tensors
+
+
+def read_json(path: str) -> dict:
+    """
+    This method loads the content of a JSON file
+    located at the 'path' directory in a dictionary.
+
+    Parameters
+    ----------
+    path : str
+        Path to JSON file.
+
+    Returns
+    ----------
+    dict
+        The dictionary built.
+
+    """
+
+    with open(path) as json_file:
+        # Init dict with default values
+        dictionary = json.loads(json_file.read())
+        # Update dict with types
+        dictionary = allow_list_in_dict(dictionary)
+        dictionary = force_types(dictionary)
+
+    return dictionary
 
 
 def force_types(dictionary: dict) -> dict:

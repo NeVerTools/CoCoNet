@@ -20,6 +20,7 @@ from never2.view.drawing.renderer import SequentialNetworkRenderer
 from never2.view.util import utility
 from never2.view.widget.dialog.dialogs import MessageDialog, MessageType, EditSmtPropertyDialog, \
     EditPolyhedralPropertyDialog, EditNodeInputDialog
+from never2.view.widget.dialog.windows import TrainingWindow, VerificationWindow
 
 
 class DrawingMode(Enum):
@@ -822,6 +823,22 @@ class Canvas(QWidget):
                     tot_height += (new_p.rect.rect().height() + 50)
                     self.draw_line_between(new_p.block_id, n)
                     break
+
+    def train_network(self):
+        if not self.renderer.NN.nodes:
+            dialog = MessageDialog("No network to train.", MessageType.ERROR)
+            dialog.exec()
+        else:
+            window = TrainingWindow(self.renderer.NN)
+            window.exec()
+
+    def verify_network(self):
+        if not self.renderer.NN.nodes:
+            dialog = MessageDialog("No network to verify.", MessageType.ERROR)
+            dialog.exec()
+        else:
+            window = VerificationWindow(self.renderer.NN)
+            window.exec()
 
     @QtCore.pyqtSlot()
     def zoom_in(self):
