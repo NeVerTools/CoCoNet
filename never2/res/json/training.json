@@ -98,7 +98,7 @@
       "Weight": {
         "name": "weight",
         "type": "tensor",
-        "value": "[]",
+        "value": "",
         "description": "A manual rescaling weight given to each class.\nIf given, has to be a Tensor of size C."
       },
       "Ignore index": {

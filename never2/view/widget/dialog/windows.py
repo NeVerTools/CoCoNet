@@ -492,7 +492,7 @@ class TrainingWindow(NeVerWindow):
                                 PytorchMetrics.inaccuracy,
                                 cuda=self.params["Cuda"]["value"],
                                 train_patience=self.params["Train patience"].get("value", None),
-                                checkpoints_root=self.params["Checkpoints root"].get("value", None),
+                                checkpoints_root=self.params["Checkpoints root"].get("value", ''),
                                 verbose_rate=self.params["Verbosity level"].get("value", None))
         train.train(self.nn, data)
         self.train_btn.setEnabled(False)
