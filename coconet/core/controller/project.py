@@ -284,27 +284,30 @@ class InputHandler:
         script = parser.get_script_fname(path)
         declarations = script.filter_by_command_name(['declare-fun', 'declare-const'])
         assertions = script.filter_by_command_name('assert')
+        var_set = []
         var_list = []
         properties = dict()
 
         for d in declarations:
+            var_list.append(str(d.args[0]))
             varname = str(d.args[0]).split('_')[0].replace('\'', '')  # Variable format is <v_name>_<idx>
-            if varname not in var_list:
-                var_list.append(varname)
+            if varname not in var_set:
+                var_set.append(varname)
 
         counter = 0
 
         for a in assertions:
             line = str(a.args[0]).replace('\'', '')
-            for v in var_list:
+            for v in var_set:
                 if f" {v}" in line or f"({v}" in line:  # Either '(v ...' or '... v)'
                     if v not in properties.keys():
                         properties[v] = PropertyBlock(f"{counter}Pr", "Generic SMT")
                         properties[v].smt_string = ''
+                        properties[v].variables = list(filter(lambda x: v in x, var_list))
                         counter += 1
                     conv = ExpressionTreeConverter()
                     wrap = conv.build_from_infix(line).as_prefix()
-                    properties[v].smt_string += f"{wrap}\n"
+                    properties[v].smt_string += f"(assert {wrap})\n"
                     break
 
         return properties
