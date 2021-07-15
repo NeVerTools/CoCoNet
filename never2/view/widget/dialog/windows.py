@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Callable
 
 import pynever.datasets as dt
@@ -535,6 +536,9 @@ class VerificationWindow(NeVerWindow):
         # Load NeVerProperty from file
         parser = reading.SmtPropertyParser(verification.SMTLIBProperty(path), input_name, output_name)
         to_verify = parser.parse_property()
+
+        # Property read, delete file
+        os.remove(path)
 
         # Launch verification
         self.strategy.verify(self.nn, to_verify)
