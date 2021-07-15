@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLa
     QFileDialog
 from pynever.datasets import Dataset
 from pynever.networks import NeuralNetwork
+from pynever.strategies import reading, verification
 from pynever.strategies.training import PytorchTraining, PytorchMetrics
 
 import never2.view.styles as style
@@ -455,18 +456,15 @@ class TrainingWindow(NeVerWindow):
             err_dialog.exec()
             return
 
+        # Load dataset
+        data = self.load_dataset()
+
         # Add logger text box
         log_textbox = LoggerTextBox(self)
         logger = logging.getLogger("pynever.strategies.training")
         logger.addHandler(log_textbox)
         logger.setLevel(logging.INFO)
         self.layout.addWidget(log_textbox.widget)
-
-        # Load dataset
-        logger.info("***** NeVer 2 - GET DATASET *****")
-        logger.info("Collecting data...")
-        data = self.load_dataset()
-        logger.info("Done.\n\n")
 
         logger.info("***** NeVer 2 - TRAINING *****")
 
@@ -500,10 +498,15 @@ class TrainingWindow(NeVerWindow):
 
 
 class VerificationWindow(NeVerWindow):
-    def __init__(self, network: NeuralNetwork):
+    def __init__(self, nn: NeuralNetwork, properties: dict):
         super().__init__("Verify network")
 
-        self.nn = network
+        self.nn = nn
+        self.properties = properties
+        self.strategy = verification.NeverVerification(heuristic="best_n_neurons", params=[0])  # Overapprox
+        # mixed_ver = ver.NeverVerification(heuristic="best_n_neurons", params=dialog.n_neurons)
+        # complete_ver = ver.NeverVerification(heuristic="best_n_neurons", params=[10000])
+
         self.params = utility.read_json('never2/res/json/verification.json')
 
         body_layout = self.create_widget_layout(self.params)
@@ -522,4 +525,16 @@ class VerificationWindow(NeVerWindow):
         self.render_layout()
 
     def verify_network(self):
-        pass
+        # Save properties
+        path = 'never2/' + self.__repr__().split(' ')[-1].replace('>', '') + '.smt2'
+        utility.write_smt_property(path, self.properties, 'Real')
+
+        input_name = list(self.properties.keys())[0]
+        output_name = list(self.properties.keys())[-1]
+
+        # Load NeVerProperty from file
+        parser = reading.SmtPropertyParser(verification.SMTLIBProperty(path), input_name, output_name)
+        to_verify = parser.parse_property()
+
+        # Launch verification
+        self.strategy.verify(self.nn, to_verify)

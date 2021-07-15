@@ -9,6 +9,7 @@ from pynever.strategies.processing import ExpressionTreeConverter
 from pysmt.smtlib.parser import SmtLibParser
 
 from never2.view.drawing.element import PropertyBlock
+from never2.view.util import utility
 from never2.view.widget.dialog.dialogs import MessageDialog, MessageType, InputDialog
 
 # Formats available for opening and saving networks
@@ -459,18 +460,7 @@ class OutputHandler:
 
         # Update extension
         self.extension = "smt2"
-
-        # Create and write file
-        with open(path, "w") as f:
-            # Variables
-            for p in properties.values():
-                for v in p.variables:
-                    f.write("(declare-fun " + v + " () Real)\n")
-            f.write("\n")
-
-            # Constraints
-            for p in properties.values():
-                f.write(p.smt_string + "\n")
+        utility.write_smt_property(path, properties, 'Real')
 
     def convert_network(self, network: pynn.NeuralNetwork, filename: str) -> AlternativeRepresentation:
         """

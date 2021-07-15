@@ -836,8 +836,11 @@ class Canvas(QWidget):
         if not self.renderer.NN.nodes:
             dialog = MessageDialog("No network to verify.", MessageType.ERROR)
             dialog.exec()
+        elif not self.project.properties:
+            dialog = MessageDialog("No property to verify.", MessageType.ERROR)
+            dialog.exec()
         else:
-            window = VerificationWindow(self.renderer.NN)
+            window = VerificationWindow(self.renderer.NN, self.project.properties)
             window.exec()
 
     @QtCore.pyqtSlot()

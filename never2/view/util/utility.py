@@ -264,3 +264,17 @@ def allow_list_in_dict(dictionary: dict) -> dict:
                 dictionary[key] = element.replace("[", "").replace("]", "").split(",")
 
     return dictionary
+
+
+def write_smt_property(path: str, props: dict, dtype: str) -> None:
+    # Create and write file
+    with open(path, "w") as f:
+        # Variables
+        for p in props.values():
+            for v in p.variables:
+                f.write(f"(declare-fun {v} () {dtype})\n")
+        f.write("\n")
+
+        # Constraints
+        for p in props.values():
+            f.write(p.smt_string + "\n")
