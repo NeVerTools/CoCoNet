@@ -130,6 +130,8 @@ class NeVerWindow(QtWidgets.QDialog):
                         self.widgets[first_level].setValidator(ArithmeticValidator.TENSOR)
 
             w_label = QLabel(first_level)
+            if 'optional' in widget_dict[first_level].keys():
+                w_label.setText(first_level + ' (opt)')
             w_label.setToolTip(widget_dict[first_level].get("description"))
             left_layout.addWidget(w_label, counter, 0)
             left_layout.addWidget(self.widgets[first_level], counter, 1)
@@ -185,6 +187,8 @@ class TrainingWindow(NeVerWindow):
         self.dataset_transform = None
         self.params = utility.read_json('never2/res/json/training.json')
         self.gui_params = dict()
+        self.loss_f = ''
+        self.metric = ''
         self.grid_layout = QGridLayout()
 
         # Dataset
@@ -264,6 +268,10 @@ class TrainingWindow(NeVerWindow):
         """
 
         self.clear_grid()
+        if 'Loss Function' in caller:
+            self.loss_f = caller
+        elif 'Metrics' in caller:
+            self.metric = caller
 
         for first_level in self.params.keys():
             if type(self.params[first_level]) == dict:
@@ -479,16 +487,32 @@ class TrainingWindow(NeVerWindow):
         for k, v in self.gui_params["Scheduler:ReduceLROnPlateau"].items():
             sched_params[v["name"]] = v["value"]
 
+        # Init loss function
+        if self.loss_f == "Loss Function:Cross Entropy":
+            loss = fun.cross_entropy
+            loss.weight = self.gui_params["Loss Function:Cross Entropy"]["Weight"]["value"]
+            loss.ignore_index = self.gui_params["Loss Function:Cross Entropy"]["Ignore index"]["value"]
+            loss.reduction = self.gui_params["Loss Function:Cross Entropy"]["Reduction"]["value"]
+        else:
+            loss = fun.mse_loss
+            loss.reduction = self.gui_params["Loss Function:MSE Loss"]["Reduction"]["value"]
+
+        # Init metrics
+        if self.metric == "Metrics:Inaccuracy":
+            metrics = PytorchMetrics.inaccuracy
+        else:
+            metrics = None  # TODO which is MSE metric?
+
         # Init train strategy
         train = PytorchTraining(opt.Adam, opt_params,
-                                fun.cross_entropy,
+                                loss,
                                 self.params["Epochs"]["value"],
                                 self.params["Validation percentage"]["value"],
                                 self.params["Training batch size"]["value"],
                                 self.params["Validation batch size"]["value"],
                                 opt.lr_scheduler.ReduceLROnPlateau,
                                 sched_params,
-                                PytorchMetrics.inaccuracy,
+                                metrics,
                                 cuda=self.params["Cuda"]["value"],
                                 train_patience=self.params["Train patience"].get("value", None),
                                 checkpoints_root=self.params["Checkpoints root"].get("value", ''),
