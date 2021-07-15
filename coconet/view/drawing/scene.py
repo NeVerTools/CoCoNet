@@ -7,15 +7,17 @@ from PyQt5.QtCore import Qt, QPoint, QRectF, pyqtSignal, QRect
 from PyQt5.QtGui import QBrush, QColor, QPen, QPainter
 from PyQt5.QtWidgets import QGraphicsRectItem, QWidget, QGraphicsScene, QApplication, QGraphicsItem, \
     QGraphicsSceneMouseEvent
+from pynever import nodes
+from pynever.networks import SequentialNetwork, NeuralNetwork
+from pynever.tensor import Tensor
 
 import coconet.view.styles as style
 from coconet.core.controller.nodewrapper import NodeOps
 from coconet.core.controller.project import Project
-from pynever.networks import SequentialNetwork, NeuralNetwork
-from pynever.tensor import Tensor
 from coconet.core.model.network import NetworkNode
 from coconet.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock, GraphicBlock
 from coconet.view.drawing.renderer import SequentialNetworkRenderer
+from coconet.view.util import utility
 from coconet.view.widget.dialog.dialogs import MessageDialog, MessageType, EditSmtPropertyDialog, \
     EditPolyhedralPropertyDialog, EditNodeInputDialog
 
@@ -135,6 +137,10 @@ class Canvas(QWidget):
         self.scene.addWidget(self)
         self.setStyleSheet(style.CANVAS_STYLE)
 
+    def get_input_variables(self) -> list:
+        head = self.renderer.NN.get_first_node()
+        return utility.create_variables_from(self.renderer.NN.input_id, head.in_dim)
+
     def update_scene(self):
         """
         This method calls a drawing method according to the current mode.
@@ -235,28 +241,16 @@ class Canvas(QWidget):
                 return
 
             if isinstance(origin, PropertyBlock) and isinstance(destination, NodeBlock):
-                v_name = destination.block_id + "_"
-                temp_list = []
-                ped_list = []
-
-                for k in destination.out_dim:
-                    if len(temp_list) == 0:
-                        for i in range(k):
-                            temp_list.append(str(i))
-                    else:
-                        for i in range(k):
-                            for p in temp_list:
-                                p = f"{p}{i}"
-                                ped_list.append(p)
-                        temp_list = ped_list
-                        ped_list = []
-
-                for p in temp_list:
-                    origin.variables.append(f"{v_name}{p}")
-
-                # Properties dict is {node_id: property}
+                origin.variables = utility.create_variables_from(destination.block_id, destination.out_dim)
                 origin.pre_condition = False
                 origin.condition_label.setText("POST")
+
+                # Properties dict is {node_id: property}
+                if origin in self.project.properties.values():
+                    # Find key of origin
+                    key = list(self.project.properties.keys())[list(self.project.properties.values()).index(origin)]
+                    del self.project.properties[key]
+
                 self.project.properties[destination.block_id] = origin
                 return
 
@@ -270,7 +264,14 @@ class Canvas(QWidget):
 
                     # Draw dimensions
                     in_dim = self.renderer.NN.nodes[destination.block_id].in_dim
+
+                    if isinstance(self.renderer.NN.nodes[destination.block_id], nodes.FullyConnectedNode):
+                        out_dim = self.renderer.NN.nodes[destination.block_id].out_features
+                    else:
+                        out_dim = self.renderer.NN.nodes[destination.block_id].out_dim
+
                     self.scene.blocks[conn_nodes[0]].out_dim = in_dim
+                    self.scene.blocks[conn_nodes[1]].out_dim = out_dim
                     destination.in_dim = in_dim
                     destination.is_head = False
 
@@ -334,6 +335,8 @@ class Canvas(QWidget):
 
                     self.scene.blocks[origin_item].out_dim = out_dim
                     self.scene.blocks[destination_item].in_dim = out_dim
+                    self.scene.blocks[destination_item].out_dim = self.renderer.NN.nodes[
+                                      self.scene.blocks[destination_item].block_id].out_dim
                     return
 
                 except Exception as e:
@@ -479,7 +482,7 @@ class Canvas(QWidget):
         return block
 
     def draw_property(self, property_type: str = "", copy: PropertyBlock = None,
-                      pos: QPoint = None) -> PropertyBlock:
+                      pos: QPoint = None, add_dict_entry: bool = True) -> PropertyBlock:
         """
         This method creates a graphic PropertyBlock for representing
         the property to draw. If the property is legal, the PropertyBlock
@@ -493,6 +496,9 @@ class Canvas(QWidget):
             The property to copy in the canvas.
         pos : QPoint, optional
             The position to draw the property.
+        add_dict_entry : boolean, optional
+            Flag that allows to add an entry in the
+            properties dictionary.
 
         Returns
         -------
@@ -527,6 +533,9 @@ class Canvas(QWidget):
         block.context_actions["Define"].triggered \
             .connect(lambda: Canvas.define_property(block))
         self.num_props += 1
+        block.variables = self.get_input_variables()
+        if add_dict_entry:
+            self.project.properties[f"PRE{self.num_props}"] = block
         self.renderer.add_property_block(block)
 
         return block
@@ -687,7 +696,14 @@ class Canvas(QWidget):
                     # Deleting an edge makes the network non sequential
                     block_before = self.scene.blocks[item.origin]
                     block_after = self.scene.blocks[item.destination]
-                    block_after.is_head = True
+
+                    if isinstance(block_before, PropertyBlock):
+                        if block_after.block_id in self.project.properties.keys():
+                            del self.project.properties[block_after.block_id]
+                        self.scene.removeItem(block_before.rect)
+                        self.scene.blocks.pop(block_before.rect)
+                    else:
+                        block_after.is_head = True
 
                     self.renderer.delete_edge_from(block_before.block_id)
                     item.remove_self()
@@ -740,7 +756,7 @@ class Canvas(QWidget):
         """
 
         self.renderer.disconnected_network = {}
-        self.renderer.NN = SequentialNetwork("", "")
+        self.renderer.NN = SequentialNetwork("", "X")
 
         # Recreate the scene
         self.scene = NetworkScene(self)
@@ -790,8 +806,16 @@ class Canvas(QWidget):
         tot_height = 0
         for n, p in self.project.properties.items():
             for node in self.project.network.nodes.values():
-                if node.identifier == n:
-                    new_p = self.draw_property(copy=p, pos=QPoint(350, tot_height))
+                if n == self.project.network.input_id:
+                    new_p = self.draw_property(copy=p, pos=QPoint(350, tot_height), add_dict_entry=False)
+                    new_p.set_smt_label()
+                    new_p.pre_condition = True
+                    new_p.update_condition_label()
+                    tot_height += (new_p.rect.rect().height() + 50)
+                    self.draw_line_between(new_p.block_id, n)
+                    break
+                if n == node.identifier:
+                    new_p = self.draw_property(copy=p, pos=QPoint(350, tot_height), add_dict_entry=False)
                     new_p.set_smt_label()
                     new_p.pre_condition = False
                     new_p.update_condition_label()

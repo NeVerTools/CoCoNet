@@ -1,7 +1,6 @@
 from pynever.nodes import LayerNode, ReLUNode, FullyConnectedNode, BatchNormNode, \
-    AveragePoolNode, ConvNode, MaxPoolNode, LRNNode, SoftMaxNode, UnsqueezeNode, FlattenNode, DropoutNode, ReshapeNode, \
-    SigmoidNode
-from pynever.tensor import Tensor
+    AveragePoolNode, ConvNode, MaxPoolNode, LRNNode, SoftMaxNode, UnsqueezeNode, \
+    FlattenNode, DropoutNode, ReshapeNode, SigmoidNode
 
 
 class NodeOps:
@@ -41,13 +40,12 @@ class NodeOps:
             node = FullyConnectedNode(node_id,
                                       in_dim,
                                       data["out_features"],
-                                      Tensor((data["out_features"], in_dim[-1])),
-                                      Tensor((data["out_features"],)))
+                                      data["weight"], data["bias"],
+                                      data["has_bias"])
         elif class_name == 'BatchNormNode':
             node = BatchNormNode(node_id,
-                                 in_dim, data["num_features"],
-                                 Tensor((data["num_features"],)),
-                                 Tensor((data["num_features"],)),
+                                 in_dim, data["weight"],
+                                 data["bias"],
                                  data["running_mean"],
                                  data["running_var"], data["eps"],
                                  data["momentum"], data["affine"],
@@ -63,7 +61,6 @@ class NodeOps:
         elif class_name == 'ConvNode':
             node = ConvNode(node_id,
                             in_dim,
-                            data["in_channels"],
                             data["out_channels"],
                             data["kernel_size"],
                             data["stride"],
@@ -161,58 +158,49 @@ class NodeOps:
         """
 
         if isinstance(node, FullyConnectedNode):
-            node.update_data(data["in_features"],
-                             data["out_features"])
+            node.out_features = data["out_features"]
+            node.has_bias = data["has_bias"]
         elif isinstance(node, BatchNormNode):
-            node.update_data(data["num_features"],
-                             data["weight"],
-                             data["bias"],
-                             data["running_mean"],
-                             data["running_var"],
-                             data["eps"],
-                             data["momentum"],
-                             data["affine"],
-                             data["track_running_stats"])
+            node.eps = data["eps"]
+            node.momentum = data["momentum"]
+            node.affine = data["affine"]
+            node.track_running_stats = data["track_running_stats"]
         elif isinstance(node, ConvNode):
-            node.update_data(data["in_channels"],
-                             data["out_channels"],
-                             data["kernel_size"],
-                             data["stride"],
-                             data["padding"],
-                             data["dilation"],
-                             data["groups"],
-                             data["has_bias"],
-                             data["bias"],
-                             data["weight"])
+            node.out_channels = data["out_channels"]
+            node.kernel_size = data["kernel_size"]
+            node.stride = data["stride"]
+            node.padding = data["padding"]
+            node.dilation = data["dilation"]
+            node.groups = data["groups"]
         elif isinstance(node, AveragePoolNode):
-            node.update_data(data["kernel_size"],
-                             data["stride"],
-                             data["padding"],
-                             data["ceil_mode"],
-                             data["count_include_pad"])
+            node.kernel_size = data["kernel_size"]
+            node.stride = data["stride"]
+            node.padding = data["padding"]
+            node.ceil_mode = data["ceil_mode"]
+            node.count_include_pad = data["count_include_pad"]
         elif isinstance(node, MaxPoolNode):
-            node.update_data(data["kernel_size"],
-                             data["stride"],
-                             data["padding"],
-                             data["dilation"],
-                             data["ceil_mode"],
-                             data["return_indices"])
+            node.kernel_size = data["kernel_size"]
+            node.stride = data["stride"]
+            node.padding = data["padding"]
+            node.dilation = data["dilation"]
+            node.ceil_mode = data["ceil_mode"]
+            node.return_indices = data["return_indices"]
         elif isinstance(node, LRNNode):
-            node.update_data(data["size"],
-                             data["alpha"],
-                             data["beta"],
-                             data["k"])
+            node.size = data["size"]
+            node.alpha = data["alpha"]
+            node.beta = data["beta"]
+            node.k = data["k"]
         elif isinstance(node, SoftMaxNode):
-            node.update_data(data["axis"])
+            node.axis = data["axis"]
         elif isinstance(node, UnsqueezeNode):
-            node.update_data(data["axes"])
+            node.axes = data["axes"]
         elif isinstance(node, ReshapeNode):
-            node.update_data(data["shape"],
-                             data["allow_zero"])
+            node.shape = data["shape"]
+            node.allow_zero = data["allow_zero"]
         elif isinstance(node, FlattenNode):
-            node.update_data(data["axis"])
+            node.axis = data["axis"]
         elif isinstance(node, DropoutNode):
-            node.update_data(data["p"])
+            node.p = data["p"]
 
         return node
 

@@ -162,6 +162,8 @@ class MainWindow(QtWidgets.QMainWindow):
         save_as_action = QAction("Save as...", self)
         save_as_action.setShortcut("Ctrl+Shift+S")
         save_as_action.triggered.connect(lambda: self.save())
+        close_action = QAction("Exit", self)
+        close_action.triggered.connect(lambda: self.close())
 
         # Edit actions
         copy_action = QAction("Copy", self)
@@ -219,6 +221,7 @@ class MainWindow(QtWidgets.QMainWindow):
         menu_file.addSeparator()
         menu_file.addAction(save_action)
         menu_file.addAction(save_as_action)
+        menu_file.addAction(close_action)
 
         # Build Edit menu
         menu_edit.addSeparator()
@@ -264,7 +267,8 @@ class MainWindow(QtWidgets.QMainWindow):
             if isinstance(button, NodeButton):
                 self.canvas.draw_node(button.node_type)
             elif isinstance(button, PropertyButton):
-                self.canvas.draw_property(button.name)
+                if self.canvas.project.network.nodes:
+                    self.canvas.draw_property(button.name)
 
         return pressed
 
