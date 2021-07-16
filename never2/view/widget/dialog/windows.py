@@ -566,7 +566,7 @@ class VerificationWindow(NeVerWindow):
         else:
             dialog = MixedVerificationDialog()
             dialog.exec()
-            self.strategy = verification.NeverVerification(heuristic="best_n_neurons", params=dialog.n_neurons)
+            self.strategy = verification.NeverVerification(heuristic="best_n_neurons", params=[dialog.n_neurons])
 
     def verify_network(self):
         """
