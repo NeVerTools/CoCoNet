@@ -604,12 +604,13 @@ class Canvas(QWidget):
         edits = block.edits
         if edits is not None and block.block_id in self.renderer.disconnected_network.keys():
             edit_node_id = edits[0]
-            new_in_dim = edits[1]
-            edit_data = dict()
-            edit_data["in_dim"] = new_in_dim
+            edit_data = edits[1]
+            new_in_dim = None
+            if "in_dim" in edit_data.keys():
+                new_in_dim = edit_data["in_dim"]
 
             # If in_dim changes to fully connected, update in_features
-            if block.node.name == "Fully Connected":
+            if block.node.name == "Fully Connected" and new_in_dim is not None:
                 edit_data["in_features"] = new_in_dim[-1]
 
             for block_par, info in block.node.param.items():

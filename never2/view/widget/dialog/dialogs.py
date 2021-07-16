@@ -732,7 +732,7 @@ class EditNodeDialog(NeVerDialog):
                             self.edited_data["in_dim"] = tuple(
                                 map(int, line.text().split(',')))
                         else:
-                            data_type = self.node.param[key]["type"]
+                            data_type = self.node.node.param[key]["type"]
 
                             # Casting
                             if data_type == "int":
