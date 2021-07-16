@@ -1,11 +1,11 @@
 import onnx
-import never2.core.controller.pynevertemp.networks as pynn
+import pynever.networks as pynn
 import torch
 from PyQt5.QtCore import pyqtSignal, QObject, Qt
 from PyQt5.QtWidgets import QFileDialog, QApplication
-from never2.core.controller.pynevertemp.strategies.conversion import ONNXNetwork, \
+from pynever.strategies.conversion import ONNXNetwork, \
     ONNXConverter, PyTorchConverter, TensorflowConverter, PyTorchNetwork, TensorflowNetwork, AlternativeRepresentation
-from never2.core.controller.pynevertemp.strategies.processing import ExpressionTreeConverter
+from pynever.strategies.processing import ExpressionTreeConverter
 from pysmt.smtlib.parser import SmtLibParser
 
 from never2.view.drawing.element import PropertyBlock

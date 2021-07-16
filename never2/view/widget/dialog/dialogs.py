@@ -6,7 +6,7 @@ from PyQt5.QtCore import QRegExp, Qt, QSize
 from PyQt5.QtGui import QIntValidator, QRegExpValidator, QDoubleValidator
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QWidget, QLineEdit, QGridLayout, QComboBox, \
     QTextEdit, QPlainTextEdit
-from never2.core.controller.pynevertemp.tensor import Tensor
+from pynever.tensor import Tensor
 
 import never2.view.styles as style
 import never2.view.util.utility as u

@@ -2,7 +2,7 @@ import json
 
 import numpy as np
 from PyQt5.QtCore import QRectF, QLineF, QPointF
-from never2.core.controller.pynevertemp.tensor import Tensor
+from pynever.tensor import Tensor
 
 
 def truncate(f: float, n: int) -> str:
