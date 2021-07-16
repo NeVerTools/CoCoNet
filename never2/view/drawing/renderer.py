@@ -1,6 +1,6 @@
 import copy
 
-from pynever.networks import SequentialNetwork
+from never2.core.controller.pynevertemp.networks import SequentialNetwork
 
 from never2.core.controller.nodewrapper import NodeOps
 from never2.view.drawing.element import NodeBlock, PropertyBlock

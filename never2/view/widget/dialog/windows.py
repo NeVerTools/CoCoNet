@@ -2,7 +2,6 @@ import logging
 import os
 from typing import Callable
 
-import pynever.datasets as dt
 import torch
 import torch.nn.functional as fun
 import torch.optim as opt
@@ -11,12 +10,13 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QGridLayout, QLineEdit, QPushButton, \
     QFileDialog
-from pynever.datasets import Dataset
-from pynever.networks import NeuralNetwork
-from pynever.strategies import reading, verification
-from pynever.strategies.training import PytorchTraining, PytorchMetrics
 
+import never2.core.controller.pynevertemp.datasets as dt
 import never2.view.styles as style
+from never2.core.controller.pynevertemp.datasets import Dataset
+from never2.core.controller.pynevertemp.networks import NeuralNetwork
+from never2.core.controller.pynevertemp.strategies import reading, verification
+from never2.core.controller.pynevertemp.strategies.training import PytorchTraining, PytorchMetrics
 from never2.view.util import utility
 from never2.view.widget.dialog.dialogs import MessageDialog, MessageType, GenericDatasetDialog, ArithmeticValidator, \
     MixedVerificationDialog

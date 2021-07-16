@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt, QLineF, QRectF, QPointF, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QPen, QPolygonF
 from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsRectItem, QGraphicsTextItem, QGraphicsPolygonItem, QLabel, \
     QVBoxLayout, QWidget, QGridLayout, QGraphicsProxyWidget, QAction
-from pynever.tensor import Tensor
+from never2.core.controller.pynevertemp.tensor import Tensor
 
 import never2.view.styles as style
 import never2.view.util.utility as u
