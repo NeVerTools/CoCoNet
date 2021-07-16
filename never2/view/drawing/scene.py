@@ -19,7 +19,7 @@ from never2.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock, G
 from never2.view.drawing.renderer import SequentialNetworkRenderer
 from never2.view.util import utility
 from never2.view.widget.dialog.dialogs import MessageDialog, MessageType, EditSmtPropertyDialog, \
-    EditPolyhedralPropertyDialog, EditNodeInputDialog
+    EditPolyhedralPropertyDialog, EditNodeInputDialog, EditNodeDialog
 from never2.view.widget.dialog.windows import TrainingWindow, VerificationWindow
 
 
@@ -1212,12 +1212,12 @@ class NetworkScene(QGraphicsScene):
                 item = self.blocks[item_rect]
 
             if isinstance(item, NodeBlock):
-                dialog = EditNodeInputDialog(item)
+                dialog = EditNodeDialog(item)
                 dialog.exec()
                 # Catch new parameters
                 if dialog.has_edits:
                     # The block emits a signal
-                    item.edits = item.block_id, dialog.new_in_dim
+                    item.edits = item.block_id, dialog.edited_data
                     item.edited.emit()
             else:
                 Canvas.define_property(item)
