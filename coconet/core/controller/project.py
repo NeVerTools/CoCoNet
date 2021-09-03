@@ -10,15 +10,16 @@ from pysmt.exceptions import PysmtException
 from pysmt.smtlib.parser import SmtLibParser
 
 from coconet.view.drawing.element import PropertyBlock
+from coconet.view.util import utility
 from coconet.view.widget.dialog.dialogs import MessageDialog, MessageType, InputDialog
 
 # Formats available for opening and saving networks
 NETWORK_FORMATS_OPENING = "All supported formats (*.onnx *.pt *.pth);;\
                             ONNX(*.onnx);;\
                             PyTorch(*.pt *.pth)"
-NETWORK_FORMATS_SAVE = "VNNLIB (*.onnx + *.smt2);;\
-                        ONNX(*.onnx);;\
-                        PyTorch(*.pt *.pth)"
+NETWORK_FORMATS_SAVE = "ONNX(*.onnx);;\
+                        PyTorch(*.pt *.pth);;\
+                        VNNLIB (*.onnx + *.smt2)"
 PROPERTY_FORMATS = "SMT-LIB files (*.smt *.smt2);;\
                            SMT(*.smt *.smt2)"
 SUPPORTED_NETWORK_FORMATS = {'VNNLIB': ['vnnlib'],
@@ -153,6 +154,7 @@ class Project(QObject):
 
         if self.file_name != ("", ""):
             self.output_handler = OutputHandler()
+            self.network.identifier = self.file_name[0].split('/')[-1]
 
             # A  "wait cursor" appears locking the interface
             QApplication.setOverrideCursor(Qt.WaitCursor)
@@ -469,18 +471,7 @@ class OutputHandler:
 
         # Update extension
         self.extension = "smt2"
-
-        # Create and write file
-        with open(path, "w") as f:
-            # Variables
-            for p in properties.values():
-                for v in p.variables:
-                    f.write("(declare-fun " + v + " () Real)\n")
-            f.write("\n")
-
-            # Constraints
-            for p in properties.values():
-                f.write(p.smt_string + "\n")
+        utility.write_smt_property(path, properties, 'Real')
 
     def convert_network(self, network: pynn.NeuralNetwork, filename: str) -> AlternativeRepresentation:
         """

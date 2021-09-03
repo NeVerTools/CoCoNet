@@ -146,7 +146,7 @@ class MessageDialog(CoCoNetDialog):
 
         # Add a button to close the dialog
         ok_button = CustomButton("Ok")
-        ok_button.clicked.connect(lambda: self.close())
+        ok_button.clicked.connect(self.close)
 
         # Compose widgets
         self.layout.addWidget(title_label)
@@ -214,10 +214,10 @@ class ConfirmDialog(CoCoNetDialog):
 
         # Add buttons to close the dialog
         confirm_button = CustomButton("Yes")
-        confirm_button.clicked.connect(lambda: self.ok())
+        confirm_button.clicked.connect(self.ok)
 
         no_button = CustomButton("No")
-        no_button.clicked.connect(lambda: self.deny())
+        no_button.clicked.connect(self.deny)
 
         buttons_layout = QHBoxLayout()
         buttons_layout.addWidget(confirm_button)
@@ -292,10 +292,10 @@ class InputDialog(CoCoNetDialog):
 
         # Add buttons to close the dialog
         confirm_button = CustomButton("Ok")
-        confirm_button.clicked.connect(lambda: self.save_input())
+        confirm_button.clicked.connect(self.save_input())
 
         cancel_button = CustomButton("Cancel")
-        cancel_button.clicked.connect(lambda: self.cancel())
+        cancel_button.clicked.connect(self.cancel())
 
         buttons = QWidget()
         buttons_layout = QHBoxLayout()
@@ -404,12 +404,12 @@ class EditNodeInputDialog(CoCoNetDialog):
 
         # "Apply" button which saves changes
         apply_button = CustomButton("Apply")
-        apply_button.clicked.connect(lambda: self.save_data())
+        apply_button.clicked.connect(self.save_data)
         self.layout.addWidget(apply_button, 2, 0)
 
         # "Cancel" button which closes the dialog without saving
         cancel_button = CustomButton("Cancel")
-        cancel_button.clicked.connect(lambda: self.close())
+        cancel_button.clicked.connect(self.close)
         self.layout.addWidget(cancel_button, 2, 1)
 
         self.layout.setColumnStretch(0, 1)
@@ -432,7 +432,6 @@ class EditNodeInputDialog(CoCoNetDialog):
         self.close()
 
 
-# deprecated
 class EditNodeDialog(CoCoNetDialog):
     """
     This dialog allows to edit the selected node in the canvas.
@@ -499,12 +498,12 @@ class EditNodeDialog(CoCoNetDialog):
 
         # "Apply" button which saves changes
         apply_button = CustomButton("Apply")
-        apply_button.clicked.connect(lambda: self.save_data())
+        apply_button.clicked.connect(self.save_data)
         self.layout.addWidget(apply_button, counter, 0)
 
         # "Cancel" button which closes the dialog without saving
         cancel_button = CustomButton("Cancel")
-        cancel_button.clicked.connect(lambda: self.close())
+        cancel_button.clicked.connect(self.close)
         self.layout.addWidget(cancel_button, counter, 1)
 
         self.layout.setColumnStretch(0, 1)

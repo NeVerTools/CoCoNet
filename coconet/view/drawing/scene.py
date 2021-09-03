@@ -672,7 +672,12 @@ class Canvas(QWidget):
                         first_node = self.renderer.NN.get_first_node()
 
                         # If the node is in the network, delete it
-                        new_tuple = self.renderer.delete_node(self.scene.blocks[item].block_id)
+                        new_tuple = None
+                        try:
+                            new_tuple = self.renderer.delete_node(self.scene.blocks[item].block_id)
+                        except Exception as e:
+                            dialog = MessageDialog(str(e), MessageType.ERROR)
+                            dialog.exec()
 
                         # If there was a connection, preserve it
                         if new_tuple is not None:
@@ -757,7 +762,8 @@ class Canvas(QWidget):
         """
 
         self.renderer.disconnected_network = {}
-        self.renderer.NN = SequentialNetwork("", "X")
+        self.project.network = SequentialNetwork("", "X")
+        self.renderer.NN = self.project.network
 
         # Recreate the scene
         self.scene = NetworkScene(self)

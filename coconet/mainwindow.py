@@ -421,6 +421,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     try:
                         self.canvas.renderer.add_node_to_nn(node)
                         self.canvas.project.save(_as)
+                        self.setWindowTitle(self.SYSNAME + " - " + self.canvas.project.network.identifier)
                     except Exception as e:
                         error_dialog = MessageDialog(str(e), MessageType.ERROR)
                         error_dialog.exec()
@@ -447,6 +448,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             if every_node_connected:
                 self.canvas.project.save(_as)
+                self.setWindowTitle(self.SYSNAME + " - " + self.canvas.project.network.identifier)
             else:
                 # If there are disconnected nodes, a message is displayed to the
                 # user to choose if saving only the connected network
@@ -457,6 +459,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 confirm_dialog.exec()
                 if confirm_dialog.confirm:
                     self.canvas.project.save(_as)
+                    self.setWindowTitle(self.SYSNAME + " - " + self.canvas.project.network.identifier)
         else:
             # If the network is not sequential, it cannot be saved.
             not_sequential_dialog = MessageDialog("The network is not sequential and "
