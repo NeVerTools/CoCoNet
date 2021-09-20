@@ -93,21 +93,21 @@ def convert_to_onnx(model_path: str) -> bool:
 
     """
 
-    nn = os.path.abspath(model_path)
+    nn_path = os.path.abspath(model_path)
 
-    if not os.path.isfile(nn):
+    if not os.path.isfile(nn_path):
         print("Invalid model path.")
         return False
     else:
-        extension = nn.split(".")[-1]
-        net_id = nn.split("/")[-1].split(".")[0]
+        extension = nn_path.split(".")[-1]
+        net_id = nn_path.split("/")[-1].split(".")[0]
 
         if extension in SUPPORTED_NETWORK_FORMATS['ONNX']:
             print("The network is already in the ONNX format.")
             return True
 
         elif extension in SUPPORTED_NETWORK_FORMATS['PyTorch']:
-            module = torch.load(nn)
+            module = torch.load(nn_path)
             alt_repr = PyTorchNetwork(net_id, module, True)
 
         else:
@@ -128,8 +128,10 @@ def convert_to_onnx(model_path: str) -> bool:
                 strategy = ONNXConverter()
                 model = strategy.from_neural_network(network)
                 onnx_net = ONNXNetwork(new_id, model, True)
-                onnx.save(onnx_net.onnx_network, nn)
+                old_ext = '.' + extension
+                onnx.save(onnx_net.onnx_network.onnx_network, nn_path.replace(old_ext, '_converted.onnx'))
 
+                print("Conversion successful.")
                 return True
 
             except Exception as e:
