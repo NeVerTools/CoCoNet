@@ -55,3 +55,16 @@ $ python CoCoNet/coconet.py
 
 Note that each time you want to run CoCoNet you'll need to activate 
 the Conda environment.
+
+## Usage
+
+CoCoNet is a GUI for constructing and converting Neural Networks, but it 
+also provides a simple CLI usage for checking whether a NN is compliant
+with VNN-LIB and quick-converting networks in the ONNX format.
+Typing
+
+```bash
+python CoCoNet/coconet.py -h
+```
+
+shows the possible command-line instructions available.
