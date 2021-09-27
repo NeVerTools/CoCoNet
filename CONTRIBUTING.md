@@ -1,12 +1,11 @@
-# Contributing to PyQt-Node-Editor
+# Contributing to CoCoNet
 
 Bug fixes, feature additions, tests, documentation and more can be contributed 
-via [issues](https://gitlab.com/pavel.krupala/pyqt-node-editor/issues) and/or [merge_requests](https://gitlab.com/pavel.krupala/pyqt-node-editor/merge_requests). All contributions are welcome.
+via [issues](https://github.com/NeVerTools/CoCoNet/issues) and/or [merge_requests](https://github.com/NeVerTools/CoCoNet/merge_requests). All contributions are welcome.
 
 ## Contributors
 
-- Richard Boltze
-- RoniPerson 
+- 
 
 ## Bug fixes, feature additions, etc.
 
