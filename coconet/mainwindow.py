@@ -198,7 +198,7 @@ class MainWindow(QtWidgets.QMainWindow):
         z_in_action.setShortcut("Ctrl++")
         z_in_action.triggered.connect(lambda: self.canvas.zoom_in())
         z_out_action = QAction("Zoom out", self)
-        z_out_action.setShortcut("Ctrl--")
+        z_out_action.setShortcut("Ctrl+-")
         z_out_action.triggered.connect(lambda: self.canvas.zoom_out())
         dims_action = QAction("Dimensions", self)
         dims_action.setCheckable(True)
