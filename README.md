@@ -24,7 +24,7 @@ run CoCoNet. All the following packages can be installed
 via PIP
 
 ```bash
-pip install numpy PyQt5 onnx torch torchvision pysmt pynever
+pip install numpy PyQt5 pysmt pynever
 ```
 
 After the installation, you can run CoCoNet from the root directory

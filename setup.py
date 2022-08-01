@@ -21,5 +21,5 @@ setuptools.setup(
         "Operating System:: OS Independent",
     ],
     python_requires='>=3.8',
-    install_requires=['pynever', 'numpy', 'PyQt5', 'onnx', 'torch', 'torchvision', 'pysmt']
+    install_requires=['pynever', 'numpy', 'PyQt5', 'pysmt']
 )
