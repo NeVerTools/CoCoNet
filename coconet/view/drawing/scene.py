@@ -816,6 +816,13 @@ class Canvas(QWidget):
 
     def draw_properties(self):
         tot_height = 0
+
+        # Preprocessing last node
+        if 'Y' in self.project.properties.keys():
+            v = self.project.properties['Y']
+            self.project.properties.pop('Y')
+            self.project.properties[self.project.network.get_last_node().identifier] = v
+
         for n, p in self.project.properties.items():
             for node in self.project.network.nodes.values():
                 if n == self.project.network.input_id:
@@ -834,6 +841,7 @@ class Canvas(QWidget):
                     tot_height += (new_p.rect.rect().height() + 50)
                     self.draw_line_between(new_p.block_id, n)
                     break
+
 
     @QtCore.pyqtSlot()
     def zoom_in(self):
