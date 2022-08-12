@@ -409,7 +409,7 @@ class BlocksToolbar(QToolBar):
 
         # Toolbar style
         for item in self.children():
-            if type(item) is QToolButton:
+            if isinstance(item, QToolButton):
                 item.setStyleSheet("background-color: " + style.GREEN_2)
         self.setStyleSheet(style.TOOLBAR_STYLE)
 
@@ -435,7 +435,7 @@ class BlocksToolbar(QToolBar):
             self.b_buttons[k] = button
 
     def __init_properties(self):
-        props = ("Generic SMT", "Polyhedral")
+        props = ("Generic SMT", "Polyhedral", "Local robustness")
 
         for k in props:
             button = PropertyButton(k)

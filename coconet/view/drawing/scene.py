@@ -19,7 +19,7 @@ from coconet.view.drawing.element import NodeBlock, GraphicLine, PropertyBlock, 
 from coconet.view.drawing.renderer import SequentialNetworkRenderer
 from coconet.view.util import utility
 from coconet.view.widget.dialog.dialogs import MessageDialog, MessageType, EditSmtPropertyDialog, \
-    EditPolyhedralPropertyDialog, EditNodeDialog
+    EditPolyhedralPropertyDialog, EditNodeDialog, EditLocalRobustnessPropertyDialog
 
 
 class DrawingMode(Enum):
@@ -532,7 +532,7 @@ class Canvas(QWidget):
 
         # Finalize block and update scene
         block.context_actions["Define"].triggered \
-            .connect(lambda: Canvas.define_property(block))
+            .connect(lambda: self.define_property(block))
         self.num_props += 1
         block.variables = self.get_input_variables()
         if add_dict_entry:
@@ -541,8 +541,7 @@ class Canvas(QWidget):
 
         return block
 
-    @staticmethod
-    def define_property(item: PropertyBlock) -> None:
+    def define_property(self, item: PropertyBlock) -> None:
         if item.property_type == "Generic SMT":
             dialog = EditSmtPropertyDialog(item)
             dialog.exec()
@@ -550,6 +549,26 @@ class Canvas(QWidget):
             if dialog.has_edits:
                 item.smt_string = dialog.new_property
                 item.set_smt_label()
+
+        elif item.property_type == "Local robustness":
+            dialog = EditLocalRobustnessPropertyDialog(item, self.project.network)
+            dialog.exec()
+
+            if dialog.has_edits:
+                size = len(dialog.local_input)
+                e = eval(dialog.epsilon_noise)
+                d = eval(dialog.delta_robustness)
+                for i in range(size):
+                    x0 = eval(dialog.local_input[i])
+                    item.smt_string += f"(assert (<= {self.project.network.input_id}_{i} {x0 + e}))\n"
+                    item.smt_string += f"(assert (>= {self.project.network.input_id}_{i} {x0 - e}))\n"
+                item.smt_string += '\n'
+                size = len(dialog.local_output)
+                for i in range(size):
+                    y0 = eval(dialog.local_output[i])
+                    item.smt_string += f"(assert (<= {self.project.network.get_last_node().identifier}_{i} {y0 + d}))\n"
+                    item.smt_string += f"(assert (>= {self.project.network.get_last_node().identifier}_{i} {y0 - d}))\n"
+
         elif item.property_type == "Polyhedral":
             dialog = EditPolyhedralPropertyDialog(item)
             dialog.exec()
@@ -816,12 +835,12 @@ class Canvas(QWidget):
 
     def draw_properties(self):
         tot_height = 0
+        y_out = False
 
         # Preprocessing last node
         if 'Y' in self.project.properties.keys():
-            v = self.project.properties['Y']
-            self.project.properties.pop('Y')
-            self.project.properties[self.project.network.get_last_node().identifier] = v
+            self.project.properties[self.project.network.get_last_node().identifier] = self.project.properties.pop('Y')
+            y_out = True
 
         for n, p in self.project.properties.items():
             for node in self.project.network.nodes.values():
@@ -842,6 +861,8 @@ class Canvas(QWidget):
                     self.draw_line_between(new_p.block_id, n)
                     break
 
+        if y_out:
+            self.project.properties['Y'] = self.project.properties.pop(self.project.network.get_last_node().identifier)
 
     @QtCore.pyqtSlot()
     def zoom_in(self):
@@ -1107,7 +1128,7 @@ class NetworkScene(QGraphicsScene):
 
     def auto_add_line(self, prev_rect_item, next_rect_item) -> Optional[GraphicLine]:
         """
-        This methods adds directly an edge between two given blocks.
+        This method adds directly an edge between two given blocks.
 
         Parameters
         ----------
@@ -1219,5 +1240,5 @@ class NetworkScene(QGraphicsScene):
                     # The block emits a signal
                     item.edits = item.block_id, dialog.edited_data
                     item.edited.emit()
-            else:
-                Canvas.define_property(item)
+            elif isinstance(item, PropertyBlock):
+                self.parent().define_property(item)

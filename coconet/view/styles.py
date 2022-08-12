@@ -173,6 +173,28 @@ BUTTON_STYLE = ("NodeButton, QPushButton { "
                 "border: black solid 1px;"
                 "}")
 
+
+PRIMARY_BUTTON_STYLE = ("QPushButton { "
+                        "background-color: " + GREEN_2 + ";" +
+                        "border: 2px solid " + GREEN_1 + ";" +
+                        "padding: 6px;"
+                        "color: #CFCFCF;"
+                        "font-family: georgia;"
+                        "border-radius: 5px;"
+                        "margin: 2px;"
+                        "}"
+                        "QPushButton:hover {"
+                        "background-color: " + GREEN_1 + ";" +
+                        "border: 2px solid " + GREEN_2 + ";" +
+                        "font-weight: bold;"
+                        "color: white;"
+                        "}"
+                        "QToolTip {"
+                        "background-color: " + GREY_1 + ";" +
+                        "color: white;"
+                        "border: black solid 1px;"
+                        "}")
+
 TOOLBAR_STYLE = ("background-color: " + GREY_1 + ";" +
                  "padding: 4px;"
                  "QToolBar {"

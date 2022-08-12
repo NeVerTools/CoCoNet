@@ -1,10 +1,11 @@
 from enum import Enum
 
 import numpy as np
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 from PyQt5.QtCore import QRegExp, Qt, QSize
 from PyQt5.QtGui import QIntValidator, QRegExpValidator, QDoubleValidator
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QWidget, QGridLayout, QTextEdit
+from pynever.networks import SequentialNetwork
 from pynever.tensor import Tensor
 
 import coconet.view.styles as style
@@ -13,7 +14,6 @@ from coconet import ROOT_DIR
 from coconet.core.model.network import NetworkNode
 from coconet.view.drawing.element import PropertyBlock, NodeBlock
 from coconet.view.widget.custom import CustomButton, CustomTextArea, CustomTextBox, CustomComboBox, CustomLabel
-from coconet.view.widget.loading import ProgressBar
 
 
 class ArithmeticValidator:
@@ -37,6 +37,7 @@ class ArithmeticValidator:
     FLOAT = QDoubleValidator()
     TENSOR = QRegExpValidator(QRegExp("(([0-9])+(,[0-9]+)*)"))
     TENSOR_LIST = QRegExpValidator(QRegExp("(\((([0-9])+(,[0-9]+)*)\))+(,(\((([0-9])+(,[0-9]+)*)\)))*"))
+    SAMPLE = QRegExpValidator(QRegExp('^(?:\d+(?:\.\d*)?|\.\d+)(?:,(?:\d+(?:\.\d*)?|\.\d+))*$'))
 
 
 class MessageType(Enum):
@@ -54,7 +55,6 @@ class CoCoNetDialog(QtWidgets.QDialog):
     Base class for grouping common elements of the dialogs.
     Each dialog shares a main_layout (vertical by default), a title
     and a string content.
-
     Attributes
     ----------
     layout : QVBoxLayout
@@ -63,15 +63,13 @@ class CoCoNetDialog(QtWidgets.QDialog):
         The dialog title.
     content : str
         The dialog content.
-
     Methods
     ----------
     render_layout()
         Procedure to update the main_layout.
-
     """
 
-    def __init__(self, title="CoCoNet Dialog", message="CoCoNet message", parent=None):
+    def __init__(self, title='CoCoNet Dialog', message='CoCoNet message', parent=None):
         super().__init__(parent)
         self.layout = QVBoxLayout()
         self.title = title
@@ -82,17 +80,15 @@ class CoCoNetDialog(QtWidgets.QDialog):
         else:
             self.setWindowTitle(self.title)
         self.setModal(True)
-        self.setStyleSheet("background-color: " + style.GREY_1 + ";")
+        self.setStyleSheet('background-color: ' + style.GREY_1 + ';')
 
     def set_title(self, title: str) -> None:
         """
         This method updates the dialog title.
-
         Parameters
         ----------
         title : str
             New title to display.
-
         """
 
         self.title = title
@@ -101,12 +97,10 @@ class CoCoNetDialog(QtWidgets.QDialog):
     def set_content(self, content: str) -> None:
         """
         This method updates the dialog content.
-
         Parameters
         ----------
         content : str
             New content to display.
-
         """
 
         self.content = content
@@ -115,160 +109,191 @@ class CoCoNetDialog(QtWidgets.QDialog):
         """
         This method updates the main_layout with the changes done
         in the child class(es).
-
         """
 
         self.setLayout(self.layout)
 
 
-class MessageDialog(CoCoNetDialog):
-    """
-    This class is a Dialog displaying a message to the user.
-
-    """
-
-    def __init__(self, message: str, message_type: MessageType):
-        super().__init__("", message)
-
-        # Set the dialog stile depending on message_type
-        if message_type == MessageType.MESSAGE:
-            title_label = CustomLabel("Message")
-            title_label.setStyleSheet(style.NODE_LABEL_STYLE)
-        else:
-            title_label = CustomLabel("Error")
-            title_label.setStyleSheet(style.ERROR_LABEL_STYLE)
-
-        title_label.setAlignment(Qt.AlignCenter)
-
-        # Set content label
-        mess_label = CustomLabel("\n" + self.content + "\n")
-        mess_label.setAlignment(Qt.AlignCenter)
-
-        # Add a button to close the dialog
-        ok_button = CustomButton("Ok")
-        ok_button.clicked.connect(self.close)
-
-        # Compose widgets
-        self.layout.addWidget(title_label)
-        self.layout.addWidget(mess_label)
-        self.layout.addWidget(ok_button)
-
-        self.render_layout()
-
-
 class HelpDialog(CoCoNetDialog):
     """
     This dialog displays the user guide from the documentation file.
-
     """
 
     def __init__(self):
-        super().__init__("User Guide", "User Guide")
-        self.setWindowTitle(self.title)
+        super().__init__('User Guide', 'User Guide')
         self.resize(QSize(800, 600))
-        self.setStyleSheet("background-color: " + style.GREY_3 + ";")
+        self.setStyleSheet('background-color: ' + style.GREY_3 + ';')
 
-        # The dialogs contains a text area reading the user guide file
-        text = open(ROOT_DIR.replace('/coconet', '') + '/docs/coconet/userguide/User Guide.html',
-                    encoding="utf8").read()
+        # The dialog contains a text area reading the user guide file
+        text = open(ROOT_DIR.replace('/coconet', '') +
+                    '/docs/coconet/userguide/User Guide.html', encoding="utf8").read()
         text_area = QTextEdit(text)
         text_area.setReadOnly(True)
 
-        self.layout = QHBoxLayout()
         self.layout.addWidget(text_area)
         self.render_layout()
 
 
-class ConfirmDialog(CoCoNetDialog):
+class SingleButtonDialog(CoCoNetDialog):
     """
-    This dialog asks the user the confirm to clear the
-    unsaved workspace before continue.
+    This class is a generic dialog with a single button
+    at the bottom of the main layout. It also provides
+    a method for imposing the button text ('Ok' by default)
+    Attributes
+    ----------
+    button : CustomButton
+        A single button for leaving the dialog
+    Methods
+    ----------
+    set_button_text(str)
+        A method for setting the button text
+    """
 
+    def __init__(self, title: str = 'CoCoNet Dialog', message: str = ''):
+        super(SingleButtonDialog, self).__init__(title, message)
+
+        self.button = CustomButton('Ok', primary=True)
+        self.button.clicked.connect(self.close)
+
+    def set_button_text(self, text: str):
+        self.button.setText(text)
+
+    def render_layout(self) -> None:
+        """
+        Override with a button at the end
+        """
+
+        self.layout.addWidget(self.button)
+        self.setLayout(self.layout)
+
+
+class TwoButtonsDialog(CoCoNetDialog):
+    """
+    This class is a generic dialog with two buttons
+    at the bottom of the main layout, for accepting or
+    refusing the operations of the dialog. It also provides
+    a method for imposing the buttons text ('Cancel' and 'Ok'
+    by default)
+    Attributes
+    ----------
+    cancel_btn : CustomButton
+        A single button for leaving the dialog without applying
+        the changes
+    ok_btn : CustomButton
+        A single button for leaving the dialog and applying
+        the changes
+    Methods
+    ----------
+    set_buttons_text(str, str)
+        A method for setting the buttons text
+    """
+
+    def __init__(self, title: str = 'CoCoNet Dialog', message: str = ''):
+        super(TwoButtonsDialog, self).__init__(title, message)
+
+        self.cancel_btn = CustomButton('Cancel')
+        self.cancel_btn.clicked.connect(self.close)
+
+        self.ok_btn = CustomButton('Ok', primary=True)
+        self.ok_btn.clicked.connect(self.close)
+
+        self.button_layout = QHBoxLayout()
+        self.button_layout.addWidget(self.cancel_btn)
+        self.button_layout.addWidget(self.ok_btn)
+
+    def set_buttons_text(self, cancel_text: str, ok_text: str):
+        self.cancel_btn.setText(cancel_text)
+        self.ok_btn.setText(ok_text)
+
+    def render_layout(self) -> None:
+        """
+        Override with a button at the end
+        """
+
+        self.layout.addLayout(self.button_layout)
+        self.setLayout(self.layout)
+
+
+class MessageDialog(SingleButtonDialog):
+    """
+    This class is a Dialog displaying a message to the user.
+    """
+
+    def __init__(self, message: str, message_type: MessageType):
+        super().__init__('', message)
+
+        # Set the dialog stile depending on message_type
+        if message_type == MessageType.MESSAGE:
+            title_label = CustomLabel('Message', alignment=Qt.AlignCenter)
+            title_label.setStyleSheet(style.NODE_LABEL_STYLE)
+        else:
+            title_label = CustomLabel('Error', alignment=Qt.AlignCenter)
+            title_label.setStyleSheet(style.ERROR_LABEL_STYLE)
+
+        # Set content label
+        mess_label = CustomLabel(f"\n{self.content}\n", alignment=Qt.AlignCenter)
+
+        # Compose widgets
+        self.layout.addWidget(title_label)
+        self.layout.addWidget(mess_label)
+
+        self.render_layout()
+
+
+class ConfirmDialog(TwoButtonsDialog):
+    """
+    This dialog asks the user the confirmation to clear the
+    unsaved workspace before continue.
     Attributes
     ----------
     confirm : bool
-        Boolean value to store user decision.
-
-    Methods
-    ----------
-    ok()
-        Register user confirm.
-    deny()
-        Register user denial.
-
+        Boolean value to store user decision
     """
 
     def __init__(self, title, message):
         super().__init__(title, message)
 
         # Set title label
-        title_label = CustomLabel(self.title)
-        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label = CustomLabel(self.title, primary=True)
 
         # Set message label
-        mess_label = CustomLabel("\n" + self.content + "\n")
-        mess_label.setAlignment(Qt.AlignCenter)
+        mess_label = CustomLabel(f"\n{self.content}\n", alignment=Qt.AlignCenter)
 
         self.confirm = False
 
         # Add buttons to close the dialog
-        confirm_button = CustomButton("Yes")
-        confirm_button.clicked.connect(self.ok)
-
-        no_button = CustomButton("No")
-        no_button.clicked.connect(self.deny)
-
-        buttons_layout = QHBoxLayout()
-        buttons_layout.addWidget(confirm_button)
-        buttons_layout.addWidget(no_button)
-        buttons = QWidget()
-        buttons.setLayout(buttons_layout)
+        self.ok_btn.clicked.connect(self.ok)
+        self.cancel_btn.clicked.connect(self.deny)
 
         # Compose widgets
         self.layout.addWidget(title_label)
         self.layout.addWidget(mess_label)
-        self.layout.addWidget(buttons)
 
         self.render_layout()
 
-    def ok(self) -> None:
-        """
-        This method sets the result to True and closes the dialog.
-
-        """
-
+    def ok(self):
         self.confirm = True
-        self.close()
 
-    def deny(self) -> None:
-        """
-        This method sets the result to False and closes the dialog.
-
-        """
-
+    def deny(self):
         self.confirm = False
-        self.close()
 
 
+# Deprecated
 class InputDialog(CoCoNetDialog):
     """
     This dialog prompts the user to give an input. After the input
     is validated, it is saved. The input can be a tuple or a
     set of tuples.
-
     Attributes
     ----------
     input: tuple
         The input representation.
-
     Methods
     ----------
     save_input()
         Save the input after conversion, and close the dialog.
     cancel()
         Discard the input and close the dialog.
-
     """
 
     def __init__(self, message):
@@ -285,17 +310,17 @@ class InputDialog(CoCoNetDialog):
 
         # Set input reading
         self.input = None
-        input_line = CustomTextBox()
-        input_line.setValidator(QRegExpValidator(QRegExp(
+        self.input_line = CustomTextBox()
+        self.input_line.setValidator(QRegExpValidator(QRegExp(
             ArithmeticValidator.TENSOR.regExp().pattern() + "|" +
             ArithmeticValidator.TENSOR_LIST.regExp().pattern())))
 
         # Add buttons to close the dialog
         confirm_button = CustomButton("Ok")
-        confirm_button.clicked.connect(self.save_input())
+        confirm_button.clicked.connect(self.save_input)
 
         cancel_button = CustomButton("Cancel")
-        cancel_button.clicked.connect(self.cancel())
+        cancel_button.clicked.connect(self.cancel)
 
         buttons = QWidget()
         buttons_layout = QHBoxLayout()
@@ -306,7 +331,7 @@ class InputDialog(CoCoNetDialog):
         # Compose widgets
         self.layout.addWidget(title_label)
         self.layout.addWidget(mess_label)
-        self.layout.addWidget(input_line)
+        self.layout.addWidget(self.input_line)
         self.layout.addWidget(buttons)
 
         self.render_layout()
@@ -314,7 +339,6 @@ class InputDialog(CoCoNetDialog):
     def save_input(self) -> None:
         """
         This method saves the input in a tuple and closes the dialog.
-
         """
 
         if self.input_line.text() == "":
@@ -325,120 +349,24 @@ class InputDialog(CoCoNetDialog):
             except TypeError:
                 self.input = None
                 error_dialog = MessageDialog("Please check your data format.", MessageType.ERROR)
-                error_dialog.show()
+                error_dialog.exec()
         self.close()
 
     def cancel(self) -> None:
         """
         This method closes the dialog without saving the input read.
-
         """
 
         self.input = None
         self.close()
 
 
-class LoadingDialog(CoCoNetDialog):
-    """
-    This frameless dialog keeps busy the interface during a
-    long action performed by a thread. It shows a message
-    and a loading bar.
-
-    """
-
-    def __init__(self, message: str):
-        super().__init__("", message)
-        # Override window title
-        self.setWindowTitle("Wait...")
-
-        # Set content label
-        message_label = CustomLabel(self.content)
-        message_label.setStyleSheet(style.LOADING_LABEL_STYLE)
-
-        # Set loading bar
-        progress_bar = ProgressBar(self, minimum=0, maximum=0,
-                                   textVisible=False, objectName="ProgressBar")
-        progress_bar.setStyleSheet(style.PROGRESS_BAR_STYLE)
-
-        # Compose widgets
-        self.layout.addWidget(message_label)
-        self.layout.addWidget(progress_bar)
-
-        self.render_layout()
-
-        # Disable the dialog frame and close button
-        self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
-        self.setWindowFlags(Qt.FramelessWindowHint)
-
-
-class EditNodeInputDialog(CoCoNetDialog):
-    def __init__(self, node_block: NodeBlock):
-        super().__init__(node_block.node.name, "")
-        self.layout = QGridLayout()
-
-        # Connect node
-        self.node = node_block
-        self.new_in_dim = ','.join(map(str, node_block.in_dim))
-        self.in_dim_box = CustomTextBox()
-        self.has_edits = False
-
-        # Build main_layout
-        title_label = CustomLabel("Edit network input")
-        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
-        title_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(title_label, 0, 0, 1, 2)
-
-        # Input box
-        in_dim_label = CustomLabel("Input shape")
-        in_dim_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
-        in_dim_label.setAlignment(Qt.AlignRight)
-        self.layout.addWidget(in_dim_label, 1, 0)
-
-        self.in_dim_box.setText(self.new_in_dim)
-        self.in_dim_box.setValidator(ArithmeticValidator.TENSOR)
-
-        self.layout.addWidget(self.in_dim_box, 1, 1)
-
-        if not node_block.is_head:
-            self.in_dim_box.setReadOnly(True)
-
-        # "Apply" button which saves changes
-        apply_button = CustomButton("Apply")
-        apply_button.clicked.connect(self.save_data)
-        self.layout.addWidget(apply_button, 2, 0)
-
-        # "Cancel" button which closes the dialog without saving
-        cancel_button = CustomButton("Cancel")
-        cancel_button.clicked.connect(self.close)
-        self.layout.addWidget(cancel_button, 2, 1)
-
-        self.layout.setColumnStretch(0, 1)
-        self.layout.setColumnStretch(1, 1)
-
-        self.render_layout()
-
-    def save_data(self) -> None:
-        """
-        This method saves the new in_dim, returning
-        it to the caller.
-
-        """
-
-        self.has_edits = True
-
-        if len(self.in_dim_box.text()) != 0:
-            self.new_in_dim = tuple(map(int, self.in_dim_box.text().split(',')))
-
-        self.close()
-
-
-class EditNodeDialog(CoCoNetDialog):
+class EditNodeDialog(TwoButtonsDialog):
     """
     This dialog allows to edit the selected node in the canvas.
-
     Attributes
     ----------
-    node_block: NetworkNode
+    node: NetworkNode
         Current node to edit, which contains information about parameters to
         display and their types.
     parameters: dict
@@ -449,19 +377,18 @@ class EditNodeDialog(CoCoNetDialog):
     has_edits: bool
         Parameters that tells if the user has pressed "Apply", so if the
         possible changes to the parameters have to be saved or not.
-
     Methods
     ----------
     append_node_params(NetworkNode, dict)
         Procedure to display the node parameters in a dialog.
     save_data()
         Procedure to update the values and return.
-
     """
 
     def __init__(self, node_block: NodeBlock):
         super().__init__(node_block.node.name, "")
-        self.layout = QGridLayout()
+        g_layout = QGridLayout()
+        self.layout.addLayout(g_layout)
 
         # Connect node
         self.node = node_block
@@ -473,61 +400,45 @@ class EditNodeDialog(CoCoNetDialog):
         title_label = CustomLabel("Edit parameters")
         title_label.setStyleSheet(style.NODE_LABEL_STYLE)
         title_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(title_label, 0, 0, 1, 2)
+        g_layout.addWidget(title_label, 0, 0, 1, 2)
 
         # Input box
         in_dim_label = CustomLabel("Input")
         in_dim_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
         in_dim_label.setAlignment(Qt.AlignRight)
-        self.layout.addWidget(in_dim_label, 1, 0)
+        g_layout.addWidget(in_dim_label, 1, 0)
 
-        in_dim_box = CustomTextBox()
-        in_dim_box.setText(','.join(map(str, node_block.in_dim)))
+        in_dim_box = CustomTextBox(','.join(map(str, node_block.in_dim)))
         in_dim_box.setValidator(ArithmeticValidator.TENSOR)
 
-        self.layout.addWidget(in_dim_box, 1, 1)
+        g_layout.addWidget(in_dim_box, 1, 1)
         self.parameters["in_dim"] = in_dim_box
 
         if not node_block.is_head:
             in_dim_box.setReadOnly(True)
 
         # Display parameters if present
-        counter = 2
         if node_block.node.param:
-            counter = self.append_node_params(node_block.node, node_block.block_data)
+            self.append_node_params(node_block.node, node_block.block_data, g_layout)
 
         # "Apply" button which saves changes
-        apply_button = CustomButton("Apply")
-        apply_button.clicked.connect(self.save_data)
-        self.layout.addWidget(apply_button, counter, 0)
-
-        # "Cancel" button which closes the dialog without saving
-        cancel_button = CustomButton("Cancel")
-        cancel_button.clicked.connect(self.close)
-        self.layout.addWidget(cancel_button, counter, 1)
-
-        self.layout.setColumnStretch(0, 1)
-        self.layout.setColumnStretch(1, 1)
+        self.set_buttons_text('Discard', 'Apply')
+        self.ok_btn.clicked.connect(self.save_data)
 
         self.render_layout()
 
-    def append_node_params(self, node: NetworkNode, current_data: dict) -> int:
+    def append_node_params(self, node: NetworkNode, current_data: dict, layout: QGridLayout) -> None:
         """
-
         This method adds to the dialog layer the editable parameters of
         the node, and returns the last row counter for the grid main_layout.
-
         Attributes
         ----------
-        node: NetworkNode
+        node : NetworkNode
             The node whose parameters are displayed.
-        current_data: dict
+        current_data : dict
             The node current data.
-        Returns
-        ----------
-        int
-            The last row counter.
-
+        layout : QGridLayout
+            The grid layout to fill
         """
 
         # Init column counter
@@ -543,7 +454,7 @@ class EditNodeDialog(CoCoNetDialog):
             # Set the tooltip of the input with the description
             param_label.setToolTip("<" + value["type"] + ">: "
                                    + value["description"])
-            self.layout.addWidget(param_label, counter, 0)
+            layout.addWidget(param_label, counter, 0)
 
             # Display parameter values
             if value["type"] == "boolean":
@@ -576,26 +487,23 @@ class EditNodeDialog(CoCoNetDialog):
 
             if node.param[param]["editable"] == "false":
                 line.setStyleSheet(style.UNEDITABLE_VALUE_LABEL_STYLE)
-            self.layout.addWidget(line, counter, 1)
+            layout.addWidget(line, counter, 1)
 
             # Keep trace of CustomTextBox objects
             self.parameters[param] = line
             counter += 1
 
-        return counter
-
     def save_data(self) -> None:
         """
         This method saves the changed parameters in their
         correct format, storing them in a dictionary.
-
         """
 
         self.has_edits = True
 
         for key, line in self.parameters.items():
             try:
-                if type(line) == CustomTextBox:
+                if isinstance(line, CustomTextBox):
                     if line.isModified() and len(line.text()) != 0:
                         if key == "in_dim":
                             self.edited_data["in_dim"] = tuple(
@@ -615,10 +523,9 @@ class EditNodeDialog(CoCoNetDialog):
                                 self.edited_data[key] = tuple(
                                     map(int, line.text().split(',')))
                             elif data_type == "list of Tensors":
-                                self.edited_data[key] = u.text_to_tensor_set(
-                                    line.text())
+                                self.edited_data[key] = u.text_to_tensor_set(line.text())
 
-                elif type(line) == CustomComboBox:
+                elif isinstance(line, CustomComboBox):
                     if line.currentText() == "True":
                         self.edited_data[key] = True
                     else:
@@ -627,16 +534,15 @@ class EditNodeDialog(CoCoNetDialog):
             except Exception:
                 # If there are errors in data format
                 error_dialog = MessageDialog("Please check data format.", MessageType.ERROR)
-                error_dialog.show()
+                error_dialog.exec()
 
         self.close()
 
 
-class EditSmtPropertyDialog(CoCoNetDialog):
+class EditSmtPropertyDialog(TwoButtonsDialog):
     """
     This dialog allows to define a generic SMT property
     by writing directly in the SMT-LIB language.
-
     Attributes
     ----------
     property_block : PropertyBlock
@@ -647,12 +553,10 @@ class EditSmtPropertyDialog(CoCoNetDialog):
         Input box.
     has_edits : bool
         Flag signaling if the property was edited.
-
     Methods
     ----------
     save_data()
         Procedure to return the new property.
-
     """
 
     def __init__(self, property_block: PropertyBlock):
@@ -660,42 +564,109 @@ class EditSmtPropertyDialog(CoCoNetDialog):
         self.property_block = property_block
         self.new_property = self.property_block.smt_string
         self.has_edits = False
-        self.layout = QGridLayout()
+        g_layout = QGridLayout()
+        self.layout.addLayout(g_layout)
 
         # Build main_layout
         title_label = CustomLabel("SMT property")
         title_label.setStyleSheet(style.NODE_LABEL_STYLE)
         title_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(title_label, 0, 0, 1, 2)
+        g_layout.addWidget(title_label, 0, 0, 1, 2)
 
         # Input box
         smt_label = CustomLabel("SMT-LIB definition")
         smt_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
         smt_label.setAlignment(Qt.AlignRight)
-        self.layout.addWidget(smt_label, 1, 0)
+        g_layout.addWidget(smt_label, 1, 0)
 
         self.smt_box = CustomTextArea()
         self.smt_box.insertPlainText(self.new_property)
-        self.layout.addWidget(self.smt_box, 1, 1)
+        g_layout.addWidget(self.smt_box, 1, 1)
 
         # "Apply" button which saves changes
-        apply_button = CustomButton("Apply")
-        apply_button.clicked.connect(self.save_data)
-        self.layout.addWidget(apply_button, 2, 0)
-
-        # "Cancel" button which closes the dialog without saving
-        cancel_button = CustomButton("Cancel")
-        cancel_button.clicked.connect(self.close)
-        self.layout.addWidget(cancel_button, 2, 1)
-
-        self.layout.setColumnStretch(0, 1)
-        self.layout.setColumnStretch(1, 1)
+        self.set_buttons_text('Discard', 'Apply')
+        self.ok_btn.clicked.connect(self.save_data)
 
         self.render_layout()
 
     def save_data(self):
         self.has_edits = True
         self.new_property = self.smt_box.toPlainText()
+
+
+class EditLocalRobustnessPropertyDialog(TwoButtonsDialog):
+    def __init__(self, property_block: PropertyBlock, nn: SequentialNetwork):
+        super().__init__("Edit property", "")
+        self.property_block = property_block
+        self.has_edits = False
+        self.nn = nn
+
+        self.local_input = None
+        self.local_output = None
+        self.epsilon_noise = 0.0
+        self.delta_robustness = 0.0
+
+        grid = QGridLayout()
+
+        # Build main_layout
+        title_label = CustomLabel("Local robustness property", primary=True)
+        grid.addWidget(title_label, 0, 0, 1, 2)
+
+        # Labels
+        in_label = CustomLabel("Local input")
+        grid.addWidget(in_label, 1, 0)
+        self.local_input_text = CustomTextBox()
+        self.local_input_text.setValidator(ArithmeticValidator.SAMPLE)
+        grid.addWidget(self.local_input_text, 1, 1)
+
+        out_label = CustomLabel("Local output")
+        grid.addWidget(out_label, 2, 0)
+        self.local_output_text = CustomTextBox()
+        self.local_output_text.setValidator(ArithmeticValidator.SAMPLE)
+        grid.addWidget(self.local_output_text, 2, 1)
+
+        eps_label = CustomLabel("Epsilon noise")
+        grid.addWidget(eps_label, 3, 0)
+        self.epsilon_noise_text = CustomTextBox('0.0')
+        self.epsilon_noise_text.setValidator(ArithmeticValidator.FLOAT)
+        grid.addWidget(self.epsilon_noise_text, 3, 1)
+
+        delta_label = CustomLabel("Delta robustness")
+        grid.addWidget(delta_label, 4, 0)
+        self.delta_robustness_text = CustomTextBox('0.0')
+        self.delta_robustness_text.setValidator(ArithmeticValidator.FLOAT)
+        grid.addWidget(self.delta_robustness_text, 4, 1)
+
+        # Visualizer
+        self.viewer = CustomTextArea()
+        self.viewer.setReadOnly(True)
+        self.viewer.setFixedHeight(80)
+        self.viewer.appendPlainText('X <= x0 + eps')
+        self.viewer.appendPlainText('-X <= -x0 + eps')
+        self.viewer.appendPlainText('')
+        self.viewer.appendPlainText('Y <= y0 + delta')
+        self.viewer.appendPlainText('-Y <= -y0 + delta')
+
+        grid.setColumnStretch(0, 1)
+        grid.setColumnStretch(1, 1)
+
+        self.set_buttons_text('Cancel', 'Save')
+        self.ok_btn.clicked.connect(self.save_property)
+
+        self.layout.addLayout(grid)
+        self.layout.addWidget(self.viewer, 2)
+
+        self.render_layout()
+
+    def save_property(self):
+        self.local_input = self.local_input_text.text().split(',')
+        self.local_output = self.local_output_text.text().split(',')
+        self.epsilon_noise = self.epsilon_noise_text.text()
+        self.delta_robustness = self.delta_robustness_text.text()
+
+        if len(self.local_input) == self.nn.get_input_len() and len(self.local_output) == self.nn.get_output_len():
+            self.has_edits = True
+
         self.close()
 
 
@@ -703,7 +674,6 @@ class EditPolyhedralPropertyDialog(CoCoNetDialog):
     """
     This dialog allows to define a polyhedral property
     within a controlled environment.
-
     Attributes
     ----------
     property_block : PropertyBlock
@@ -712,14 +682,12 @@ class EditPolyhedralPropertyDialog(CoCoNetDialog):
         List of given properties.
     has_edits : bool
         Flag signaling if the property was edited.
-
     Methods
     ----------
     add_entry(str, str, str)
         Procedure to append the current constraint to the property list.
     save_property()
         Procedure to return the defined property.
-
     """
 
     def __init__(self, property_block: PropertyBlock):
@@ -733,25 +701,17 @@ class EditPolyhedralPropertyDialog(CoCoNetDialog):
         grid = QGridLayout()
 
         # Build main_layout
-        title_label = CustomLabel("Polyhedral property")
-        title_label.setStyleSheet(style.NODE_LABEL_STYLE)
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label = CustomLabel("Polyhedral property", primary=True)
         grid.addWidget(title_label, 0, 0, 1, 3)
 
         # Labels
-        var_label = CustomLabel("Variable")
-        var_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
-        var_label.setAlignment(Qt.AlignRight)
+        var_label = CustomLabel("Variable", primary=True)
         grid.addWidget(var_label, 1, 0)
 
-        relop_label = CustomLabel("Operator")
-        relop_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
-        relop_label.setAlignment(Qt.AlignCenter)
+        relop_label = CustomLabel("Operator", primary=True)
         grid.addWidget(relop_label, 1, 1)
 
-        value_label = CustomLabel("Value")
-        value_label.setStyleSheet(style.IN_DIM_LABEL_STYLE)
-        value_label.setAlignment(Qt.AlignLeft)
+        value_label = CustomLabel("Value", primary=True)
         grid.addWidget(value_label, 1, 2)
 
         self.var_cb = CustomComboBox()
@@ -772,18 +732,18 @@ class EditPolyhedralPropertyDialog(CoCoNetDialog):
         # "Add" button which adds the constraint
         add_button = CustomButton("Add")
         add_button.clicked.connect(
-            lambda: self.add_entry(str(self.var_cb.currentText()), str(self.op_cb.currentText()), self.val.text()))
+            lambda: self.add_entry(self.var_cb.currentText(), self.op_cb.currentText(), self.val.text()))
         grid.addWidget(add_button, 3, 0)
-
-        # "Save" button which saves the state
-        save_button = CustomButton("Save")
-        save_button.clicked.connect(self.save_property)
-        grid.addWidget(save_button, 3, 1)
 
         # "Cancel" button which closes the dialog without saving
         cancel_button = CustomButton("Cancel")
         cancel_button.clicked.connect(self.close)
-        grid.addWidget(cancel_button, 3, 2)
+        grid.addWidget(cancel_button, 3, 1)
+
+        # "Save" button which saves the state
+        save_button = CustomButton("Save", primary=True)
+        save_button.clicked.connect(self.save_property)
+        grid.addWidget(save_button, 3, 2)
 
         grid.setColumnStretch(0, 1)
         grid.setColumnStretch(1, 1)
