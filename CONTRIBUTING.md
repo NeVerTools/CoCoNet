@@ -5,7 +5,8 @@ via [issues](https://github.com/NeVerTools/CoCoNet/issues) and/or [merge_request
 
 ## Contributors
 
-- 
+- Andrea Gimelli
+- Giacomo Rosato
 
 ## Bug fixes, feature additions, etc.
 
@@ -13,7 +14,7 @@ Please send a merge request to the master branch. Tests or documentation without
 
 - Create a branch from master.
 - Develop bug fixes, features, tests, etc.
-- Test your code on Python 3.8.x. 
+- Test your code on Python 3.9.x
 - Create a merge request to merge the changes from your branch to the CoCoNet master.
 
 ### Guidelines
