@@ -5,6 +5,7 @@ via [issues](https://github.com/NeVerTools/CoCoNet/issues) and/or [merge_request
 
 ## Contributors
 
+- Stefano Demarchi
 - Andrea Gimelli
 - Giacomo Rosato
 
