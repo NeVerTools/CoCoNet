@@ -8,13 +8,9 @@ CoCoNet is written in Python, and relies on the
 [pyNeVer](https://www.github.com/nevertools/pynever) API.
 
 ---
-
-# DISCLAIMER: This is an early alpha version, many bugs are yet to be fixed.
-
----
 ## Execution requirements
 
-CoCoNet can be executed on any system running Python >= 3.8. \
+CoCoNet can be executed on any system running Python >= 3.9.5 \
 The instructions below have been tested on Windows, 
 Ubuntu Linux and Mac OS x86 and ARM-based Mac OS.
 
@@ -24,7 +20,7 @@ run CoCoNet. All the following packages can be installed
 via PIP
 
 ```bash
-pip install numpy PyQt5 pysmt pynever
+pip install numpy PyQ6 pysmt pynever
 ```
 
 After the installation, you can run CoCoNet from the root directory
@@ -49,7 +45,7 @@ $ conda activate myenv
 You can now run PIP for installing the libraries and run CoCoNet
 
 ```bash
-$ pip install numpy PyQt5 onnx torch torchvision pysmt pynever
+$ pip install numpy PyQt6 pysmt pynever
 $ python CoCoNet/coconet.py
 ```
 
