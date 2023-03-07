@@ -20,7 +20,7 @@ run CoCoNet. All the following packages can be installed
 via PIP
 
 ```bash
-pip install numpy PyQ6 pysmt pynever
+pip install numpy PyQt6 pysmt pynever
 ```
 
 After the installation, you can run CoCoNet from the root directory
