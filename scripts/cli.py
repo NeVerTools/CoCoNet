@@ -1,14 +1,7 @@
 import os
 
-import onnx
-import pynever
-import torch
-from pynever.networks import SequentialNetwork
-from pynever.strategies.conversion import PyTorchNetwork, PyTorchConverter, ONNXConverter, ONNXNetwork
-
-SUPPORTED_NETWORK_FORMATS = {'VNNLIB': ['vnnlib'],
-                             'ONNX': ['onnx'],
-                             'PyTorch': ['pt', 'pth']}
+import pynever.networks as nets
+import pynever.strategies.conversion as conv
 
 
 def check_vnnlib_compliance(model_path: str) -> bool:
@@ -28,37 +21,29 @@ def check_vnnlib_compliance(model_path: str) -> bool:
 
     """
 
-    nn = os.path.abspath(model_path)
+    nn_path = os.path.abspath(model_path)
 
-    if not os.path.isfile(nn):
+    if not os.path.isfile(nn_path):
         print("Invalid model path.")
         return False
     else:
-        extension = nn.split(".")[-1]
-        net_id = nn.split("/")[-1].split(".")[0]
-        alt_repr = None
-
-        if extension in SUPPORTED_NETWORK_FORMATS['ONNX']:
-            model_proto = onnx.load(nn)
-            alt_repr = ONNXNetwork(net_id, model_proto, True)
-
-        elif extension in SUPPORTED_NETWORK_FORMATS['PyTorch']:
-            module = torch.load(nn)
-            alt_repr = PyTorchNetwork(net_id, module, True)
+        # Read the network file
+        alt_repr = conv.load_network_path(nn_path)
 
         # Convert the network
         if alt_repr is not None:
             try:
-                # Converting the network in the internal representation
-                # If the chosen format has got an initial input for the network,
-                # it is converted in the internal representation
-                if isinstance(alt_repr, ONNXNetwork):
-                    strategy = ONNXConverter()
+                if isinstance(alt_repr, conv.ONNXNetwork):
+                    strategy = conv.ONNXConverter()
+                elif isinstance(alt_repr, conv.PyTorchNetwork):
+                    strategy = conv.PyTorchConverter()
                 else:
-                    strategy = PyTorchConverter()
+                    strategy = conv.TensorflowConverter()
 
                 network = strategy.to_neural_network(alt_repr)
-                if isinstance(network, pynever.networks.SequentialNetwork):
+
+                # Check compliance
+                if isinstance(network, nets.SequentialNetwork):
                     print("This network is VNN-LIB compliant")
                     return True
                 else:
@@ -66,11 +51,8 @@ def check_vnnlib_compliance(model_path: str) -> bool:
                     return False
 
             except Exception as e:
-                # Even in case of conversion_exception, the signal of the ending of the
-                # ending is emitted in order to update the interface
-                print("This network is not VNN-LIB compliant.")
-                print(e)
-                return False
+                print(f"Error reading network: {e}")
+            return False
         else:
             print("This network is not VNN-LIB compliant")
             return False
@@ -99,52 +81,45 @@ def convert_to_onnx(model_path: str) -> bool:
         print("Invalid model path.")
         return False
     else:
+        # Read the network file
+        alt_repr = conv.load_network_path(nn_path)
         extension = nn_path.split(".")[-1]
-        net_id = nn_path.split("/")[-1].split(".")[0]
 
-        if extension in SUPPORTED_NETWORK_FORMATS['ONNX']:
-            print("The network is already in the ONNX format.")
-            return True
-
-        elif extension in SUPPORTED_NETWORK_FORMATS['PyTorch']:
-            module = torch.load(nn_path)
-            alt_repr = PyTorchNetwork(net_id, module, True)
-
-        else:
-            print("Conversion supported only for PyTorch networks.")
-            return False
-
+        # Convert the network
         if alt_repr is not None:
             try:
-                # If the chosen format has got an initial input for the network,
-                # it is converted in the internal representation
-                strategy = PyTorchConverter()
+                if isinstance(alt_repr, conv.ONNXNetwork):
+                    print('The network is already in the ONNX format.')
+                    return True
+
+                elif isinstance(alt_repr, conv.PyTorchNetwork):
+                    strategy = conv.PyTorchConverter()
+                else:
+                    strategy = conv.TensorflowConverter()
+
                 network = strategy.to_neural_network(alt_repr)
-                if not isinstance(network, SequentialNetwork):
-                    print("The network is not VNN-LIB compliant, only sequential networks are supported.")
+
+                if network is not None and isinstance(network, nets.SequentialNetwork):
+                    new_id = network.identifier + '_converted'
+                    model = conv.ONNXConverter().from_neural_network(network)
+                    onnx_net = conv.ONNXNetwork(new_id, model, True)
+                    old_ext = '.' + extension
+                    conv.save_network_path(onnx_net, nn_path.replace(old_ext, '_converted.onnx'))
+
+                    print('Conversion successful')
+                    return True
+                else:
+                    print('Conversion supported only for PyTorch and TensorFlow networks.')
                     return False
 
-                new_id = net_id + "_converted"
-                strategy = ONNXConverter()
-                model = strategy.from_neural_network(network)
-                onnx_net = ONNXNetwork(new_id, model, True)
-                old_ext = '.' + extension
-                onnx.save(onnx_net.onnx_network.onnx_network, nn_path.replace(old_ext, '_converted.onnx'))
-
-                print("Conversion successful.")
-                return True
-
             except Exception as e:
-                print("The network is not VNN-LIB compliant.")
-                print(e)
-                return False
-
+                print(f"Conversion error: {e}")
         else:
-            print("There was an unexpected error.")
+            print('There was an unexpected error reading the model file.')
             return False
 
 
-def help():
+def show_help():
     print("usage: coconet ... [-check | -convert] [arg]")
     print("Options and arguments:")
     print("no args      : launch CoCoNet in GUI mode.")
