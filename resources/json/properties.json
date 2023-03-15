@@ -1,0 +1,23 @@
+{
+  "Generic SMT": {
+    "name": "Generic SMT",
+    "id": "SMT",
+    "parameters": {
+    },
+    "description": ""
+  },
+  "Polyhedral": {
+    "name": "Polyhedral",
+    "id": "PLH",
+    "parameters": {
+    },
+    "description": ""
+  },
+  "Local robustness": {
+    "name": "Local robustness",
+    "id": "LRB",
+    "parameters": {
+    },
+    "description": ""
+  }
+}
