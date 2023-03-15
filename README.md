@@ -41,7 +41,7 @@ $ conda create -n myenv python=3.9.5
 $ conda activate myenv
 ```
 
-You can now run PIP for installing the libraries and run CoCoNet
+You can now run PIP for installing the libraries and run __CoCoNet__
 
 ```bash
 $ pip install pynever PyQt6
@@ -55,7 +55,7 @@ the Conda environment.
 
 __CoCoNet__ is a GUI for constructing and converting Neural Networks, but it 
 also provides a simple CLI usage for checking whether a NN is compliant
-with VNN-LIB and quick-converting networks in the ONNX format.
+with [VNN-LIB](www.vnnlib.org) and quick-converting networks in the ONNX format.
 Typing
 
 ```bash
