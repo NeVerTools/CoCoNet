@@ -1,3 +1,15 @@
+"""
+Module cli.py
+
+This module contains command-line interfaces for the conversion
+of neural networks towards the ONNX file format and to check
+the compliance of a neural network with the VNN-LIB standard
+(www.vnnlib.org/#standard)
+
+Author: Stefano Demarchi
+
+"""
+
 import os
 
 import pynever.networks as nets
@@ -120,7 +132,8 @@ def convert_to_onnx(model_path: str) -> bool:
 
 
 def show_help():
-    print("usage: coconet ... [-check | -convert] [arg]")
+    print("usage: python coconet.py ... [-check | -convert] [arg]")
+    print()
     print("Options and arguments:")
     print("no args      : launch CoCoNet in GUI mode.")
     print("-check arg   : checks if the model passed via arg is compliant")

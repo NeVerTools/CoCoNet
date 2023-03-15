@@ -1,22 +1,30 @@
-from scripts import cli
-import sys
-# from coconet import mainwindow
-from PyQt6 import QtWidgets
 import ctypes
-import os
+import platform
+import sys
+
+from PyQt6.QtWidgets import QApplication
+
+from coconet.main_window import CoCoNetWindow
+from scripts import cli
 
 if __name__ == "__main__":
 
-    if len(sys.argv) == 1:  # GUI
-        myappid = u'org.neuralverification.coconet.2.0'
-        if os.name == 'nt':
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    # GUI mode
 
-        # app = QtWidgets.QApplication(sys.argv)
-        # window = mainwindow.MainWindow()
+    if len(sys.argv) == 1:
+        APP_ID = u'org.neuralverification.coconet.2.0'
 
-        # window.show()
-        # sys.exit(app.exec_())
+        # Set taskbar icon on Windows
+        if platform.system() == 'Windows':
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
+            sys.argv += ['-platform', 'windows:darkmode=2']  # TODO remove with styling
+
+        app = QApplication(sys.argv)
+        window = CoCoNetWindow()
+        window.show()
+        sys.exit(app.exec())
+
+    # CLI mode
 
     elif len(sys.argv) == 2 and sys.argv[1] == "-h":
         cli.show_help()
