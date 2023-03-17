@@ -30,26 +30,26 @@ python CoCoNet/coconet.py
 
 ## ARM-based Mac OS
 
-Since the Python packages needed are incompatible with "Python for ARM
-Platform" you can install [Anaconda](https://www.anaconda.com/) using
-Rosetta and create a x86 Python virtual environment.
+Since the Python packages needed are incompatible with "Python for ARM Platform" you can install 
+[miniforge](https://github.com/conda-forge/miniforge) for arm64 (Apple Silicon) and create a Python virtual environment.
 
 Create a new environment using Python 3.9.5 and activate it
 
 ```bash
 $ conda create -n myenv python=3.9.5
 $ conda activate myenv
+$ conda install -c apple tensorflow-deps
 ```
 
 You can now run PIP for installing the libraries and run __CoCoNet__
 
 ```bash
+$ pip install tensorflow-macos tensorflow-metal
 $ pip install pynever PyQt6
 $ python CoCoNet/coconet.py
 ```
 
-Note that each time you want to run __CoCoNet__ you'll need to activate 
-the Conda environment.
+Note that each time you want to run __CoCoNet__ you'll need to activate the Conda environment.
 
 ## Usage
 
