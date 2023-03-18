@@ -2,7 +2,7 @@
 
 __CoCoNet__ is a tool for construction and conversion of neural networks 
 across different standards.
-See the [LICENSE](https://github.com/NeVerTools/NeVer2/blob/main/LICENSE.txt) 
+See the [LICENSE](https://github.com/NeVerTools/CoCoNet/blob/main/LICENSE.txt) 
 for usage terms. \
 __CoCoNet__ is written in Python, and relies on the 
 [pyNeVer](https://www.github.com/nevertools/pynever) API.
