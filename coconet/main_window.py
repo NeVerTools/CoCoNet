@@ -37,10 +37,12 @@ class CoCoNetWindow(QMainWindow):
 
     Methods
     ----------
+    init_ui()
+        Procedure to set up the UI parameters
     create_menu()
-        This method creates the QActions and the submenus
-    change_window_title()
-        This method changes the title of the window
+        Procedure to create the QActions and the submenus
+    load_inspector()
+        Procedure to create the QDockWidget for block inspection
 
     """
 
@@ -59,7 +61,27 @@ class CoCoNetWindow(QMainWindow):
         self.init_ui()
         self.load_inspector()
 
+    def init_ui(self):
+        """
+        This method initializes the QMainWindow settings such as the title, the icon and the geometry.
+        It sets the default window size to 1024x768 and moves the window to the scree center
+
+        """
+        self.setWindowTitle(APP_NAME)
+        self.setWindowIcon(QIcon(RES_DIR + '/icons/logo_square.png'))
+
+        # Frame window to center
+        self.setGeometry(0, 0, 1024, 736)
+        frame = self.frameGeometry()
+        frame.moveCenter(QGuiApplication.primaryScreen().availableGeometry().center())
+        self.move(frame.topLeft())
+
     def create_menu(self):
+        """
+        This method builds the application menu reading from a JSON file. Each action is linked
+        manually to functions contained in editor_widget
+
+        """
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.PreventContextMenu)
         menu_actions = dict()  # Dictionary containing the QAction objects linked to the menu items
 
@@ -104,16 +126,6 @@ class CoCoNetWindow(QMainWindow):
 
             # HELP
             menu_actions["Help:Open guide"].triggered.connect(open_guide)
-
-    def init_ui(self):
-        self.setWindowTitle(APP_NAME)
-        self.setWindowIcon(QIcon(RES_DIR + '/icons/logo_square.png'))
-
-        # Frame window to center
-        self.setGeometry(0, 0, 1024, 736)
-        frame = self.frameGeometry()
-        frame.moveCenter(QGuiApplication.primaryScreen().availableGeometry().center())
-        self.move(frame.topLeft())
 
     def load_inspector(self):
         pass
