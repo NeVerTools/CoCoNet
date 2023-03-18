@@ -27,3 +27,27 @@ class CoCoNetWidget(QWidget):
         self.layout = QHBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
+
+    def save_prompt_dialog(self):
+        pass
+
+    def new(self):
+        pass
+
+    def open(self):
+        pass
+
+    def open_property(self):
+        pass
+
+    def save(self, _as: bool = False):
+        pass
+
+    def clear(self):
+        pass
+
+    def remove_sel(self):
+        pass
+
+    def show_inspector(self):
+        pass

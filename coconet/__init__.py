@@ -2,11 +2,12 @@ import os
 
 # ROOT_DIR computes the absolute path of this folder
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__)).replace('\\', '/')
+RES_DIR = ROOT_DIR + '/resources'
 # APP_NAME is used in the window title
 APP_NAME = 'CoCoNet'
 
 
-def getClassname(object_instance):
+def get_classname(object_instance):
     """
     Utility method to return the class of an object instance
 

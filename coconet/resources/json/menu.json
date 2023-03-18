@@ -26,7 +26,7 @@
     }
   },
   "Edit": {
-    "Delete node": {
+    "Delete block": {
       "Shortcut": "DEL",
       "checkable": "False"
     },
@@ -54,7 +54,7 @@
     }
   },
   "Help": {
-    "Show guide": {
+    "Open guide": {
       "Shortcut": "Ctrl+H",
       "checkable": "False"
     }
