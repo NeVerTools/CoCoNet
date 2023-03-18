@@ -6,6 +6,7 @@ This module contains the QMainWindow class CoCoNetWindow.
 Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
+
 import json
 import webbrowser
 
@@ -107,25 +108,25 @@ class CoCoNetWindow(QMainWindow):
 
         if menu_actions:
             # FILE submenu triggers connections
-            menu_actions["File:New..."].triggered.connect(self.editor_widget.new)
-            menu_actions["File:Open..."].triggered.connect(self.editor_widget.open)
-            menu_actions["File:Open property..."].triggered.connect(self.editor_widget.open_property)
-            menu_actions["File:Save"].triggered.connect(self.editor_widget.save)
-            menu_actions["File:Save as..."].triggered.connect(lambda: self.editor_widget.save(_as=True))
-            menu_actions["File:Close"].triggered.connect(self.quit)
+            menu_actions['File:New...'].triggered.connect(self.editor_widget.new)
+            menu_actions['File:Open...'].triggered.connect(self.editor_widget.open)
+            menu_actions['File:Open property...'].triggered.connect(self.editor_widget.open_property)
+            menu_actions['File:Save'].triggered.connect(self.editor_widget.save)
+            menu_actions['File:Save as...'].triggered.connect(lambda: self.editor_widget.save(_as=True))
+            menu_actions['File:Close'].triggered.connect(self.quit)
 
             # EDIT submenu triggers connections
-            menu_actions["Edit:Clear workspace"].triggered.connect(self.editor_widget.clear)
-            menu_actions["Edit:Delete block"].triggered.connect(self.editor_widget.remove_sel)
+            menu_actions['Edit:Clear workspace'].triggered.connect(self.editor_widget.clear)
+            menu_actions['Edit:Delete block'].triggered.connect(self.editor_widget.remove_sel)
 
             # VIEW submenu triggers connections
-            # menu_actions["View:Zoom in"].triggered.connect(self.editor_widget.scene.view.zoom_in)
-            # menu_actions["View:Zoom out"].triggered.connect(self.editor_widget.scene.view.zoom_out)
+            # menu_actions['View:Zoom in'].triggered.connect(self.editor_widget.scene.view.zoom_in)
+            # menu_actions['View:Zoom out'].triggered.connect(self.editor_widget.scene.view.zoom_out)
             # menu_actions['View:Toggle edges dimensions'].triggered.connect()
-            menu_actions["View:Show inspector"].triggered.connect(self.editor_widget.show_inspector)
+            menu_actions['View:Show inspector'].triggered.connect(self.editor_widget.show_inspector)
 
             # HELP
-            menu_actions["Help:Open guide"].triggered.connect(open_guide)
+            menu_actions['Help:Open guide'].triggered.connect(open_guide)
 
     def load_inspector(self):
         pass

@@ -53,7 +53,7 @@ class CoCoNetWidget(QWidget):
             for j in self.block_data[i].keys():
                 j_item = QTreeWidgetItem(i_item, [j])
                 button = CustomButton(j)
-                # dict_sign = i + ":" + j
+                # dict_sign = i + ':' + j
                 # draw_part = partial(self.addBlockProxy, self.block_data[i][j], dict_sign)
                 # button.clicked.connect(draw_part)
                 toolbar_tree.setItemWidget(j_item, 0, button)

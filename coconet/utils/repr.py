@@ -6,6 +6,7 @@ This module contains utility methods for the representation of objects
 Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
+
 import json
 
 from coconet import RES_DIR
