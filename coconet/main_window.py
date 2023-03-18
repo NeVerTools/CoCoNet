@@ -18,7 +18,7 @@ from coconet.view.ui.widget import CoCoNetWidget
 
 
 def open_guide():
-    webbrowser.open('https://neuralverification.org/coconet_guide.html')
+    webbrowser.open('https://nevertools.github.io/coconet_guide.html')
 
 
 class CoCoNetWindow(QMainWindow):
