@@ -3,7 +3,7 @@
     "name": "Input",
     "id": "INP",
     "parameters": {
-      "name": {
+      "Name": {
         "type": "String",
         "description": "Identifier of the network input",
         "object": "QLineEdit",
@@ -11,7 +11,7 @@
         "default": "X",
         "required": "True"
       },
-      "dimension": {
+      "Dimension": {
         "type": "Tensor",
         "description": "Dimension of the network input",
         "object": "QLineEdit",
@@ -19,7 +19,7 @@
         "required": "True",
         "default": "1"
       },
-      "property": {
+      "Property": {
         "type": "String",
         "description": "Pre-condition related to the input of the property to verify",
         "object": "QComboBox",
@@ -33,7 +33,7 @@
     "name": "Output",
     "id": "END",
     "parameters": {
-      "name": {
+      "Name": {
         "type": "String",
         "description": "Identifier of the network output",
         "object": "QLineEdit",
@@ -41,14 +41,14 @@
         "default": "Y",
         "required": "True"
       },
-      "dimension": {
+      "Dimension": {
         "type": "Tensor",
         "description": "Dimension of the network output",
         "object": "QLabel",
         "editable": "False",
         "required": "True"
       },
-      "property": {
+      "Property": {
         "type": "String",
         "description": "Post-condition related to the output of the property to verify",
         "object": "QComboBox",
