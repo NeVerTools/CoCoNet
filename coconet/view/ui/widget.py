@@ -66,6 +66,19 @@ class CoCoNetWidget(QWidget):
         self.layout.addWidget(toolbar_tree)
         return toolbar_tree
 
+    def add_to_layout(self, widget: QWidget):
+        """
+        Proxy method to add widgets to the layout
+
+        Parameters
+        ----------
+        widget : QWidget
+            The widget to add
+
+        """
+
+        self.layout.addWidget(widget)
+
     def save_prompt_dialog(self):
         pass
 
