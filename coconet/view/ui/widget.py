@@ -10,6 +10,7 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QTreeWidget, QTreeWidgetItem
 
 import coconet.utils.repr as fu
+from coconet.model.scene import Scene
 from coconet.resources.styling.custom import CustomButton
 
 
@@ -36,6 +37,9 @@ class CoCoNetWidget(QWidget):
 
         # Layers toolbar
         self.layers_toolbar = self.create_layers_toolbar()
+
+        # Scene
+        self.scene = Scene(self)
 
     def create_layers_toolbar(self) -> QTreeWidget:
         """
