@@ -68,8 +68,8 @@ class Scene:
         output_block = FunctionalBlock(self, False)
 
         # Add to blocks dict
-        self.blocks[input_block.block_id] = input_block
-        self.blocks[output_block.block_id] = output_block
+        self.blocks[input_block.id] = input_block
+        self.blocks[output_block.id] = output_block
 
         # Init start position in the view
         # input_block.setPos(-300, -60)

@@ -90,4 +90,15 @@ class LayerBlock(Block):
 class FunctionalBlock(Block):
     def __init__(self, scene: 'Scene', is_input: bool = True):
         super().__init__(scene)
-        pass
+
+        # I/O data
+        if is_input:
+            self.title = 'Input'
+            sockets = [[], [1]]
+
+        else:
+            self.title = 'Output'
+            sockets = [[1], []]
+
+        # Id from data
+        self._id = self.scene_ref.editor_widget_ref.functional_data[self.title]['id']
