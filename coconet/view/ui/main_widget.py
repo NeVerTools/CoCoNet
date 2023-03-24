@@ -1,5 +1,5 @@
 """
-Module widget.py
+Module main_widget.py
 
 This module contains the QWidget class CoCoNetWidget.
 

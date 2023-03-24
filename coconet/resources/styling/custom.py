@@ -26,7 +26,6 @@ class CustomLabel(QLabel):
     def __init__(self, text: str = '', color: str = 'white', primary: bool = False,
                  alignment=Qt.AlignmentFlag.AlignLeft):
         super(CustomLabel, self).__init__(text)
-        # self.setWordWrap(True)
         if primary:
             self.setAlignment(Qt.AlignmentFlag.AlignLeft)
             # self.setStyleSheet(style.NODE_LABEL_STYLE)

@@ -15,7 +15,7 @@ from PyQt6.QtGui import QIcon, QGuiApplication, QAction, QCloseEvent
 from PyQt6.QtWidgets import QMainWindow
 
 from coconet import APP_NAME, RES_DIR
-from coconet.view.ui.widget import CoCoNetWidget
+from coconet.view.ui.main_widget import CoCoNetWidget
 
 
 def open_guide():
