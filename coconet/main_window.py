@@ -58,9 +58,7 @@ class CoCoNetWindow(QMainWindow):
         self.menu_bar = self.menuBar()
         self.create_menu()
 
-        # Init window and toolbars
         self.init_ui()
-        self.load_inspector()
 
     def init_ui(self):
         """
@@ -123,13 +121,10 @@ class CoCoNetWindow(QMainWindow):
             # menu_actions['View:Zoom in'].triggered.connect(self.editor_widget.scene.view.zoom_in)
             # menu_actions['View:Zoom out'].triggered.connect(self.editor_widget.scene.view.zoom_out)
             # menu_actions['View:Toggle edges dimensions'].triggered.connect()
-            menu_actions['View:Show inspector'].triggered.connect(self.editor_widget.show_inspector)
+            menu_actions['View:Show inspector'].triggered.connect(lambda: self.editor_widget.show_inspector())
 
             # HELP
             menu_actions['Help:Open guide'].triggered.connect(open_guide)
-
-    def load_inspector(self):
-        pass
 
     def quit(self):
         self.editor_widget.save_prompt_dialog()

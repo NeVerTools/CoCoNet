@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import QWidget, QHBoxLayout, QTreeWidget, QTreeWidgetItem
 import coconet.utils.repr as fu
 from coconet.model.scene import Scene
 from coconet.resources.styling.custom import CustomButton
+from coconet.view.ui.inspector import InspectorDockToolbar
 
 
 class CoCoNetWidget(QWidget):
@@ -37,6 +38,7 @@ class CoCoNetWidget(QWidget):
 
         # Layers toolbar
         self.layers_toolbar = self.create_layers_toolbar()
+        self.inspector = InspectorDockToolbar(self.block_data, self.property_data)
 
         # Scene
         self.scene = Scene(self)
@@ -104,5 +106,5 @@ class CoCoNetWidget(QWidget):
     def remove_sel(self):
         pass
 
-    def show_inspector(self):
-        pass
+    def show_inspector(self, block=None):
+        self.inspector.display(block)

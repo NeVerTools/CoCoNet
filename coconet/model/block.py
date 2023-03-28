@@ -109,8 +109,8 @@ class LayerBlock(Block):
         super().__init__(scene)
 
         # Signature for dictionary map
-        self._signature = key_signature
-        self.title = self._signature.split(':')[-1]
+        self.signature = key_signature
+        self.title = self.signature.split(':')[-1]
 
         # If an ID is provided use it
         if block_id is not None:
