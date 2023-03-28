@@ -6,6 +6,8 @@ This module contains the QWidget class CoCoNetWidget.
 Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
+from functools import partial
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QTreeWidget, QTreeWidgetItem, QSplitter
 
@@ -68,9 +70,9 @@ class CoCoNetWidget(QWidget):
             for j in self.block_data[i].keys():
                 j_item = QTreeWidgetItem(i_item, [j])
                 button = CustomButton(j)
-                # dict_sign = i + ':' + j
-                # draw_part = partial(self.addBlockProxy, self.block_data[i][j], dict_sign)
-                # button.clicked.connect(draw_part)
+                dict_sign = i + ':' + j
+                draw_part = partial(self.add_block_proxy, self.block_data[i][j], dict_sign)
+                button.clicked.connect(draw_part)
                 toolbar_tree.setItemWidget(j_item, 0, button)
 
         # Size control
@@ -81,18 +83,13 @@ class CoCoNetWidget(QWidget):
         self.splitter.addWidget(toolbar_tree)
         return toolbar_tree
 
-    def add_to_layout(self, widget: QWidget):
+    def add_block_proxy(self, block_data: dict, block_sign: str):
         """
-        Proxy method to add widgets to the layout
-
-        Parameters
-        ----------
-        widget : QWidget
-            The widget to add
+        Proxy method to add a node in the scene
 
         """
 
-        self.layout.addWidget(widget)
+        self.scene.add_block(block_data, block_sign)
 
     def save_prompt_dialog(self):
         pass

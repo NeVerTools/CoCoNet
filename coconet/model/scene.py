@@ -81,3 +81,6 @@ class Scene:
         self.blocks_number += 2
 
         return input_block, output_block
+
+    def add_block(self, block_data: dict, block_sign: str, loading_dict: dict = None, block_id=None):
+        pass
