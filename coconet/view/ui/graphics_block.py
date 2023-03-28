@@ -7,14 +7,20 @@ the IO and the properties
 Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
+
+from functools import partial
+
 from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPen, QColor, QFont, QBrush, QPainterPath
-from PyQt6.QtWidgets import QGraphicsItem, QWidget, QGraphicsProxyWidget, QGraphicsTextItem
+from PyQt6.QtWidgets import QGraphicsItem, QWidget, QGraphicsProxyWidget, QGraphicsTextItem, QVBoxLayout, QGridLayout, \
+    QHBoxLayout
 
 import coconet.resources.styling.dimension as dim
 import coconet.resources.styling.palette as palette
-from coconet import get_classname
+from coconet import get_classname, RES_DIR
+from coconet.resources.styling.custom import CustomTextBox, CustomLabel, CustomComboBox
+from coconet.utils.repr import ArithmeticValidator
 
 
 class GraphicsBlock(QGraphicsItem):
@@ -120,7 +126,7 @@ class GraphicsBlock(QGraphicsItem):
     def mouseMoveEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         super().mouseMoveEvent(event)
 
-        for block in self.scene_ref.blocks.values():
+        for block in self.block_ref.scene_ref.blocks.values():
             if block.isSelected():
                 block.updateConnectedEdges()
 
@@ -196,5 +202,156 @@ class GraphicsBlock(QGraphicsItem):
 
 
 class BlockContentWidget(QWidget):
-    def __init__(self, block: 'Block', build_dict: dict, parent=None):
+    """
+    This class provides a QGridLayout structure for the display
+    of the Block object parameters inside the GraphicsBlock
+
+    Attributes
+    ----------
+    block_ref : Block
+        Reference to block object
+
+    params_ref : dict
+        Reference to block parameters
+
+    wdg_param_dict : dict
+        Dictionary of concrete block parameters and widgets
+
+    """
+
+    def __init__(self, block: 'Block', build_dict: dict = None, parent=None):
         super().__init__(parent)
+
+        # Block and parameters reference
+        self.block_ref = block
+        self.params_ref = self.block_ref.attr_dict['parameters']
+
+        # Concrete parameters
+        self.wdg_param_dict = dict()
+
+        # Set style
+        with open(RES_DIR + '/style/block.qss').read() as qss_file:
+            self.setStyleSheet(qss_file)
+
+        # Layouts
+        self.layout = QVBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+
+        self.grid_layout = QGridLayout()
+        self.grid_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.buttons_layout = QHBoxLayout()
+        self.buttons_layout.setContentsMargins(0, 0, 0, 0)
+
+        if build_dict is None:
+            self.init_content()
+        else:
+            self.loading_dict = build_dict
+            self.load_content()
+
+        self.init_buttons()
+
+        # Build
+        self.layout.addLayout(self.grid_layout)
+        self.layout.addLayout(self.buttons_layout)
+        self.setLayout(self.layout)
+
+        self.init_validators()
+
+    def init_content(self):
+        """
+        This method reads the parameters and creates the corresponding objects
+
+        """
+
+        row_grid_count = 0
+
+        for param_name in self.params_ref:
+            # Set label
+            self.grid_layout.addWidget(CustomLabel(param_name + ':'), row_grid_count, 0)
+
+            # Switch components
+            def_val = ''
+            if 'default' in self.params_ref[param_name]:
+                def_val = self.params_ref[param_name]['default']
+
+            type_val = self.params_ref[param_name]['type']
+            param_obj = self.params_ref[param_name]['object']
+
+            if param_obj == 'QLabel':
+                label = CustomLabel(def_val)
+
+                self.grid_layout.addWidget(label, row_grid_count, 1)
+                self.wdg_param_dict[param_name] = [label, def_val, type_val]
+
+            elif param_obj == 'QLineEdit':
+                line_edit = CustomTextBox(def_val, context=get_classname(self.block_ref))
+
+                if self.params_ref[param_name]['editable'] == 'False':
+                    line_edit.setEnabled(False)
+
+                self.grid_layout.addWidget(line_edit, row_grid_count, 1)
+                self.wdg_param_dict[param_name] = [line_edit, def_val, type_val]
+
+            elif param_obj == 'QComboBox':
+                if get_classname(self.block_ref) == 'FunctionalBlock':
+                    if not self.block_ref.has_input():
+                        self.setObjectName('OutputBlockContent')
+
+                    combo = CustomComboBox(context=get_classname(self.block_ref))
+                    cb_fill = self.block_ref.scene_ref.editor_widget_ref.property_data.keys()
+                    combo.addItems(cb_fill)
+
+                    combo.view().setMinimumWidth(140)
+                    combo.setCurrentText(def_val)
+                else:
+                    combo = CustomComboBox()
+                    combo.addItems(['True', 'False'])
+                    if def_val == '':
+                        combo.setCurrentText('True')
+                    else:
+                        combo.setCurrentText(def_val)
+
+                self.grid_layout.addWidget(combo, row_grid_count, 1)
+                self.wdg_param_dict[param_name] = [combo, combo.currentText(), type_val]
+
+            # Increment for next parameter
+            row_grid_count += 1
+
+    def load_content(self):
+        pass
+
+    def init_buttons(self):
+        pass
+
+    def init_validators(self):
+        """
+        This method sets the proper validator for the parameters widgets
+
+        """
+
+        for param_name, param_info in self.params_ref.items():
+            qt_wdg = self.wdg_param_dict[param_name][0]
+
+            # Type check
+            if isinstance(qt_wdg, CustomTextBox):
+                prev = qt_wdg.text()
+                check_value = partial(self.check_value_proxy, param_name, prev)
+                qt_wdg.editingFinished.connect(check_value)
+
+                # Set proper validator
+                validator = None
+                param_type = param_info['type']
+                if param_type == 'int':
+                    validator = ArithmeticValidator.INT
+                elif param_type == 'float':
+                    validator = ArithmeticValidator.FLOAT
+                elif param_type == 'Tensor' or param_type == 'list of ints':
+                    validator = ArithmeticValidator.TENSOR
+                qt_wdg.setValidator(validator)
+
+    def check_value_proxy(self, name, value):
+        self.check_values(name, value)
+
+    def check_values(self, name, value):
+        pass
