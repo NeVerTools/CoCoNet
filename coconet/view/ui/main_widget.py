@@ -6,10 +6,11 @@ This module contains the QWidget class CoCoNetWidget.
 Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
-
-from PyQt6.QtWidgets import QWidget, QHBoxLayout, QTreeWidget, QTreeWidgetItem
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QWidget, QHBoxLayout, QTreeWidget, QTreeWidgetItem, QSplitter
 
 import coconet.utils.repr as fu
+from coconet import RES_DIR
 from coconet.model.scene import Scene
 from coconet.resources.styling.custom import CustomButton
 from coconet.view.ui.inspector import InspectorDockToolbar
@@ -28,10 +29,18 @@ class CoCoNetWidget(QWidget):
         # Reference to the main window
         self.main_wnd_ref = main_window
 
+        # Style
+        with open(RES_DIR + '/styling/qss/style.qss') as qss_file:
+            self.setStyleSheet(qss_file.read())
+
         # Widget layout
         self.layout = QHBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
+
+        self.splitter = QSplitter(self)
+        self.splitter.setOrientation(Qt.Orientation.Horizontal)
+        self.layout.addWidget(self.splitter)
 
         # Objects data from JSON
         self.block_data, self.property_data, self.functional_data = fu.read_json_data()
@@ -69,7 +78,7 @@ class CoCoNetWidget(QWidget):
         toolbar_tree.setMaximumWidth(400)
         toolbar_tree.expandAll()
 
-        self.layout.addWidget(toolbar_tree)
+        self.splitter.addWidget(toolbar_tree)
         return toolbar_tree
 
     def add_to_layout(self, widget: QWidget):

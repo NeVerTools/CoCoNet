@@ -54,7 +54,7 @@ class Scene:
 
         # Graphics view
         self.view = GraphicsView(self.graphics_scene)
-        self.editor_widget_ref.add_to_layout(self.view)
+        self.editor_widget_ref.splitter.addWidget(self.view)
 
     def init_io(self) -> (Block, Block):
         """
