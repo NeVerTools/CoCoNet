@@ -28,6 +28,9 @@ class Scene:
         # Dictionary of the displayed blocks
         self.blocks = {}
 
+        # Sequential order of the blocks
+        self.sequential_list = []
+
         # Blocks counter
         self.blocks_number = 0
 

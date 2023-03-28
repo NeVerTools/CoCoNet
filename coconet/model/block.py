@@ -6,7 +6,7 @@ This module contains the logic class Block and its children LayerBlock, Function
 Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
-
+from typing import Optional
 from uuid import uuid4
 
 from coconet.view.ui.graphics_block import GraphicsBlock, BlockContentWidget
@@ -31,8 +31,17 @@ class Block:
     attr_dict : dict
         Dictionary containing all the block parameters
 
+    input_sockets : list
+        Sockets for input connection
+
+    output_sockets : list
+        Sockets for output connection
+
     graphics_block : GraphicsBlock
         Graphics block representation of this object
+
+    is_newline : bool
+        Flag used when rendering large networks
 
     """
 
@@ -49,8 +58,15 @@ class Block:
         # Block attributes dict
         self.attr_dict = dict()
 
+        # Sockets
+        self.input_sockets = []
+        self.output_sockets = []
+
         # Graphics representation of the block
         self.graphics_block = None
+
+        # Utility attributes
+        self.is_newline = False
 
     @property
     def id(self):
@@ -62,6 +78,29 @@ class Block:
 
     def has_parameters(self) -> bool:
         return len(self.attr_dict['parameters']) > 0
+
+    def previous(self) -> Optional['Block']:
+        """
+        Utility method to retrieve the previous block
+
+        Returns
+        ----------
+        The previous block, if it exists, None otherwise
+
+        """
+
+        prev = None
+
+        if self.has_input():
+            prev_block_idx = self.scene_ref.sequential_list.index(self.id) - 1
+            prev_block_id = self.scene_ref.sequential_list[prev_block_idx]
+            prev = self.scene_ref.blocks[prev_block_id]
+
+        return prev
+
+    def has_input(self) -> bool:
+        if self.input_sockets:
+            return self.input_sockets[-1].has_edge()
 
 
 class LayerBlock(Block):
@@ -79,12 +118,13 @@ class LayerBlock(Block):
 
         # Init graphics block
         self.graphics_block = GraphicsBlock(self)
-        self.scene_ref.graphics_scene.addItem(self.graphics_block)
 
         # Copy parameters and create block layout
         self.attr_dict = build_dict
         if self.has_parameters():
-            self.graphics_block.set_content(BlockContentWidget(self, self.attr_dict))
+            self.graphics_block.content = BlockContentWidget(self, self.attr_dict)
+
+        self.scene_ref.graphics_scene.addItem(self.graphics_block)
 
 
 class FunctionalBlock(Block):
