@@ -10,18 +10,35 @@ Author: Stefano Demarchi
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QLabel, QComboBox, QLineEdit, QPlainTextEdit, QPushButton
 
+import coconet.resources.styling.display as disp
 import coconet.resources.styling.palette as palette
 
 
 class CustomButton(QPushButton):
-    def __init__(self, text: str = '', primary: bool = False):
+    def __init__(self, text: str = '', primary: bool = False, context: str = None):
         super(CustomButton, self).__init__(text)
         if primary:
-            # self.setStyleSheet(style.PRIMARY_BUTTON_STYLE)
+            self.setStyleSheet(disp.PRIMARY_BUTTON_STYLE)
             self.setDefault(True)
         else:
-            # self.setStyleSheet(style.BUTTON_STYLE)
+            self.setStyleSheet(disp.BUTTON_STYLE)
             self.setDefault(False)
+
+        if context == 'FunctionalBlock':
+            if text == 'Add property':
+                self.setStyleSheet(disp.PROPERTY_BUTTON_STYLE)
+            elif text == 'Update':
+                self.setStyleSheet(disp.UPDATE_FUNC_BUTTON_STYLE)
+        elif context == 'LayerBlock':
+            if primary:
+                self.setStyleSheet(disp.SAVE_LAYER_BUTTON_STYLE)
+            else:
+                self.setStyleSheet(disp.BUTTON_STYLE)
+        elif context == 'Property':
+            if text == 'Add':
+                self.setStyleSheet(disp.PRIMARY_BUTTON_STYLE)
+            elif text == 'Save':
+                self.setStyleSheet(disp.PROPERTY_BUTTON_STYLE)
 
 
 class CustomLabel(QLabel):
@@ -30,7 +47,7 @@ class CustomLabel(QLabel):
         super(CustomLabel, self).__init__(text)
         if primary:
             self.setAlignment(Qt.AlignmentFlag.AlignLeft)
-            # self.setStyleSheet(style.NODE_LABEL_STYLE)
+            self.setStyleSheet(disp.NODE_LABEL_STYLE)
         else:
             self.setAlignment(alignment)
             self.setStyleSheet('color: ' + color + ';' +

@@ -76,6 +76,18 @@ class Block:
     def id(self, value):
         self._id = value
 
+    @property
+    def pos(self):
+        return self.graphics_block.pos()
+
+    @property
+    def width(self):
+        return self.graphics_block.width
+
+    @property
+    def height(self):
+        return self.graphics_block.height
+
     def has_parameters(self) -> bool:
         return len(self.attr_dict['parameters']) > 0
 
@@ -97,6 +109,9 @@ class Block:
             prev = self.scene_ref.blocks[prev_block_id]
 
         return prev
+
+    def set_rel_to(self, prev_block: 'Block'):
+        pass
 
     def has_input(self) -> bool:
         if self.input_sockets:
@@ -142,3 +157,7 @@ class FunctionalBlock(Block):
 
         # Id from data
         self._id = self.scene_ref.editor_widget_ref.functional_data[self.title]['id']
+
+
+class PropertyBlock(Block):
+    pass
