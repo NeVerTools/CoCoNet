@@ -98,6 +98,10 @@ class Block:
         if self.input_sockets:
             return self.input_sockets[-1].has_edge()
 
+    def has_output(self) -> bool:
+        if self.output_sockets:
+            return self.output_sockets[-1].has_edge()
+
     def init_sockets(self, inputs, outputs):
         """
         Draw the sockets given the inputs and outputs of the block
@@ -173,10 +177,7 @@ class Block:
         else:
             new_pos_height = other.pos.y()
 
-        next_dst = 200
-        border = 2300
-
-        if new_pos_width > border:
+        if new_pos_width > dim.SCENE_BORDER:
             self.is_newline = True
 
             # Newline
@@ -189,7 +190,7 @@ class Block:
                     highest = prev
 
             new_pos_width = prev.pos.x()
-            new_pos_height = highest.pos.y() + highest.height + next_dst
+            new_pos_height = highest.pos.y() + highest.height + dim.NEXT_BLOCK_DISTANCE
 
         self.graphics_block.setPos(new_pos_width, new_pos_height)
 
