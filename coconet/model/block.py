@@ -53,7 +53,7 @@ class Block:
         self.scene_ref = scene
 
         # Block identifier
-        self._id = uuid4()
+        self._id = str(uuid4())
 
         # Block title
         self.title = ''
@@ -212,13 +212,9 @@ class Block:
 
         """
 
-        for isocket in self.input_sockets:
-            if isocket.edge is not None:
-                isocket.edge.update_pos()
-
-        for osocket in self.output_sockets:
-            if osocket.edge is not None:
-                osocket.edge.update_pos()
+        for socket in self.input_sockets + self.output_sockets:
+            if socket.edge is not None:
+                socket.edge.update_pos()
 
 
 class LayerBlock(Block):
@@ -227,7 +223,7 @@ class LayerBlock(Block):
         super().__init__(scene)
 
         # Signature for dictionary map
-        self.signature = key_signature
+        self.signature = 'blocks:' + key_signature
         self.title = self.signature.split(':')[-1]
 
         # If an ID is provided use it
@@ -245,6 +241,33 @@ class LayerBlock(Block):
         self.scene_ref.graphics_scene.addItem(self.graphics_block)
 
         self.init_sockets(inputs, outputs)
+
+    def remove(self):
+        """
+        Procedure to remove this block
+
+        """
+
+        end_block = self.scene_ref.blocks['END']
+        end_pos_width = self.pos.x()
+
+        if self.height != end_block.height:
+            end_pos_height = self.pos.y() - end_block.height / 2 + self.height / 2
+        else:
+            end_pos_height = self.pos.y()
+
+        end_block.graphics_block.setPos(end_pos_width, end_pos_height)
+
+        # Remove connected edges
+        for socket in self.input_sockets + self.output_sockets:
+            if socket.edge is not None:
+                socket.edge.remove()
+                socket.edge = None
+
+        # Remove from graphics scene
+        self.scene_ref.graphics_scene.removeItem(self.graphics_block)
+        self.graphics_block = None
+        del self
 
 
 class FunctionalBlock(Block):
