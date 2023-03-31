@@ -8,6 +8,7 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 """
 
 import json
+import traceback
 
 from PyQt6.QtCore import QLocale, QRegularExpression
 from PyQt6.QtGui import QIntValidator, QDoubleValidator, QRegularExpressionValidator
@@ -59,3 +60,8 @@ def read_json_data() -> tuple:
         func_data = json.load(fdata)
 
     return block_data, prop_data, func_data
+
+
+def dump_exception(e: Exception):
+    # TODO format
+    traceback.print_exc()

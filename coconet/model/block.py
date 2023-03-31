@@ -9,6 +9,7 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 from typing import Optional
 from uuid import uuid4
 
+from coconet.model.socket import Socket, SocketPosition, SocketType
 from coconet.view.components.graphics_block import GraphicsBlock, BlockContentWidget
 
 
@@ -91,6 +92,20 @@ class Block:
     def has_parameters(self) -> bool:
         return len(self.attr_dict['parameters']) > 0
 
+    def init_sockets(self, inputs, outputs):
+        """
+        Draw the sockets given the inputs and outputs of the block
+
+        """
+
+        for i in range(len(inputs)):
+            socket = Socket(self, i, SocketPosition.LEFT_TOP, SocketType.INPUT)
+            self.input_sockets.append(socket)
+
+        for i in range(len(outputs)):
+            socket = Socket(self, i, SocketPosition.RIGHT_TOP, SocketType.OUTPUT)
+            self.output_sockets.append(socket)
+
     def previous(self) -> Optional['Block']:
         """
         Utility method to retrieve the previous block
@@ -141,6 +156,8 @@ class LayerBlock(Block):
 
         self.scene_ref.graphics_scene.addItem(self.graphics_block)
 
+        self.init_sockets(inputs, outputs)
+
 
 class FunctionalBlock(Block):
     def __init__(self, scene: 'Scene', is_input: bool = True):
@@ -157,6 +174,16 @@ class FunctionalBlock(Block):
 
         # Id from data
         self._id = self.scene_ref.editor_widget_ref.functional_data[self.title]['id']
+        self.signature = 'functional:' + self.title
+
+        self.attr_dict = self.scene_ref.editor_widget_ref.functional_data[self.title]
+
+        # Init content
+        self.graphics_block = GraphicsBlock(self)
+        self.graphics_block.content = BlockContentWidget(self)
+        self.scene_ref.graphics_scene.addItem(self.graphics_block)
+
+        self.init_sockets(*sockets)
 
 
 class PropertyBlock(Block):
