@@ -15,7 +15,7 @@ import coconet.utils.repr as fu
 from coconet import RES_DIR
 from coconet.model.scene import Scene
 from coconet.resources.styling.custom import CustomButton
-from coconet.view.ui.inspector import InspectorDockToolbar
+from coconet.view.components.inspector import InspectorDockToolbar
 
 
 class CoCoNetWidget(QWidget):

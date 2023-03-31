@@ -9,7 +9,7 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 from typing import Optional
 from uuid import uuid4
 
-from coconet.view.ui.graphics_block import GraphicsBlock, BlockContentWidget
+from coconet.view.components.graphics_block import GraphicsBlock, BlockContentWidget
 
 
 class Block:
