@@ -6,9 +6,11 @@ This module contains the logic class Block and its children LayerBlock, Function
 Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
+
 from typing import Optional
 from uuid import uuid4
 
+import coconet.resources.styling.dimension as dim
 from coconet.model.socket import Socket, SocketPosition, SocketType
 from coconet.view.components.graphics_block import GraphicsBlock, BlockContentWidget
 
@@ -92,6 +94,10 @@ class Block:
     def has_parameters(self) -> bool:
         return len(self.attr_dict['parameters']) > 0
 
+    def has_input(self) -> bool:
+        if self.input_sockets:
+            return self.input_sockets[-1].has_edge()
+
     def init_sockets(self, inputs, outputs):
         """
         Draw the sockets given the inputs and outputs of the block
@@ -105,6 +111,24 @@ class Block:
         for i in range(len(outputs)):
             socket = Socket(self, i, SocketPosition.RIGHT_TOP, SocketType.OUTPUT)
             self.output_sockets.append(socket)
+
+    def get_socket_pos(self, index: int, position: SocketPosition, absolute: bool) -> tuple:
+        """
+        Method to return the relative or absolute position of the sockets of this block
+
+        """
+
+        if position == SocketPosition.LEFT_TOP:
+            x = 0
+        else:
+            x = self.graphics_block.width
+
+        y = dim.TITLE_HEIGHT + dim.TITLE_PAD + dim.EDGE_ROUNDNESS + index * dim.SOCKET_SPACING
+
+        if absolute:
+            return x + self.pos.x(), y + self.pos.y()
+        else:
+            return x, y
 
     def previous(self) -> Optional['Block']:
         """
@@ -125,12 +149,75 @@ class Block:
 
         return prev
 
-    def set_rel_to(self, prev_block: 'Block'):
-        pass
+    def set_rel_to(self, other: 'Block'):
+        """
+        Utility method to set the block position with respect to another one
 
-    def has_input(self) -> bool:
-        if self.input_sockets:
-            return self.input_sockets[-1].has_edge()
+        Parameters
+        ----------
+        other : Block
+            The relative block
+
+        """
+
+        if self.scene_ref.input_block is not None:
+            if self.previous() == self.scene_ref.input_block:
+                self.is_newline = True
+        else:
+            self.is_newline = False
+
+        new_pos_width = other.pos.x() + other.width + self.scene_ref.block_distance
+
+        if other.height != self.height:
+            new_pos_height = other.pos.y() - self.height / 2 + other.height / 2
+        else:
+            new_pos_height = other.pos.y()
+
+        next_dst = 200
+        border = 2300
+
+        if new_pos_width > border:
+            self.is_newline = True
+
+            # Newline
+            prev = self.previous()
+            highest = prev
+
+            while not prev.is_newline:
+                prev = prev.previous()
+                if prev.height > highest.height:
+                    highest = prev
+
+            new_pos_width = prev.pos.x()
+            new_pos_height = highest.pos.y() + highest.height + next_dst
+
+        self.graphics_block.setPos(new_pos_width, new_pos_height)
+
+        # Move the output block
+        end_pos_width = self.pos.x() + self.width + self.scene_ref.block_distance
+
+        if self.height != self.scene_ref.output_block:
+            end_pos_height = self.pos.y() - self.scene_ref.output_block.height / 2 + self.height / 2
+        else:
+            end_pos_height = other.pos.y()
+
+        self.scene_ref.output_block.graphics_block.setPos(end_pos_width, end_pos_height)
+
+        self.update_edges()
+
+    def update_edges(self):
+        """
+        This method updates the edges connected to the block
+
+        """
+
+        for isocket in self.input_sockets:
+            if isocket.edge is not None:
+                isocket.edge.update_pos()
+
+        for osocket in self.output_sockets:
+            if osocket.edge is not None:
+                osocket.edge.update_pos()
 
 
 class LayerBlock(Block):

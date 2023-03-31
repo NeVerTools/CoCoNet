@@ -40,6 +40,13 @@ class Scene:
         # Default distance between blocks
         self.block_distance = 100
 
+        # Graphics scene
+        self.graphics_scene = GraphicsScene(self)
+
+        # Graphics view
+        self.view = GraphicsView(self.graphics_scene)
+        self.editor_widget_ref.splitter.addWidget(self.view)
+
         # Initialize I/O blocks
         self.input_block, self.output_block = self.init_io()
 
@@ -51,13 +58,6 @@ class Scene:
 
         # Project with pynever NN object and interfaces
         self.project = Project(self)
-
-        # Graphics scene
-        self.graphics_scene = GraphicsScene(self)
-
-        # Graphics view
-        self.view = GraphicsView(self.graphics_scene)
-        self.editor_widget_ref.splitter.addWidget(self.view)
 
     def init_io(self) -> (Block, Block):
         """

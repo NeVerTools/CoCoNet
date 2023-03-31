@@ -230,8 +230,8 @@ class BlockContentWidget(QWidget):
         self.wdg_param_dict = dict()
 
         # Set style
-        with open(RES_DIR + '/style/block.qss').read() as qss_file:
-            self.setStyleSheet(qss_file)
+        with open(RES_DIR + '/styling/qss/blocks.qss') as qss_file:
+            self.setStyleSheet(qss_file.read())
 
         # Layouts
         self.layout = QVBoxLayout()
