@@ -10,6 +10,7 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 from enum import Enum
 
 from coconet.model.block import PropertyBlock
+from coconet.view.components.graphics_edge import GraphicsDirectEdge, GraphicsBezierEdge
 
 
 class EdgeType(Enum):
@@ -24,8 +25,14 @@ class EdgeType(Enum):
 
 class GraphicsEdgeFactory:
     @staticmethod
-    def create_edge(edge_type: EdgeType):
-        pass
+    def create_edge(e: 'Edge', t: EdgeType):
+        if t == EdgeType.DIRECT_EDGE:
+            return GraphicsDirectEdge(e)
+        elif t == EdgeType.BEZIER_EDGE:
+            return GraphicsBezierEdge(e)
+        else:
+            # Fallback
+            return GraphicsDirectEdge(e)
 
 
 class Edge:
@@ -49,9 +56,19 @@ class Edge:
         self.end_skt.edge = self
 
         # Create graphics edge
-        self.graphics_edge = GraphicsEdgeFactory().create_edge(edge_type)
+        self.graphics_edge = GraphicsEdgeFactory().create_edge(self, edge_type)
         self.update_pos()
         self.scene_ref.graphics_scene.addItem(self.graphics_edge)
 
     def update_pos(self):
+        pass
+
+    def update_label(self, text):
+        self.graphics_edge.set_label(text)
+
+    def detach(self):
+        self.start_skt = None
+        self.end_skt = None
+
+    def remove(self):
         pass
