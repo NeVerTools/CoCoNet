@@ -218,6 +218,11 @@ class Block:
 
 
 class LayerBlock(Block):
+    """
+    This class represents a block for the definition of a neural network layer
+
+    """
+
     def __init__(self, scene: 'Scene', inputs: list, outputs: list, build_dict: dict,
                  key_signature: str = '', block_id: str = None):
         super().__init__(scene)
@@ -271,6 +276,11 @@ class LayerBlock(Block):
 
 
 class FunctionalBlock(Block):
+    """
+    This class represents a block for the input and output of the neural network
+
+    """
+
     def __init__(self, scene: 'Scene', is_input: bool = True):
         super().__init__(scene)
 
@@ -295,6 +305,35 @@ class FunctionalBlock(Block):
         self.scene_ref.graphics_scene.addItem(self.graphics_block)
 
         self.init_sockets(*sockets)
+
+    def get_name(self):
+        return self.attr_dict['parameters']['name'][1]
+
+    def get_shape(self):
+        return self.attr_dict['parameters']['dimension'][1]
+
+    def get_property_block(self) -> 'PropertyBlock':
+        return self.scene_ref.pre_block if self.title == 'Input' else self.scene_ref.post_block
+
+    def add_property_socket(self):
+        """
+        Method to add a socket only when a property is connected
+
+        """
+
+        if self.title == 'Input':
+            socket = Socket(self, 1, SocketPosition.LEFT_TOP, SocketType.INPUT)
+            self.input_sockets.append(socket)
+        else:
+            socket = Socket(self, 1, SocketPosition.RIGHT_TOP, SocketType.OUTPUT)
+            self.output_sockets.append(socket)
+
+    def remove(self):
+        """
+        Prevent deletion of this block
+
+        """
+        pass
 
 
 class PropertyBlock(Block):
