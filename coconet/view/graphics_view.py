@@ -25,13 +25,6 @@ class GraphicsView(QGraphicsView):
         self.gr_scene_ref = gr_scene
         self.setScene(self.gr_scene_ref)
 
-        # Zoom parameters
-        self.zoom = 10
-        self.zoom_in_factor = 1.25
-        self.zoom_step = 1
-        self.zoom_range = [0, 10]
-        self.zoomClamp = True
-
         self.initUI()
 
     def initUI(self):

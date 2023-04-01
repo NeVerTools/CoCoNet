@@ -6,10 +6,12 @@ This module contains the graphical representation of a Socket element
 Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
+
 from PyQt6.QtCore import QRectF
 from PyQt6.QtGui import QColor, QPen, QBrush, QPainter
 from PyQt6.QtWidgets import QGraphicsItem
 
+import coconet.resources.styling.dimension as dim
 import coconet.resources.styling.palette as palette
 from coconet import get_classname
 
@@ -25,17 +27,13 @@ class GraphicsSocket(QGraphicsItem):
         # Reference to socket
         self.socket_ref = socket
 
-        # Parameters
-        self.radius = 6
-        self.outline_width = 2
-
         # Style parameters
         self.bg_color = QColor(palette.WHITE)
         self.outline_color = QColor(palette.WHITE)
         self.init_colors()
 
         self._pen = QPen(self.outline_color)
-        self._pen.setWidth(self.outline_width)
+        self._pen.setWidth(dim.SOCKET_OUTLINE)
         self._brush = QBrush(self.bg_color)
 
         self.setZValue(-1)
@@ -56,13 +54,13 @@ class GraphicsSocket(QGraphicsItem):
     def paint(self, painter: QPainter, option: 'QStyleOptionGraphicsItem', widget=None) -> None:
         painter.setBrush(self._brush)
         painter.setPen(self._pen)
-        painter.drawEllipse(-self.radius, -self.radius, 2 * self.radius, 2 * self.radius)
+        painter.drawEllipse(-dim.SOCKET_RADIUS, -dim.SOCKET_RADIUS, 2 * dim.SOCKET_RADIUS, 2 * dim.SOCKET_RADIUS)
 
     def boundingRect(self) -> QRectF:
 
         return QRectF(
-            - self.radius - self.outline_width,
-            - self.radius - self.outline_width,
-            2 * (self.radius + self.outline_width),
-            2 * (self.radius + self.outline_width),
+            - dim.SOCKET_RADIUS - dim.SOCKET_OUTLINE,
+            - dim.SOCKET_RADIUS - dim.SOCKET_OUTLINE,
+            2 * (dim.SOCKET_RADIUS + dim.SOCKET_OUTLINE),
+            2 * (dim.SOCKET_RADIUS + dim.SOCKET_OUTLINE),
         )

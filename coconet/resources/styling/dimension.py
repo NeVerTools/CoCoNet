@@ -7,6 +7,9 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
 
+# Blocks
+# ------------
+
 # Width values
 BLOCK_BASE_WIDTH = 90
 BLOCK_PARAM_WIDTH = 200
@@ -19,8 +22,37 @@ TITLE_HEIGHT = 25
 # Other dimensions
 EDGE_ROUNDNESS = 10
 TITLE_PAD = 10.0
-
 SOCKET_SPACING = 22
 
 NEXT_BLOCK_DISTANCE = 200
 SCENE_BORDER = 2300
+
+# Sockets
+# ------------
+
+# Parameters
+SOCKET_RADIUS = 6
+SOCKET_OUTLINE = 2
+
+# Scene
+# ------------
+
+# Width and height
+SCENE_WIDTH = 12800
+SCENE_HEIGHT = 6400
+
+# Other dimensions
+GRID_SIZE = 20
+GRID_SQUARE = 5
+ABS_BLOCK_DISTANCE = 100
+
+# Graphics View
+# ------------
+
+# Zoom parameters
+ZOOM = 10
+ZOOM_IN_FACTOR = 1.25
+ZOOM_STEP = 1
+ZOOM_RANGE = [0, 10]
+ZOOM_CLAMP = True
+

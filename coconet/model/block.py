@@ -170,7 +170,7 @@ class Block:
         else:
             self.is_newline = False
 
-        new_pos_width = other.pos.x() + other.width + self.scene_ref.block_distance
+        new_pos_width = other.pos.x() + other.width + dim.ABS_BLOCK_DISTANCE
 
         if other.height != self.height:
             new_pos_height = other.pos.y() - self.height / 2 + other.height / 2
@@ -195,7 +195,7 @@ class Block:
         self.graphics_block.setPos(new_pos_width, new_pos_height)
 
         # Move the output block
-        end_pos_width = self.pos.x() + self.width + self.scene_ref.block_distance
+        end_pos_width = self.pos.x() + self.width + dim.ABS_BLOCK_DISTANCE
 
         if self.height != self.scene_ref.output_block:
             end_pos_height = self.pos.y() - self.scene_ref.output_block.height / 2 + self.height / 2

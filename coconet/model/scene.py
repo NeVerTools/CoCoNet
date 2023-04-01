@@ -6,6 +6,7 @@ This module contains the class Scene which is used as the manager of logic and g
 Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
+
 from typing import Optional
 
 from coconet.model.block import FunctionalBlock, Block, LayerBlock
@@ -36,9 +37,6 @@ class Scene:
 
         # Blocks counter
         self.blocks_count = 0
-
-        # Default distance between blocks
-        self.block_distance = 100
 
         # Graphics scene
         self.graphics_scene = GraphicsScene(self)
@@ -78,8 +76,8 @@ class Scene:
         self.blocks[output_block.id] = output_block
 
         # Init start position in the view
-        # input_block.setPos(-300, -60)
-        # output_block.setPos(100, -60)
+        input_block.graphics_block.setPos(-300, -60)
+        output_block.graphics_block.setPos(100, -60)
 
         self.blocks_count += 2
 

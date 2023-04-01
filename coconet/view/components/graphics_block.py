@@ -151,8 +151,6 @@ class GraphicsBlock(QGraphicsItem):
         path_title.addRoundedRect(0, 0, self.width, dim.TITLE_HEIGHT, dim.EDGE_ROUNDNESS, dim.EDGE_ROUNDNESS)
 
         # Remove bottom rounded corners for title box
-        # (add the following line if you finally want to remove content on block with no parameters)
-        # if self.hasParameters != 0:
         path_title.addRect(0, dim.TITLE_HEIGHT - dim.EDGE_ROUNDNESS, dim.EDGE_ROUNDNESS, dim.EDGE_ROUNDNESS)
         path_title.addRect(self.width - dim.EDGE_ROUNDNESS, dim.TITLE_HEIGHT - dim.EDGE_ROUNDNESS,
                            dim.EDGE_ROUNDNESS, dim.EDGE_ROUNDNESS)
@@ -166,7 +164,7 @@ class GraphicsBlock(QGraphicsItem):
         path_content.addRoundedRect(0, dim.TITLE_HEIGHT, self.width,
                                     self.height - dim.TITLE_HEIGHT, dim.EDGE_ROUNDNESS, dim.EDGE_ROUNDNESS)
 
-        # Remove bottom rounded corners for content box
+        # Remove top rounded corners for content box
         # left
         path_content.addRect(0, dim.TITLE_HEIGHT, dim.EDGE_ROUNDNESS, dim.EDGE_ROUNDNESS / 2)
         # right
