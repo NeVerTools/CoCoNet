@@ -399,9 +399,6 @@ class BlockContentWidget(QWidget):
 
             self.buttons_layout.addWidget(edit)
 
-    def add_property(self):
-        pass
-
     def init_validators(self):
         """
         This method sets the proper validator for the parameters widgets
@@ -502,6 +499,40 @@ class BlockContentWidget(QWidget):
 
             # Restore backup value
             qt_widget.setText(bk_value)
+
+    def toggle_content_enabled(self, enable=False):
+        """
+        Enable/disable editing the content widget
+
+        """
+
+        widgets = [self.grid_layout.itemAt(i).widget() for i in range(self.grid_layout.count())]
+        buttons = [self.buttons_layout.itemAt(i).widget() for i in range(self.buttons_layout.count())]
+
+        for widget in widgets:
+            if isinstance(widget, CustomLabel) or isinstance(widget, CustomComboBox):
+                # Free to add property
+                if isinstance(widget, CustomComboBox) and get_classname(self.block_ref) == 'FunctionalBlock':
+                    continue
+
+                if enable:
+                    widget.setEnabled(True)
+                else:
+                    widget.setEnabled(False)
+
+        for button in buttons:
+            # Free to add property
+            if get_classname(self.block_ref) == 'FunctionalBlock':
+                if button.text() == 'Add property':
+                    continue
+
+                if enable:
+                    button.setEnabled(True)
+                else:
+                    button.setEnabled(False)
+
+    def add_property(self):
+        pass
 
     def missing_params(self) -> bool:
         """
