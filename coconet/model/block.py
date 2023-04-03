@@ -241,7 +241,7 @@ class LayerBlock(Block):
         # Copy parameters and create block layout
         self.attr_dict = build_dict
         if self.has_parameters():
-            self.graphics_block.content = BlockContentWidget(self, self.attr_dict)
+            self.graphics_block.set_content(BlockContentWidget(self, self.attr_dict))
 
         self.scene_ref.graphics_scene.addItem(self.graphics_block)
 
@@ -301,7 +301,7 @@ class FunctionalBlock(Block):
 
         # Init content
         self.graphics_block = GraphicsBlock(self)
-        self.graphics_block.content = BlockContentWidget(self)
+        self.graphics_block.set_content(BlockContentWidget(self))
         self.scene_ref.graphics_scene.addItem(self.graphics_block)
 
         self.init_sockets(*sockets)

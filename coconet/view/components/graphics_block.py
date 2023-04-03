@@ -104,7 +104,7 @@ class GraphicsBlock(QGraphicsItem):
             self.graphics_content.setWidget(self.content)
 
             self.width = self.content.size().width() + 2 * dim.EDGE_ROUNDNESS
-            self.height = self.content.size.height() + 2 * dim.EDGE_ROUNDNESS + dim.TITLE_HEIGHT
+            self.height = self.content.size().height() + 2 * dim.EDGE_ROUNDNESS + dim.TITLE_HEIGHT
 
     def init_flags(self):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
@@ -113,6 +113,10 @@ class GraphicsBlock(QGraphicsItem):
 
     def open_dock_params(self):
         self.block_ref.scene_ref.editor_widget_ref.show_inspector(self.block_ref)
+
+    def set_content(self, content: 'BlockContentWidget'):
+        self.content = content
+        self.init_graphics_content()
 
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
         self.hover = True
