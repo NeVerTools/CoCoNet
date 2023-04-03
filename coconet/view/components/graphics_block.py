@@ -8,13 +8,11 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
 
-from functools import partial
-
 from PyQt6 import QtCore
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPen, QColor, QFont, QBrush, QPainterPath
 from PyQt6.QtWidgets import QGraphicsItem, QWidget, QGraphicsProxyWidget, QGraphicsTextItem, QVBoxLayout, QGridLayout, \
-    QHBoxLayout
+    QHBoxLayout, QMessageBox
 
 import coconet.resources.styling.dimension as dim
 import coconet.resources.styling.palette as palette
@@ -269,6 +267,8 @@ class BlockContentWidget(QWidget):
             self.grid_layout.addWidget(CustomLabel(param_name + ':'), row_grid_count, 0)
 
             # Switch components
+            widget = None
+
             def_val = ''
             if 'default' in self.params_ref[param_name]:
                 def_val = self.params_ref[param_name]['default']
@@ -277,41 +277,37 @@ class BlockContentWidget(QWidget):
             param_obj = self.params_ref[param_name]['object']
 
             if param_obj == 'QLabel':
-                label = CustomLabel(def_val)
-
-                self.grid_layout.addWidget(label, row_grid_count, 1)
-                self.wdg_param_dict[param_name] = [label, def_val, type_val]
+                widget = CustomLabel(def_val)
 
             elif param_obj == 'QLineEdit':
-                line_edit = CustomTextBox(def_val, context=get_classname(self.block_ref))
+                widget = CustomTextBox(def_val, context=get_classname(self.block_ref))
 
                 if self.params_ref[param_name]['editable'] == 'False':
-                    line_edit.setEnabled(False)
-
-                self.grid_layout.addWidget(line_edit, row_grid_count, 1)
-                self.wdg_param_dict[param_name] = [line_edit, def_val, type_val]
+                    widget.setEnabled(False)
 
             elif param_obj == 'QComboBox':
                 if get_classname(self.block_ref) == 'FunctionalBlock':
                     if not self.block_ref.has_input():
                         self.setObjectName('OutputBlockContent')
 
-                    combo = CustomComboBox(context=get_classname(self.block_ref))
+                    widget = CustomComboBox(context=get_classname(self.block_ref))
                     cb_fill = self.block_ref.scene_ref.editor_widget_ref.property_data.keys()
-                    combo.addItems(cb_fill)
+                    widget.addItems(cb_fill)
 
-                    combo.view().setMinimumWidth(140)
-                    combo.setCurrentText(def_val)
+                    widget.view().setMinimumWidth(140)
+                    widget.setCurrentText(def_val)
                 else:
-                    combo = CustomComboBox()
-                    combo.addItems(['True', 'False'])
+                    widget = CustomComboBox()
+                    widget.addItems(['True', 'False'])
                     if def_val == '':
-                        combo.setCurrentText('True')
+                        widget.setCurrentText('True')
                     else:
-                        combo.setCurrentText(def_val)
+                        widget.setCurrentText(def_val)
 
-                self.grid_layout.addWidget(combo, row_grid_count, 1)
-                self.wdg_param_dict[param_name] = [combo, combo.currentText(), type_val]
+                def_val = widget.currentText()
+
+            self.grid_layout.addWidget(widget, row_grid_count, 1)
+            self.wdg_param_dict[param_name] = [widget, def_val, type_val]
 
             # Increment for next parameter
             row_grid_count += 1
@@ -369,8 +365,7 @@ class BlockContentWidget(QWidget):
             # Type check
             if isinstance(qt_wdg, CustomTextBox):
                 prev = qt_wdg.text()
-                check_value = partial(self.check_value_proxy, param_name, prev)
-                qt_wdg.editingFinished.connect(check_value)
+                qt_wdg.editingFinished.connect(lambda: self.check_values(param_name, prev))
 
                 # Set proper validator
                 validator = None
@@ -417,11 +412,47 @@ class BlockContentWidget(QWidget):
             elif button_type == 'Save':
                 self.save_layer_params()
 
-    def check_value_proxy(self, name, value):
-        self.check_values(name, value)
+    def check_values(self, name, bk_value):
+        """
+        This method checks that all values written in Text Edit objects are sound w.r.t. their meaning
 
-    def check_values(self, name, value):
-        pass
+        """
+
+        err_message = ''
+
+        param_type = self.params_ref[name]['type']
+        qt_widget = self.wdg_param_dict[name][0]
+        param_value = qt_widget.text()
+
+        if param_type == 'int':
+            try:
+                int(param_value)
+            except ValueError:
+                err_message = param_value + ' is not a ' + param_type + '. Please change it'
+
+        elif param_type == 'float':
+            try:
+                float(param_value)
+            except ValueError:
+                err_message = param_value + ' is not a ' + param_type + '. Please change it'
+
+        elif param_type == 'list of ints':
+            list_of_strings = param_value.replace(' ', '').rstrip(',').split(',')
+            comma = ', '
+            qt_widget.setText(comma.join(list_of_strings))
+            try:
+                [int(x) for x in list_of_strings]
+            except ValueError:
+                err_message = param_value + ' is not a ' + param_type + '. Please change it'
+
+        if err_message != '':
+            error_msg = QMessageBox()
+            error_msg.setWindowTitle('Error - ' + self.block_ref.title)
+            error_msg.setText(name + ': ' + err_message)
+            error_msg.exec()
+
+            # Restore backup value
+            qt_widget.setText(bk_value)
 
     def save_func_params(self):
         pass
