@@ -6,6 +6,7 @@ This module contains the QWidget class CoCoNetWidget.
 Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
+
 from functools import partial
 
 from PyQt6.QtCore import Qt
