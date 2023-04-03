@@ -7,8 +7,9 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
 
-from typing import Optional
+from typing import Optional, Iterable
 
+import coconet.utils.repr as u
 from coconet.model.block import FunctionalBlock, Block, LayerBlock, PropertyBlock
 from coconet.model.edge import Edge
 from coconet.model.project import Project
@@ -56,6 +57,11 @@ class Scene:
 
         # Project with pynever NN object and interfaces
         self.project = Project(self)
+
+    @staticmethod
+    def get_variables(f_block: FunctionalBlock) -> Iterable:
+        return u.create_variables_from(f_block.attr_dict['name'][1],
+                                       u.text2tuple(f_block.attr_dict['dimension'][1]))
 
     def init_io(self) -> (Block, Block):
         """

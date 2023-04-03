@@ -454,11 +454,31 @@ class BlockContentWidget(QWidget):
             # Restore backup value
             qt_widget.setText(bk_value)
 
+    def missing_params(self) -> bool:
+        return False
+
     def save_func_params(self):
+        """
+        Update label and dimension
+
+        """
+
+        if not self.missing_params():
+
+            name_wdg = self.wdg_param_dict['name'][0]
+            self.wdg_param_dict['name'][1] = name_wdg.text()
+
+            dim_wdg = self.wdg_param_dict['dimension'][0]
+            self.wdg_param_dict['dimension'][1] = dim_wdg.text()
+
+            # Update property variables if required
+            if self.block_ref.get_property_block() is not None:
+                self.block_ref.get_property_block().variables = self.block_ref.scene_ref.get_variables(self.block_ref)
+
+            # TODO UPDATE NETWORK
+
+    def save_layer_params(self):
         pass
 
     def restore_default(self):
-        pass
-
-    def save_layer_params(self):
         pass

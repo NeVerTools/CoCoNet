@@ -62,6 +62,80 @@ def read_json_data() -> tuple:
     return block_data, prop_data, func_data
 
 
+def create_variables_from(v_name: str, v_dim: tuple) -> list:
+    """
+    This method creates a list of variables describing
+    the tuple v_dim with the name v_name.
+
+    Parameters
+    ----------
+    v_name : str
+        The variable main name.
+    v_dim : tuple
+        The variable shape.
+
+    Returns
+    ----------
+    list
+        The list of string variables.
+
+    """
+
+    temp_list = []
+    ped_list = []
+    var_list = []
+
+    # Add underscore
+    v_name += '_'
+    for k in v_dim:
+        if len(temp_list) == 0:
+            for i in range(k):
+                temp_list.append(str(i))
+        else:
+            for i in range(k):
+                for p in temp_list:
+                    p = f"{p}-{i}"
+                    ped_list.append(p)
+            temp_list = ped_list
+            ped_list = []
+
+    for p in temp_list:
+        var_list.append(f"{v_name}{p}")
+
+    return var_list
+
+
+def text2tuple(text: str) -> tuple:
+    """
+    This method takes a string in format "(n,m,l)..."
+    converts it into a variable of type tuple with the given dimensions.
+
+    Parameters
+    ----------
+    text: str
+        Input string to convert.
+
+    Returns
+    ----------
+    tuple
+        The converted tensor set.
+
+    """
+
+    output_tuple = tuple()
+    text = str(text)
+
+    if len(text.split(",")) > 1:
+        for token in text.replace("(", "").replace(")", "").split(","):
+            if token != "":
+                num = int(token)
+                output_tuple += (num,)
+    else:
+        output_tuple += (int(text),)
+
+    return output_tuple
+
+
 def dump_exception(e: Exception):
     # TODO format
     traceback.print_exc()
