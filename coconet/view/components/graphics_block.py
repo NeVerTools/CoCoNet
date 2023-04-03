@@ -19,13 +19,14 @@ from PyQt6.QtWidgets import QGraphicsItem, QWidget, QGraphicsProxyWidget, QGraph
 import coconet.resources.styling.dimension as dim
 import coconet.resources.styling.palette as palette
 from coconet import get_classname, RES_DIR
-from coconet.resources.styling.custom import CustomTextBox, CustomLabel, CustomComboBox
+from coconet.resources.styling.custom import CustomTextBox, CustomLabel, CustomComboBox, CustomButton
 from coconet.utils.repr import ArithmeticValidator
+from coconet.view.ui.dialog import ConfirmDialog
 
 
 class GraphicsBlock(QGraphicsItem):
-    def __init__(self, block: 'Block'):
-        super().__init__()
+    def __init__(self, block: 'Block', parent=None):
+        super().__init__(parent)
         # Reference to the block
         self.block_ref = block
 
@@ -113,7 +114,7 @@ class GraphicsBlock(QGraphicsItem):
         self.setAcceptHoverEvents(True)
 
     def open_dock_params(self):
-        self.block_ref.scene_ref.editor_widget_ref.main_wnd_ref.load_inspector(self.block_ref)
+        self.block_ref.scene_ref.editor_widget_ref.show_inspector(self.block_ref)
 
     def hoverEnterEvent(self, event: 'QGraphicsSceneHoverEvent') -> None:
         self.hover = True
@@ -127,10 +128,10 @@ class GraphicsBlock(QGraphicsItem):
         super().mouseMoveEvent(event)
 
         for block in self.block_ref.scene_ref.blocks.values():
-            if block.isSelected():
-                block.updateConnectedEdges()
+            if block.graphics_block.isSelected():
+                block.update_edges()
 
-        self.block_ref.updateConnectedEdges()
+        self.block_ref.update_edges()
 
     def mouseDoubleClickEvent(self, event: 'QGraphicsSceneMouseEvent') -> None:
         self.open_dock_params()
@@ -244,8 +245,7 @@ class BlockContentWidget(QWidget):
         if build_dict is None:
             self.init_content()
         else:
-            self.loading_dict = build_dict
-            self.load_content()
+            self.load_content(build_dict)
 
         self.init_buttons()
 
@@ -316,10 +316,45 @@ class BlockContentWidget(QWidget):
             # Increment for next parameter
             row_grid_count += 1
 
-    def load_content(self):
+    def load_content(self, build_dict: dict):
         pass
 
     def init_buttons(self):
+        """
+        This method adds to the bottom of the block buttons for saving the updates or to
+        add some property
+
+        """
+
+        if get_classname(self.block_ref) == 'LayerBlock':
+            if self.block_ref.has_parameters():
+                # Create save and discard buttons
+                discard = CustomButton('Restore defaults', context='LayerBlock')
+                discard.clicked.connect(self.on_button_click)
+                save = CustomButton('Save', primary=True, context='LayerBlock')
+                discard.clicked.connect(self.on_button_click)
+
+                self.buttons_layout.addWidget(discard)
+                self.buttons_layout.addWidget(save)
+
+        elif get_classname(self.block_ref) == 'FunctionalBlock':
+            # Create property and update buttons
+            add_prop = CustomButton('Add property', context='FunctionalBlock')
+            add_prop.clicked.connect(self.add_property)
+            update = CustomButton('Update', context='FunctionalBlock')
+            update.clicked.connect(self.on_button_click)
+
+            self.buttons_layout.addWidget(add_prop)
+            self.buttons_layout.addWidget(update)
+
+        elif get_classname(self.block_ref) == 'PropertyBlock':
+            # Create edit button
+            edit = CustomButton('Edit', context='PropertyBlock')
+            edit.clicked.connect(lambda: self.block_ref.scene_ref.edit_property(self.block_ref))
+
+            self.buttons_layout.addWidget(edit)
+
+    def add_property(self):
         pass
 
     def init_validators(self):
@@ -348,8 +383,51 @@ class BlockContentWidget(QWidget):
                     validator = ArithmeticValidator.TENSOR
                 qt_wdg.setValidator(validator)
 
+    def on_button_click(self):
+        """
+        Handler for the button operations. It checks for properties before allowing modifications.
+
+        """
+
+        if self.block_ref.scene_ref.post_block is not None:
+            dialog = ConfirmDialog('Confirmation required',
+                                   'Editing the network will remove the output property.\nProceed?')
+            dialog.exec()
+
+            if dialog.confirm:
+                self.block_ref.scene_ref.remove_out_prop()
+        else:
+            button_type = self.sender().text()
+
+            if button_type == 'Update':  # Only for FunctionalBlocks
+                if self.block_ref.title == 'Input' and self.block_ref.scene_ref.pre_block is not None:
+
+                    dialog = ConfirmDialog('Confirmation required',
+                                           'Editing the network will remove the input property.\nProceed?')
+                    dialog.exec()
+
+                    if dialog.confirm:
+                        self.block_ref.scene_ref.remove_in_prop()
+                        self.save_func_params()
+                else:
+                    self.save_func_params()
+
+            elif button_type == 'Restore defaults':
+                self.restore_default()
+            elif button_type == 'Save':
+                self.save_layer_params()
+
     def check_value_proxy(self, name, value):
         self.check_values(name, value)
 
     def check_values(self, name, value):
+        pass
+
+    def save_func_params(self):
+        pass
+
+    def restore_default(self):
+        pass
+
+    def save_layer_params(self):
         pass

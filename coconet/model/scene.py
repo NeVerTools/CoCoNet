@@ -9,7 +9,7 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 from typing import Optional
 
-from coconet.model.block import FunctionalBlock, Block, LayerBlock
+from coconet.model.block import FunctionalBlock, Block, LayerBlock, PropertyBlock
 from coconet.model.edge import Edge
 from coconet.model.project import Project
 from coconet.view.graphics_scene import GraphicsScene
@@ -164,6 +164,12 @@ class Scene:
 
         if self.blocks_count > 0:
             return Edge(self, prev, cur)
+
+    def edit_property(self, block: PropertyBlock):
+        pass
+
+    def remove_in_prop(self):
+        pass
 
     def remove_out_prop(self):
         pass
