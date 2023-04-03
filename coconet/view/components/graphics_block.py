@@ -19,7 +19,7 @@ import coconet.resources.styling.palette as palette
 from coconet import get_classname, RES_DIR
 from coconet.resources.styling.custom import CustomTextBox, CustomLabel, CustomComboBox, CustomButton
 from coconet.utils.repr import ArithmeticValidator
-from coconet.view.ui.dialog import ConfirmDialog
+from coconet.view.ui.dialog import ConfirmDialog, MessageDialog, MessageType
 
 
 class GraphicsBlock(QGraphicsItem):
@@ -313,7 +313,52 @@ class BlockContentWidget(QWidget):
             row_grid_count += 1
 
     def load_content(self, build_dict: dict):
-        pass
+        """
+        This method loads the block content and displays the proper widgets
+
+        Parameters
+        ----------
+        build_dict : dict
+            Dictionary containing the block data already formatted
+
+        """
+
+        row_grid_count = 0
+
+        for param_name, param_value in build_dict['parameters'].items():
+            # Set label
+            self.grid_layout.addWidget(CustomLabel(param_name + ':'), row_grid_count, 0)
+
+            # Switch components
+            widget = None
+
+            def_val = ''
+            if self.params_ref[param_name]['editable'] == 'True':
+                def_val = param_value
+
+            type_val = self.params_ref[param_name]['type']
+            param_obj = self.params_ref[param_name]['object']
+
+            if param_obj == 'QLabel':
+                widget = CustomLabel(def_val)
+
+            elif param_obj == 'QLineEdit':
+                widget = CustomTextBox(def_val, context=get_classname(self.block_ref))
+
+                if self.params_ref[param_name]['editable'] == 'False':
+                    widget.setEnabled(False)
+
+            elif param_obj == 'QComboBox':
+                widget = CustomComboBox(context=get_classname(self.block_ref))
+                widget.addItems(['True', 'False'])
+                widget.setCurrentText(param_value)
+                def_val = widget.currentText()
+
+            self.grid_layout.addWidget(widget, row_grid_count, 1)
+            self.wdg_param_dict[param_name] = [widget, def_val, type_val]
+
+            # Increment for next parameter
+            row_grid_count += 1
 
     def init_buttons(self):
         """
@@ -455,6 +500,37 @@ class BlockContentWidget(QWidget):
             qt_widget.setText(bk_value)
 
     def missing_params(self) -> bool:
+        """
+        This function checks that all required parameters are set before updating
+
+        Returns
+        -------
+        bool
+            True if there are missing parameters to set, False otherwise
+
+        """
+
+        missing_parameters = []
+
+        for parameter_name in self.wdg_param_dict:
+
+            q_widget = self.wdg_param_dict[parameter_name][0]
+
+            if 'editable' in self.params_ref[parameter_name]:
+                if self.params_ref[parameter_name]['editable'] == 'True':
+                    if 'required' in self.params_ref[parameter_name]:
+                        if self.params_ref[parameter_name]['required'] == 'True':
+                            if q_widget.text() == '':
+                                missing_parameters.append(parameter_name)
+
+                    q_widget.clearFocus()
+
+        if missing_parameters:
+            dialog = MessageDialog('Required parameter(s) ' + ', '.join(missing_parameters).upper()
+                                   + ' missing.\nPlease add them.', MessageType.ERROR)
+            dialog.exec()
+            return True
+
         return False
 
     def save_func_params(self):
