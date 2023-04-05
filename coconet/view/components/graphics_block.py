@@ -532,7 +532,17 @@ class BlockContentWidget(QWidget):
                     button.setEnabled(False)
 
     def add_property(self):
-        pass
+        """
+        This method builds a property from the name in the combo box
+
+        """
+
+        wdg = self.wdg_param_dict['Property'][0]
+        prop_name = wdg.currentText().strip()
+
+        if prop_name in self.block_ref.scene_ref.editor_widget_ref.property_data.keys():
+            self.wdg_param_dict['Property'][1] = prop_name
+            self.block_ref.scene_ref.create_property(prop_name, self.block_ref)
 
     def missing_params(self) -> bool:
         """
@@ -576,11 +586,11 @@ class BlockContentWidget(QWidget):
 
         if not self.missing_params():
 
-            name_wdg = self.wdg_param_dict['name'][0]
-            self.wdg_param_dict['name'][1] = name_wdg.text()
+            name_wdg = self.wdg_param_dict['Name'][0]
+            self.wdg_param_dict['Name'][1] = name_wdg.text()
 
-            dim_wdg = self.wdg_param_dict['dimension'][0]
-            self.wdg_param_dict['dimension'][1] = dim_wdg.text()
+            dim_wdg = self.wdg_param_dict['Dimension'][0]
+            self.wdg_param_dict['Dimension'][1] = dim_wdg.text()
 
             # Update property variables if required
             if self.block_ref.get_property_block() is not None:

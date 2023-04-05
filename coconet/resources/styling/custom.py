@@ -68,6 +68,9 @@ class CustomComboBox(QComboBox):
         elif context == 'Property':
             self.setStyleSheet('border: 2px solid' + palette.DARK_ORANGE + ';')
 
+    def text(self) -> str:
+        return self.currentText()
+
 
 class CustomTextBox(QLineEdit):
     def __init__(self, text: str = '', color: str = 'white', context: str = None):

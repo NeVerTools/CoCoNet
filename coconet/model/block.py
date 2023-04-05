@@ -12,6 +12,7 @@ from uuid import uuid4
 
 import coconet.resources.styling.dimension as dim
 from coconet.model.socket import Socket, SocketPosition, SocketType
+from coconet.resources.styling.custom import CustomLabel
 from coconet.view.components.graphics_block import GraphicsBlock, BlockContentWidget
 
 
@@ -30,6 +31,9 @@ class Block:
 
     title : str
         Title of the block in the editor
+
+    signature : str
+        String used for the key name in dictionaries
 
     attr_dict : dict
         Dictionary containing all the block parameters
@@ -57,6 +61,9 @@ class Block:
 
         # Block title
         self.title = ''
+
+        # Block signature
+        self.signature = 'Block'
 
         # Block attributes dict
         self.attr_dict = dict()
@@ -228,7 +235,7 @@ class LayerBlock(Block):
         super().__init__(scene)
 
         # Signature for dictionary map
-        self.signature = 'blocks:' + key_signature
+        self.signature = 'layers:' + key_signature
         self.title = self.signature.split(':')[-1]
 
         # If an ID is provided use it
@@ -337,4 +344,61 @@ class FunctionalBlock(Block):
 
 
 class PropertyBlock(Block):
-    pass
+    """
+    This class represents a block for the specification of a VNN-LIB property
+
+    """
+
+    def __init__(self, scene: 'Scene', name: str, ref_block: FunctionalBlock):
+        super().__init__(scene)
+
+        self.title = name
+        self.signature = 'properties:' + self.title
+
+        self.id = self.scene_ref.editor_widget_ref.property_data[self.title]['id']
+        self.attr_dict = self.scene_ref.editor_widget_ref.property_data[self.title]
+
+        self.ref_block = ref_block
+
+        # Display attributes
+        self.smt_string = ''
+        self.label_string = ''
+        self.variables = self.scene_ref.get_variables_from(self.ref_block)
+
+        self.property_label = CustomLabel(self.label_string)
+
+    def draw_property(self):
+        # Init content
+        self.graphics_block = GraphicsBlock(self)
+        self.graphics_block.set_content(BlockContentWidget(self))
+        self.scene_ref.graphics_scene.addItem(self.graphics_block)
+
+        # Init sockets
+        if self.ref_block.title == 'Input':
+            sockets = [[], [1]]
+        else:
+            sockets = [[1], []]
+
+        self.init_sockets(*sockets)
+
+        # Add socket to the related functional block
+        self.ref_block.add_property_socket()
+
+        # Init position close to the functional block
+        self.init_position()
+
+        # Create edge between Input node and property
+        self.scene_ref.add_edge(self, self.ref_block)
+
+    def init_position(self):
+        """
+        This method sets the positions of the properties respect to the FunctionalBlocks
+
+        """
+
+        if self.ref_block.title == 'Input':
+            self.graphics_block.setPos(self.ref_block.pos.x() - 80 - self.width,
+                                       self.ref_block.pos.y() + self.ref_block.height / 2 - self.height / 2)
+        else:
+            self.graphics_block.setPos(self.ref_block.pos.x() + self.ref_block.width + 80,
+                                       self.ref_block.pos.y() + self.ref_block.height / 2 - self.height / 2)

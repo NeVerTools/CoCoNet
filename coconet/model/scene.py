@@ -13,9 +13,10 @@ import coconet.utils.repr as u
 from coconet.model.block import FunctionalBlock, Block, LayerBlock, PropertyBlock
 from coconet.model.edge import Edge
 from coconet.model.project import Project
+from coconet.utils.container import PropertyContainer
 from coconet.view.graphics_scene import GraphicsScene
 from coconet.view.graphics_view import GraphicsView
-from coconet.view.ui.dialog import ConfirmDialog
+from coconet.view.ui.dialog import ConfirmDialog, MessageDialog, MessageType
 
 
 class Scene:
@@ -171,7 +172,52 @@ class Scene:
         if self.blocks_count > 0:
             return Edge(self, prev, cur)
 
-    def edit_property(self, block: PropertyBlock):
+    def create_property(self, name: str, parent: FunctionalBlock, prop_cnt: PropertyContainer = None):
+        """
+        This function defines a property given the input or output block
+
+        Parameters
+        ----------
+        name
+        parent
+        prop_cnt
+
+        """
+
+        if len(self.blocks) > 2:  # Check there are layers in the network
+            new_block = PropertyBlock(self, name, parent)
+
+            # Check there are no properties already
+            if parent.get_property_block() is not None:
+                dialog = ConfirmDialog('Replace property',
+                                       'There is a property already\nReplace it?')
+                dialog.exec()
+
+                if dialog.confirm:
+                    if parent.title == 'Input':
+                        self.remove_in_prop()
+                    else:
+                        self.remove_out_prop()
+
+                    if prop_cnt is None:
+                        has_edits = self.edit_property(new_block)
+                    else:
+                        has_edits = True
+                        new_block.smt_string = prop_cnt.smt_string
+                        new_block.variables = prop_cnt.variables
+
+                    if has_edits:
+                        new_block.draw_property()
+
+                        if parent.title == 'Input' and not self.pre_block:
+                            self.pre_block = new_block
+                        elif parent.title == 'Output' and not self.post_block:
+                            self.post_block = new_block
+        else:
+            dialog = MessageDialog('No network defined for adding a property', MessageType.ERROR)
+            dialog.exec()
+
+    def edit_property(self, block: PropertyBlock) -> bool:
         pass
 
     def remove_in_prop(self):
