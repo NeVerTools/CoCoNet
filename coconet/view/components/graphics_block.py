@@ -395,7 +395,7 @@ class BlockContentWidget(QWidget):
         elif get_classname(self.block_ref) == 'PropertyBlock':
             # Create edit button
             edit = CustomButton('Edit', context='PropertyBlock')
-            edit.clicked.connect(lambda: self.block_ref.scene_ref.edit_property(self.block_ref))
+            edit.clicked.connect(self.block_ref.edit_property)
 
             self.buttons_layout.addWidget(edit)
 
@@ -594,7 +594,7 @@ class BlockContentWidget(QWidget):
 
             # Update property variables if required
             if self.block_ref.get_property_block() is not None:
-                self.block_ref.get_property_block().variables = self.block_ref.scene_ref.get_variables(self.block_ref)
+                self.block_ref.get_property_block().variables = self.block_ref.get_variables()
 
             # TODO UPDATE NETWORK
 

@@ -7,13 +7,15 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
 
-from typing import Optional
+from typing import Optional, Iterable
 from uuid import uuid4
 
 import coconet.resources.styling.dimension as dim
+import coconet.utils.repr as u
 from coconet.model.socket import Socket, SocketPosition, SocketType
 from coconet.resources.styling.custom import CustomLabel
 from coconet.view.components.graphics_block import GraphicsBlock, BlockContentWidget
+from coconet.view.ui.dialog import EditSmtPropertyDialog, EditPolyhedralPropertyDialog
 
 
 class Block:
@@ -314,10 +316,10 @@ class FunctionalBlock(Block):
         self.init_sockets(*sockets)
 
     def get_name(self):
-        return self.attr_dict['parameters']['name'][1]
+        return self.attr_dict['parameters']['Name'][1]
 
     def get_shape(self):
-        return self.attr_dict['parameters']['dimension'][1]
+        return self.attr_dict['parameters']['Dimension'][1]
 
     def get_property_block(self) -> 'PropertyBlock':
         return self.scene_ref.pre_block if self.title == 'Input' else self.scene_ref.post_block
@@ -334,6 +336,10 @@ class FunctionalBlock(Block):
         else:
             socket = Socket(self, 1, SocketPosition.RIGHT_TOP, SocketType.OUTPUT)
             self.output_sockets.append(socket)
+
+    def get_variables(self) -> Iterable:
+        return u.create_variables_from(self.attr_dict['Name'][1],
+                                       u.text2tuple(self.attr_dict['Dimension'][1]))
 
     def remove(self):
         """
@@ -363,7 +369,7 @@ class PropertyBlock(Block):
         # Display attributes
         self.smt_string = ''
         self.label_string = ''
-        self.variables = self.scene_ref.get_variables_from(self.ref_block)
+        self.variables = self.ref_block.get_variables()
 
         self.property_label = CustomLabel(self.label_string)
 
@@ -402,6 +408,43 @@ class PropertyBlock(Block):
         else:
             self.graphics_block.setPos(self.ref_block.pos.x() + self.ref_block.width + 80,
                                        self.ref_block.pos.y() + self.ref_block.height / 2 - self.height / 2)
+
+    def edit_property(self) -> bool:
+        """
+        This method invokes the proper dialog to edit the property
+
+        Returns
+        ----------
+        bool
+            True if there are edits, False otherwise
+
+        """
+
+        dialog = None
+
+        if self.title == 'Generic SMT':
+            dialog = EditSmtPropertyDialog(self)
+            dialog.exec()
+
+            if dialog.has_edits:
+                self.smt_string = dialog.new_property_str
+                self.property_label.setText(self.smt_string)
+
+        elif self.title == 'Polyhedral':
+            dialog = EditPolyhedralPropertyDialog(self)
+            dialog.exec()
+
+            if dialog.has_edits:
+                if self.label_string == 'Ax - b <= 0':
+                    self.label_string = ''
+
+                for p in dialog.property_list:
+                    self.label_string += f'{p[0]} {p[1]} {p[2]}\n'
+                    self.smt_string += f'(assert ({p[1]} {p[0]} {float(p[2])}))\n'
+
+                self.property_label.setText(self.smt_string)
+
+        return dialog.has_edits if dialog is not None else False
 
     def remove(self):
         """

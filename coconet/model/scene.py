@@ -7,17 +7,18 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
 
-from typing import Optional, Iterable
+from typing import Optional
 
-import coconet.utils.repr as u
+from PyQt6.QtCore import QPointF
+from PyQt6.QtWidgets import QGraphicsItem
+
 from coconet.model.block import FunctionalBlock, Block, LayerBlock, PropertyBlock
 from coconet.model.edge import Edge
 from coconet.model.project import Project
 from coconet.utils.container import PropertyContainer
 from coconet.view.graphics_scene import GraphicsScene
 from coconet.view.graphics_view import GraphicsView
-from coconet.view.ui.dialog import ConfirmDialog, MessageDialog, MessageType, EditSmtPropertyDialog, \
-    EditPolyhedralPropertyDialog
+from coconet.view.ui.dialog import ConfirmDialog, MessageDialog, MessageType
 
 
 class Scene:
@@ -60,11 +61,6 @@ class Scene:
         # Project with pynever NN object and interfaces
         self.project = Project(self)
 
-    @staticmethod
-    def get_variables(f_block: FunctionalBlock) -> Iterable:
-        return u.create_variables_from(f_block.attr_dict['name'][1],
-                                       u.text2tuple(f_block.attr_dict['dimension'][1]))
-
     def init_io(self) -> (Block, Block):
         """
         This method creates the input and output blocks, which are permanent
@@ -90,6 +86,44 @@ class Scene:
         self.blocks_count += 2
 
         return input_block, output_block
+
+    def has_properties(self) -> bool:
+        return self.pre_block is not None or self.post_block is not None
+
+    def load_properties(self, prop_dict: dict):
+        """
+        Load existing properties from a dictionary <ID> : <PropertyFormat>
+
+        """
+
+        if len(prop_dict.keys()) <= 2:  # At most one pre-condition and one post-condition
+            available_list = [self.input_block.tile, self.output_block.title,
+                              self.project.nn.get_last_node().identifier]
+
+            # Check variables compatibility
+            for prop_id in prop_dict.keys():
+                if prop_id not in available_list:
+                    raise Exception('This property appears to be defined on another network!\n'
+                                    f'Unknown variable: {prop_id}')
+
+            # Check output id
+            if self.project.nn.get_last_node().identifier in prop_dict.keys():
+                new_smt_string = prop_dict[self.project.nn.get_last_node().identifier].smt_string.replace(
+                    self.project.nn.get_last_node().identifier, self.output_block.title)
+
+                new_variable_list = []
+                for variable in prop_dict[self.project.nn.get_last_node().identifier].variables:
+                    new_variable_list.append(variable.replace(
+                        self.project.nn.get_last_node().identifier, self.output_block.title))
+
+                prop_dict[self.output_block.title] = PropertyContainer(new_smt_string, new_variable_list)
+                prop_dict.pop(self.project.nn.get_last_node().identifier)
+
+            for k, v in prop_dict.keys():
+                if k == self.input_block.tile:
+                    self.create_property('Generic SMT', self.input_block, v)
+                elif k == self.output_block.title or k == self.project.nn.get_last_node().identifier:
+                    self.create_property('Generic SMT', self.output_block, v)
 
     def add_layer_block(self, block_data: dict, block_sign: str, block_id=None) -> Optional[LayerBlock]:
         """
@@ -206,7 +240,7 @@ class Scene:
                         self.remove_out_prop()
 
                     if prop_cnt is None:
-                        has_edits = self.edit_property(new_block)
+                        has_edits = new_block.edit_property()
                     else:
                         has_edits = True
                         new_block.smt_string = prop_cnt.smt_string
@@ -223,49 +257,6 @@ class Scene:
             dialog = MessageDialog('No network defined for adding a property', MessageType.ERROR)
             dialog.exec()
 
-    @staticmethod
-    def edit_property(block: PropertyBlock) -> bool:
-        """
-        This method invokes the proper dialog to edit the property
-
-        Parameters
-        ----------
-        block : PropertyBlock
-            The caller block
-
-        Returns
-        ----------
-        bool
-            True if there are edits, False otherwise
-
-        """
-
-        dialog = None
-
-        if block.title == 'Generic SMT':
-            dialog = EditSmtPropertyDialog(block)
-            dialog.exec()
-
-            if dialog.has_edits:
-                block.smt_string = dialog.new_property_str
-                block.property_label.setText(block.smt_string)
-
-        elif block.title == 'Polyhedral':
-            dialog = EditPolyhedralPropertyDialog(block)
-            dialog.exec()
-
-            if dialog.has_edits:
-                if block.label_string == 'Ax - b <= 0':
-                    block.label_string = ''
-
-                for p in dialog.property_list:
-                    block.label_string += f'{p[0]} {p[1]} {p[2]}\n'
-                    block.smt_string += f'(assert ({p[1]} {p[0]} {float(p[2])}))\n'
-
-                block.property_label.setText(block.smt_string)
-
-        return dialog.has_edits if dialog is not None else False
-
     def remove_in_prop(self):
         if self.pre_block is not None:
             self.pre_block.remove()
@@ -275,3 +266,20 @@ class Scene:
         if self.post_block is not None:
             self.post_block.remove()
             self.post_block = None
+
+    def clear_scene(self):
+        """
+        Clear all graphics objects, dictionaries and re-init the I/O blocks
+
+        """
+
+        self.graphics_scene.clear()
+        self.blocks = {}
+        self.sequential_list = []
+        self.blocks_count = 0
+        self.pre_block = None
+        self.post_block = None
+        self.input_block, self.output_block = self.init_io()
+
+    def get_item_at(self, pos: 'QPointF') -> 'QGraphicsItem':
+        return self.view.itemAt(pos)
