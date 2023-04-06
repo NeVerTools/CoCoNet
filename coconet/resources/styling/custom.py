@@ -43,7 +43,7 @@ class CustomButton(QPushButton):
 
 class CustomLabel(QLabel):
     def __init__(self, text: str = '', color: str = 'white', primary: bool = False,
-                 alignment=Qt.AlignmentFlag.AlignLeft):
+                 alignment=Qt.AlignmentFlag.AlignLeft, context: str = ''):
         super(CustomLabel, self).__init__(text)
         if primary:
             self.setAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -53,6 +53,9 @@ class CustomLabel(QLabel):
             self.setStyleSheet('color: ' + color + ';' +
                                'border: none;' +
                                'padding: 2px 0px 2px 2px;')
+
+        if context == 'Property':
+            self.setStyleSheet(disp.PROPERTY_LABEL_STYLE)
 
 
 class CustomComboBox(QComboBox):

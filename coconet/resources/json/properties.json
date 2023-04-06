@@ -12,12 +12,5 @@
     "parameters": {
     },
     "description": ""
-  },
-  "Local robustness": {
-    "name": "Local robustness",
-    "id": "LRB",
-    "parameters": {
-    },
-    "description": ""
   }
 }

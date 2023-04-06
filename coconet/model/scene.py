@@ -16,7 +16,8 @@ from coconet.model.project import Project
 from coconet.utils.container import PropertyContainer
 from coconet.view.graphics_scene import GraphicsScene
 from coconet.view.graphics_view import GraphicsView
-from coconet.view.ui.dialog import ConfirmDialog, MessageDialog, MessageType
+from coconet.view.ui.dialog import ConfirmDialog, MessageDialog, MessageType, EditSmtPropertyDialog, \
+    EditPolyhedralPropertyDialog
 
 
 class Scene:
@@ -222,8 +223,48 @@ class Scene:
             dialog = MessageDialog('No network defined for adding a property', MessageType.ERROR)
             dialog.exec()
 
-    def edit_property(self, block: PropertyBlock) -> bool:
-        pass
+    @staticmethod
+    def edit_property(block: PropertyBlock) -> bool:
+        """
+        This method invokes the proper dialog to edit the property
+
+        Parameters
+        ----------
+        block : PropertyBlock
+            The caller block
+
+        Returns
+        ----------
+        bool
+            True if there are edits, False otherwise
+
+        """
+
+        dialog = None
+
+        if block.title == 'Generic SMT':
+            dialog = EditSmtPropertyDialog(block)
+            dialog.exec()
+
+            if dialog.has_edits:
+                block.smt_string = dialog.new_property_str
+                block.property_label.setText(block.smt_string)
+
+        elif block.title == 'Polyhedral':
+            dialog = EditPolyhedralPropertyDialog(block)
+            dialog.exec()
+
+            if dialog.has_edits:
+                if block.label_string == 'Ax - b <= 0':
+                    block.label_string = ''
+
+                for p in dialog.property_list:
+                    block.label_string += f'{p[0]} {p[1]} {p[2]}\n'
+                    block.smt_string += f'(assert ({p[1]} {p[0]} {float(p[2])}))\n'
+
+                block.property_label.setText(block.smt_string)
+
+        return dialog.has_edits if dialog is not None else False
 
     def remove_in_prop(self):
         if self.pre_block is not None:
