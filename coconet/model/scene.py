@@ -87,6 +87,9 @@ class Scene:
 
         return input_block, output_block
 
+    def has_network(self) -> bool:
+        return False if self.project is None else self.project.nn.is_empty()
+
     def has_properties(self) -> bool:
         return self.pre_block is not None or self.post_block is not None
 

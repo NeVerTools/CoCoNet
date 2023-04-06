@@ -100,6 +100,10 @@ class Block:
     def height(self):
         return self.graphics_block.height
 
+    @property
+    def content(self):
+        return self.graphics_block.content
+
     def has_parameters(self) -> bool:
         return len(self.attr_dict['parameters']) > 0
 
