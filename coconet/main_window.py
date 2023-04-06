@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import QMainWindow
 
 from coconet import APP_NAME, RES_DIR
 from coconet.view.ui.main_widget import CoCoNetWidget
+import coconet.resources.styling.dimension as dim
 
 
 def open_guide():
@@ -70,7 +71,7 @@ class CoCoNetWindow(QMainWindow):
         self.setWindowIcon(QIcon(RES_DIR + '/icons/logo_square.png'))
 
         # Frame window to center
-        self.setGeometry(0, 0, 1024, 736)
+        self.setGeometry(0, 0, dim.WINDOW_WIDTH, dim.WINDOW_HEIGHT)
         frame = self.frameGeometry()
         frame.moveCenter(QGuiApplication.primaryScreen().availableGeometry().center())
         self.move(frame.topLeft())

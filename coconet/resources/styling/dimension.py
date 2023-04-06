@@ -7,6 +7,32 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
 
+# Scene
+# ------------
+
+# Width and height
+SCENE_WIDTH = 12800
+SCENE_HEIGHT = 6400
+
+# Window size
+WINDOW_WIDTH = 1024
+WINDOW_HEIGHT = 768
+
+# Other dimensions
+GRID_SIZE = 20
+GRID_SQUARE = 5
+ABS_BLOCK_DISTANCE = 100
+
+# Graphics View
+# ------------
+
+# Zoom parameters
+ZOOM = 10
+ZOOM_IN_FACTOR = 1.25
+ZOOM_STEP = 1
+ZOOM_RANGE = [0, 10]
+ZOOM_CLAMP = True
+
 # Blocks
 # ------------
 
@@ -33,26 +59,3 @@ SCENE_BORDER = 2300
 # Parameters
 SOCKET_RADIUS = 6
 SOCKET_OUTLINE = 2
-
-# Scene
-# ------------
-
-# Width and height
-SCENE_WIDTH = 12800
-SCENE_HEIGHT = 6400
-
-# Other dimensions
-GRID_SIZE = 20
-GRID_SQUARE = 5
-ABS_BLOCK_DISTANCE = 100
-
-# Graphics View
-# ------------
-
-# Zoom parameters
-ZOOM = 10
-ZOOM_IN_FACTOR = 1.25
-ZOOM_STEP = 1
-ZOOM_RANGE = [0, 10]
-ZOOM_CLAMP = True
-
