@@ -402,3 +402,16 @@ class PropertyBlock(Block):
         else:
             self.graphics_block.setPos(self.ref_block.pos.x() + self.ref_block.width + 80,
                                        self.ref_block.pos.y() + self.ref_block.height / 2 - self.height / 2)
+
+    def remove(self):
+        """
+        Remove this block and hide sockets
+
+        """
+
+        for socket in self.input_sockets + self.output_sockets:
+            # Remove the functional socket
+            if self.title == 'Input':
+                socket.edge.end_skt.remove()
+            else:
+                socket.edge.start_skt.remove()

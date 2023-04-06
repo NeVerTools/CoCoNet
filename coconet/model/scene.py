@@ -178,9 +178,14 @@ class Scene:
 
         Parameters
         ----------
-        name
-        parent
-        prop_cnt
+        name : str
+            The name of the property
+
+        parent : FunctionalBlock
+            The block to attach the property to
+
+        prop_cnt : PropertyContainer
+            The container object for property data
 
         """
 
@@ -221,7 +226,11 @@ class Scene:
         pass
 
     def remove_in_prop(self):
-        pass
+        if self.pre_block is not None:
+            self.pre_block.remove()
+            self.pre_block = None
 
     def remove_out_prop(self):
-        pass
+        if self.post_block is not None:
+            self.post_block.remove()
+            self.post_block = None
