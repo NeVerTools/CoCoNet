@@ -248,11 +248,12 @@ class LayerBlock(Block):
         if block_id is not None:
             self._id = block_id
 
+        # Copy parameters and create block layout
+        self.attr_dict = build_dict
+
         # Init graphics block
         self.graphics_block = GraphicsBlock(self)
 
-        # Copy parameters and create block layout
-        self.attr_dict = build_dict
         if self.has_parameters():
             self.graphics_block.set_content(BlockContentWidget(self, self.attr_dict))
 
