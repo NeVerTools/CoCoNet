@@ -25,9 +25,9 @@ class GraphicsView(QGraphicsView):
         self.gr_scene_ref = gr_scene
         self.setScene(self.gr_scene_ref)
 
-        self.initUI()
+        self.init_ui()
 
-    def initUI(self):
+    def init_ui(self):
         self.setRenderHints(QPainter.RenderHint.Antialiasing | QPainter.RenderHint.TextAntialiasing |
                             QPainter.RenderHint.SmoothPixmapTransform)
         self.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.FullViewportUpdate)
@@ -38,3 +38,9 @@ class GraphicsView(QGraphicsView):
 
         self.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.FullViewportUpdate)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+
+    def zoom_in(self):
+        pass
+
+    def zoom_out(self):
+        pass

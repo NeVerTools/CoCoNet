@@ -44,10 +44,6 @@
       "Shortcut": "Ctrl+-",
       "checkable": "False"
     },
-    "Toggle edge dimensions": {
-      "Shortcut": "Ctrl+E",
-      "checkable": "True"
-    },
     "Show inspector": {
       "Shortcut": "Ctrl+P",
       "checkable": "False"
