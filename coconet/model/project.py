@@ -77,7 +77,7 @@ class Project:
 
         """
 
-        new_node = NodeFactory.create_node(layer_name, layer_id, data, self.last_out_dim())
+        new_node = NodeFactory.create_layernode(layer_name, layer_id, data, self.last_out_dim())
         self.nn.add_node(new_node)
         self.set_modified(True)
 
