@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QGridLayout
 import coconet.resources.styling.display as disp
 from coconet import RES_DIR
 from coconet.resources.styling.custom import CustomLabel, CustomButton, CustomTextArea, CustomComboBox, CustomTextBox
-from coconet.utils.rep import ArithmeticValidator
+from coconet.utils.validator import ArithmeticValidator
 
 
 class MessageType(Enum):

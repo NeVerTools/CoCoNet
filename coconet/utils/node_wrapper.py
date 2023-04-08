@@ -1,3 +1,12 @@
+"""
+Module node_wrapper.py
+
+This module contains the factory class for instantiating nodes in pynever and dictionary formats
+
+Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
+
+"""
+
 from pynever.nodes import LayerNode, ReLUNode, SigmoidNode, FullyConnectedNode, BatchNormNode, AveragePoolNode, \
     ConvNode, MaxPoolNode, LRNNode, SoftMaxNode, UnsqueezeNode, FlattenNode, DropoutNode, ReshapeNode, ELUNode, \
     CELUNode, LeakyReLUNode, TanhNode
