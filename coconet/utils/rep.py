@@ -1,5 +1,5 @@
 """
-Module repr.py
+Module rep.py
 
 This module contains utility methods for the representation of objects
 

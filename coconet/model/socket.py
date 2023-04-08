@@ -10,7 +10,7 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 from enum import Enum
 
 from coconet import get_classname
-from coconet.utils.repr import dump_exception
+from coconet.utils.rep import dump_exception
 from coconet.view.components.graphics_socket import GraphicsSocket
 
 

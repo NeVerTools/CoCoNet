@@ -12,7 +12,7 @@ from functools import partial
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QTreeWidget, QTreeWidgetItem, QSplitter
 
-import coconet.utils.repr as fu
+import coconet.utils.rep as fu
 from coconet import RES_DIR
 from coconet.model.scene import Scene
 from coconet.resources.styling.custom import CustomButton

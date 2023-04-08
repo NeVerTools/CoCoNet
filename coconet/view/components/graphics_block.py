@@ -18,7 +18,7 @@ import coconet.resources.styling.dimension as dim
 import coconet.resources.styling.palette as palette
 from coconet import get_classname, RES_DIR
 from coconet.resources.styling.custom import CustomTextBox, CustomLabel, CustomComboBox, CustomButton
-from coconet.utils.repr import ArithmeticValidator
+from coconet.utils.rep import ArithmeticValidator
 from coconet.view.ui.dialog import ConfirmDialog, MessageDialog, MessageType
 
 

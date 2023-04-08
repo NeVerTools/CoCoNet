@@ -11,7 +11,7 @@ from typing import Optional, Iterable
 from uuid import uuid4
 
 import coconet.resources.styling.dimension as dim
-import coconet.utils.repr as u
+import coconet.utils.rep as u
 from coconet.model.socket import Socket, SocketPosition, SocketType
 from coconet.resources.styling.custom import CustomLabel
 from coconet.view.components.graphics_block import GraphicsBlock, BlockContentWidget
