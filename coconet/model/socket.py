@@ -57,6 +57,10 @@ class Socket:
         self.graphics_socket = GraphicsSocket(self, self.block_ref.graphics_block)
         self.graphics_socket.setPos(*self.block_ref.get_socket_pos(self.idx, self.position, absolute=False))
 
+    @property
+    def abs_pos(self):
+        return self.block_ref.get_socket_pos(self.idx, self.position, absolute=True)
+
     def remove(self):
         """
         Procedure to safely remove the Socket

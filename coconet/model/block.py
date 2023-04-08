@@ -109,11 +109,11 @@ class Block:
 
     def has_input(self) -> bool:
         if self.input_sockets:
-            return self.input_sockets[-1].has_edge()
+            return self.input_sockets[-1].edge is not None
 
     def has_output(self) -> bool:
         if self.output_sockets:
-            return self.output_sockets[-1].has_edge()
+            return self.output_sockets[-1].edge is not None
 
     def init_sockets(self, inputs, outputs):
         """
@@ -129,7 +129,7 @@ class Block:
             socket = Socket(self, i, SocketPosition.RIGHT_TOP, SocketType.OUTPUT)
             self.output_sockets.append(socket)
 
-    def get_socket_pos(self, index: int, position: SocketPosition, absolute: bool) -> tuple:
+    def get_socket_pos(self, index: int, position: SocketPosition, absolute: bool) -> list:
         """
         Method to return the relative or absolute position of the sockets of this block
 
@@ -143,9 +143,9 @@ class Block:
         y = dim.TITLE_HEIGHT + dim.TITLE_PAD + dim.EDGE_ROUNDNESS + index * dim.SOCKET_SPACING
 
         if absolute:
-            return x + self.pos.x(), y + self.pos.y()
+            return [x + self.pos.x(), y + self.pos.y()]
         else:
-            return x, y
+            return [x, y]
 
     def previous(self) -> Optional['Block']:
         """
@@ -237,7 +237,7 @@ class LayerBlock(Block):
     """
 
     def __init__(self, scene: 'Scene', inputs: list, outputs: list, build_dict: dict,
-                 key_signature: str = '', block_id: str = None):
+                 key_signature: str = '', block_id: str = None, load_dict: dict = None):
         super().__init__(scene)
 
         # Signature for dictionary map
@@ -255,7 +255,7 @@ class LayerBlock(Block):
         self.graphics_block = GraphicsBlock(self)
 
         if self.has_parameters():
-            self.graphics_block.set_content(BlockContentWidget(self, self.attr_dict))
+            self.graphics_block.set_content(BlockContentWidget(self, load_dict))
 
         self.scene_ref.graphics_scene.addItem(self.graphics_block)
 

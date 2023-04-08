@@ -61,7 +61,17 @@ class Edge:
         self.scene_ref.graphics_scene.addItem(self.graphics_edge)
 
     def update_pos(self):
-        pass
+        """
+        This method updates dynamically the start and end positions of the edge
+
+        """
+
+        if self.start_skt is not None:
+            self.graphics_edge.src_pos = self.start_skt.abs_pos
+        if self.end_skt is not None:
+            self.graphics_edge.dest_pos = self.end_skt.abs_pos
+
+        self.graphics_edge.update()
 
     def update_label(self, text):
         self.graphics_edge.set_label(text)

@@ -79,6 +79,10 @@ class Scene:
         self.blocks[input_block.id] = input_block
         self.blocks[output_block.id] = output_block
 
+        # Add to sequential list
+        self.sequential_list.append(input_block.id)
+        self.sequential_list.append(output_block.id)
+
         # Init start position in the view
         input_block.graphics_block.setPos(-300, -60)
         output_block.graphics_block.setPos(100, -60)
@@ -174,8 +178,8 @@ class Scene:
 
         # Remove last edge
         last_block_socket = self.output_block.input_sockets[0]
-        if last_block_socket.has_edge():
-            last_block_socket.get_edge().remove()
+        if last_block_socket.edge is not None:
+            last_block_socket.edge.remove()
 
         # Add two new edges
         self.add_edge(prev, added_block)
