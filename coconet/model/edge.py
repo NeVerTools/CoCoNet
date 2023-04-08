@@ -81,4 +81,17 @@ class Edge:
         self.end_skt = None
 
     def remove(self):
-        pass
+        """
+        Remove the edge object along with the graphics edge reference
+
+        """
+
+        self.graphics_edge.hide()
+
+        self.start_skt.edge = None
+        self.start_skt = None
+        self.end_skt.edge = None
+        self.end_skt = None
+
+        self.scene_ref.graphics_scene.removeItem(self.graphics_edge)
+        self.scene_ref.graphics_scene.update()

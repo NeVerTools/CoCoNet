@@ -77,7 +77,7 @@ class GraphicsEdge(QGraphicsPathItem):
         # Draw arrow
         painter.setBrush(QColor(palette.BLUE))
 
-        if not self.edge_ref.view_dim:
+        if self.edge_ref.view_dim:
             polygon = QPolygonF(self.build_arrow())
             painter.drawPolygon(polygon)
 

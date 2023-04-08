@@ -31,7 +31,6 @@ ZOOM = 10
 ZOOM_IN_FACTOR = 1.25
 ZOOM_STEP = 1
 ZOOM_RANGE = [0, 10]
-ZOOM_CLAMP = True
 
 # Blocks
 # ------------
