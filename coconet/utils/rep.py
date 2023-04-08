@@ -14,6 +14,7 @@ from PyQt6.QtCore import QLocale, QRegularExpression
 from PyQt6.QtGui import QIntValidator, QDoubleValidator, QRegularExpressionValidator
 
 from coconet import RES_DIR
+from coconet.view.ui.dialog import MessageDialog, MessageType
 
 JSON_PATH = RES_DIR + '/json'
 
@@ -134,6 +135,49 @@ def text2tuple(text: str) -> tuple:
         output_tuple += (int(text),)
 
     return output_tuple
+
+
+def format_data(params: dict) -> dict:
+    """
+    This function re-formats a complete dictionary of block attributes in the format
+    <key> : str
+    <value> : expected type
+
+    Parameters
+    ----------
+    params : dict
+        The original dictionary
+
+    Returns
+    ----------
+    dict
+        The formatted dictionary
+
+    """
+
+    converted_dict = dict()
+    value = None
+
+    try:
+        for param_name, param_value in params.items():
+            if param_value[1] == '':
+                continue
+            if param_value[2] == 'Tensor':
+                value = text2tuple(param_value[1])
+            elif param_value[2] == 'int':
+                value = int(param_value[1])
+            elif param_value[2] == 'list of ints':
+                value = list(map(int, param_value[1].split(', ')))
+            elif param_value[2] == 'boolean':
+                value = param_value[1] == 'True'
+            elif param_value[2] == 'float':
+                value = float(param_value[1])
+            converted_dict[param_name] = value
+    except Exception as e:
+        dialog = MessageDialog(str(e), MessageType.ERROR)
+        dialog.exec()
+
+    return converted_dict
 
 
 def dump_exception(e: Exception):
