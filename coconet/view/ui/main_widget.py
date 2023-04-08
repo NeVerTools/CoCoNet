@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import QWidget, QHBoxLayout, QTreeWidget, QTreeWidgetItem, 
 
 import coconet.utils.rep as fu
 from coconet import RES_DIR
+from coconet.model.block import LayerBlock, PropertyBlock
 from coconet.model.scene import Scene
 from coconet.resources.styling.custom import CustomButton
 from coconet.view.components.inspector import InspectorDockToolbar
@@ -51,6 +52,7 @@ class CoCoNetWidget(QWidget):
         # Layers toolbar
         self.layers_toolbar = self.create_layers_toolbar()
         self.inspector = InspectorDockToolbar(self.block_data, self.property_data)
+        self.main_wnd_ref.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.inspector)
 
         # Scene
         self.scene = Scene(self)
@@ -113,5 +115,15 @@ class CoCoNetWidget(QWidget):
     def remove_sel(self):
         pass
 
-    def show_inspector(self, block=None):
-        self.inspector.display(block)
+    def show_inspector(self):
+        """
+        This method opens the block inspector if a block is selected
+
+        """
+
+        if len(self.scene.graphics_scene.selectedItems()) == 1:
+            item = self.scene.graphics_scene.selectedItems()
+
+            if hasattr(item[0], 'block_ref'):
+                if isinstance(item[0].block_ref, LayerBlock) or isinstance(item[0].block_ref, PropertyBlock):
+                    self.inspector.display(item[0].block_ref)
