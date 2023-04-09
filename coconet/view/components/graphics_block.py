@@ -114,7 +114,7 @@ class GraphicsBlock(QGraphicsItem):
         self.setAcceptHoverEvents(True)
 
     def open_dock_params(self):
-        self.block_ref.scene_ref.editor_widget_ref.show_inspector(self.block_ref)
+        self.block_ref.scene_ref.editor_widget_ref.show_inspector()
 
     def set_content(self, content: 'BlockContentWidget'):
         self.content = content

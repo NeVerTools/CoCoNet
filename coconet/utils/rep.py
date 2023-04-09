@@ -74,7 +74,7 @@ def create_variables_from(v_name: str, v_dim: tuple) -> list:
 
 def text2tuple(text: str) -> tuple:
     """
-    This method takes a string in format "(n,m,l)..."
+    This method takes a string in format '(n,m,l)...' and
     converts it into a variable of type tuple with the given dimensions.
 
     Parameters
@@ -101,6 +101,43 @@ def text2tuple(text: str) -> tuple:
         output_tuple += (int(text),)
 
     return output_tuple
+
+
+def tuple2text(tup: tuple, prod: bool = True) -> str:
+    """
+    This function takes in input a tuple and return a string in a new format
+
+    Parameters
+    ----------
+    tup : tuple
+        A tuple of elements
+
+    prod : boolean
+        Determines if the digits of the tuple must be separated by 'x' or ','
+
+    Returns
+    -------
+    new_format : str
+        Either the tuple formatted as 'a x b x c ...' if prod is True, 'a, b, c ...' otherwise
+
+    """
+
+    dim_list = list(str(tup).replace('(', '').strip().replace(')', '').strip().split(','))
+    if '' in dim_list:
+        dim_list.remove('')
+
+    if len(dim_list) == 1:
+        return str(tup).replace('(', '').replace(')', '').replace(',', '')
+
+    if prod:
+        separator = 'x'
+    else:
+        separator = ','
+
+    dim_list = [x.strip() for x in str(tup).replace('(', '').strip().replace(')', '').strip().split(',')]
+    new_format = separator.join(dim_list)
+
+    return new_format
 
 
 def format_data(params: dict) -> dict:

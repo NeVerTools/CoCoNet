@@ -9,12 +9,16 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 from typing import Optional
 
+import numpy as np
 from PyQt6.QtCore import QPointF
 from PyQt6.QtWidgets import QGraphicsItem
+from pynever.nodes import LayerNode
 
+import coconet.utils.rep as rep
 from coconet.model.block import FunctionalBlock, Block, LayerBlock, PropertyBlock
 from coconet.model.edge import Edge
 from coconet.model.project import Project
+from coconet.resources.styling.custom import CustomLabel
 from coconet.utils.container import PropertyContainer
 from coconet.view.graphics_scene import GraphicsScene
 from coconet.view.graphics_view import GraphicsView
@@ -132,7 +136,8 @@ class Scene:
                 elif k == self.output_block.title or k == self.project.nn.get_last_node().identifier:
                     self.create_property('Generic SMT', self.output_block, v)
 
-    def add_layer_block(self, block_data: dict, block_sign: str, block_id=None) -> Optional[LayerBlock]:
+    def add_layer_block(self, block_data: dict, block_sign: str,
+                        block_id: str = None, load_dict: dict = None) -> Optional[LayerBlock]:
         """
         This method adds a layer block in the Scene and draws it in the View
 
@@ -146,6 +151,9 @@ class Scene:
 
         block_id : str, Optional
             Identifier provided when reading a network file
+
+        load_dict : dict, Optional
+            Extra dictionary with values for loading from file
 
         Returns
         ----------
@@ -171,6 +179,8 @@ class Scene:
 
         # Ex last block is the second last (output is included)
         prev = self.blocks.get(self.sequential_list[-2])
+        if prev.has_parameters():
+            prev.graphics_block.content.toggle_content_enabled(False)
 
         # Add the block in the list and dictionary
         self.sequential_list.insert(len(self.sequential_list) - 1, added_block.id)
@@ -188,10 +198,31 @@ class Scene:
         # Set position
         added_block.set_rel_to(prev)
 
-        # Manage network
-        # TODO
-        # self.update_out_dim()
-        # self.update_edge_label(added_block)
+        # Case 1: the network is loaded from file
+        if load_dict is not None and block_id is not None:
+            if hasattr(added_block.graphics_block, 'content'):
+                added_node = self.project.nn.nodes[block_id]
+                self.update_block_params(added_block, added_node)
+        # Case 2: the network is built on the fly
+        else:
+            try:
+                if hasattr(added_block.graphics_block, 'content'):
+                    added_node = self.project.add_to_nn(added_block.attr_dict['name'],
+                                                        added_block.id,
+                                                        rep.format_data(added_block.attr_dict))
+                    self.update_block_params(added_block, added_node)
+                else:
+                    self.project.add_to_nn(added_block.attr_dict['name'],
+                                           added_block.id, {})
+            except Exception as e:
+                dialog = MessageDialog(str(e), MessageType.ERROR)
+                dialog.exec()
+
+                self.remove(added_block, logic=False)
+                return None
+
+        self.update_out_dim()
+        self.update_edge_dim(added_block)
 
         self.view.centerOn(added_block.pos.x() + added_block.width / 2, added_block.pos.y() + added_block.height / 2)
 
@@ -263,6 +294,42 @@ class Scene:
         else:
             dialog = MessageDialog('No network defined for adding a property', MessageType.ERROR)
             dialog.exec()
+
+    @staticmethod
+    def update_block_params(added_block: LayerBlock, added_node: LayerNode):
+        """
+        Display the correct parameters on the graphics block
+
+        Parameters
+        ----------
+        added_block : LayerBlock
+            The block displayed in the view
+
+        added_node : LayerNode
+            The corresponding neural network node
+
+        """
+
+        if hasattr(added_block.graphics_block.content, 'wdg_param_dict'):
+            for param_name, param_value in added_block.graphics_block.content.wdg_param_dict.items():
+                q_wdg = param_value[0]
+                if isinstance(q_wdg, CustomLabel):
+                    if hasattr(added_node, param_name):
+                        node_param = getattr(added_node, param_name)
+                        if isinstance(node_param, np.ndarray):
+                            sh = node_param.shape
+                            q_wdg.setText(rep.tuple2text(sh))
+                        else:
+                            q_wdg.setText(str(node_param))
+
+    def update_out_dim(self):
+        pass
+
+    def update_edge_dim(self, added_block: Block):
+        pass
+
+    def remove(self, added_block: Block, logic: bool = False):
+        pass
 
     def remove_in_prop(self):
         if self.pre_block is not None:
