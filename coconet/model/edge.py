@@ -24,6 +24,16 @@ class EdgeType(Enum):
 
 
 class GraphicsEdgeFactory:
+    """
+    This class is a factory for different graphics edge objects
+
+    Methods
+    ----------
+    create_edge(Edge, EdgeType)
+        Return the correct graphics edge associated to the input edge
+
+    """
+
     @staticmethod
     def create_edge(e: 'Edge', t: EdgeType):
         if t == EdgeType.DIRECT_EDGE:
@@ -36,6 +46,12 @@ class GraphicsEdgeFactory:
 
 
 class Edge:
+    """
+    This class represents a connection between two blocks in the Scene.
+    It links the two blocks and then draws a GraphicsEdge connected to their sockets
+
+    """
+
     def __init__(self, scene: 'Scene', start_block: 'Block', end_block: 'Block', edge_type=EdgeType.BEZIER_EDGE):
         # Reference to the scene
         self.scene_ref = scene
@@ -89,9 +105,8 @@ class Edge:
         self.graphics_edge.hide()
 
         self.start_skt.edge = None
-        self.start_skt = None
         self.end_skt.edge = None
-        self.end_skt = None
+        self.detach()
 
         self.scene_ref.graphics_scene.removeItem(self.graphics_edge)
         self.scene_ref.graphics_scene.update()
