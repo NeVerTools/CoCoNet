@@ -10,7 +10,6 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 from typing import Optional
 
 import numpy as np
-from PyQt6.QtCore import QPointF
 from PyQt6.QtWidgets import QGraphicsItem
 from pynever.nodes import LayerNode
 
@@ -218,7 +217,7 @@ class Scene:
                 dialog = MessageDialog(str(e), MessageType.ERROR)
                 dialog.exec()
 
-                self.remove(added_block, logic=False)
+                self.delete_block(added_block, logic=False)
                 return None
 
         self.update_out_dim()
@@ -323,13 +322,40 @@ class Scene:
                             q_wdg.setText(str(node_param))
 
     def update_edges(self):
-        pass
+        """
+        Add new edges and reposition after an update occurs
+
+        """
+
+        # Blocks to connect
+        start_block = None
+        end_block = None
+
+        for _, block in self.blocks.items():
+            if not block.has_input():
+                end_block = block
+            elif not block.has_output():
+                start_block = block
+
+        if start_block is not None and end_block is not None:
+            if start_block is not self.input_block or end_block is not self.output_block:
+                self.add_edge(start_block, end_block)
 
     def update_out_dim(self):
         pass
 
-    def update_edge_dim(self, added_block: Block):
-        pass
+    def update_edge_dim(self, block: Block):
+        """
+        Display the output dimension of a block in the following edge
+
+        """
+
+        if block.has_input():
+            prev_id = block.input_sockets[0].edge.start_skt.block_ref.id
+
+            if prev_id != 'INP':
+                prev_out_dim = self.project.nn.nodes[prev_id].out_dim
+                block.input_sockets[0].edge.update_label(rep.tuple2text(prev_out_dim))
 
     def delete_block(self, block: Block, logic: bool = False):
         """
