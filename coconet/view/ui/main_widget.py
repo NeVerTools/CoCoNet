@@ -10,13 +10,12 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 from functools import partial
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QWidget, QHBoxLayout, QTreeWidget, QTreeWidgetItem, QSplitter
+from PyQt6.QtWidgets import QWidget, QHBoxLayout, QTreeWidget, QTreeWidgetItem, QSplitter, QPushButton
 
 import coconet.utils.rep as fu
 from coconet import RES_DIR
 from coconet.model.block import LayerBlock, PropertyBlock
 from coconet.model.scene import Scene
-from coconet.resources.styling.custom import CustomButton
 from coconet.view.components.inspector import InspectorDockToolbar
 
 
@@ -72,7 +71,7 @@ class CoCoNetWidget(QWidget):
 
             for j in self.block_data[i].keys():
                 j_item = QTreeWidgetItem(i_item, [j])
-                button = CustomButton(j)
+                button = QPushButton(j)  # TODO refactor style in order to use a CustomButton
                 dict_sign = i + ':' + j
                 draw_part = partial(self.add_block_proxy, self.block_data[i][j], dict_sign)
                 button.clicked.connect(draw_part)

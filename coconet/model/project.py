@@ -26,6 +26,9 @@ class Project:
         
     nn : SequentialNetwork
         The network object instantiated by the interface
+
+    filename : (str, str)
+        The filename of the network stored in a tuple (name, extension)
     
     """
 

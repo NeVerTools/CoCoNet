@@ -39,7 +39,6 @@ class GraphicsBlock(QGraphicsItem):
         # Init graphics content
         self.title_item = QGraphicsTextItem(self)
         self.graphics_content = QGraphicsProxyWidget(self)
-        self.init_title()
         self.init_graphics_content()
 
         # Style parameters
@@ -105,6 +104,9 @@ class GraphicsBlock(QGraphicsItem):
 
             self.width = self.content.size().width() + 2 * dim.EDGE_ROUNDNESS
             self.height = self.content.size().height() + 2 * dim.EDGE_ROUNDNESS + dim.TITLE_HEIGHT
+
+        # Init title card after setting the correct widget width
+        self.init_title()
 
     def init_flags(self):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
