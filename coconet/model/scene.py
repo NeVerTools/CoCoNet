@@ -322,14 +322,66 @@ class Scene:
                         else:
                             q_wdg.setText(str(node_param))
 
+    def update_edges(self):
+        pass
+
     def update_out_dim(self):
         pass
 
     def update_edge_dim(self, added_block: Block):
         pass
 
-    def remove(self, added_block: Block, logic: bool = False):
-        pass
+    def delete_block(self, block: Block, logic: bool = False):
+        """
+        Remove a block both from the view and from the network
+
+        Parameters
+        ----------
+        block : Block
+            The block to delete
+
+        logic : bool, Optional
+            Flag for deleting the corresponding node in the network
+
+        """
+
+        # If the block is a property logic is forced to False
+        if isinstance(block, PropertyBlock):
+            logic = False
+        elif self.post_block is not None:
+            dialog = ConfirmDialog('Confirm required', 'If you edit the network the output property will be removed\n'
+                                                       'Do you wish to proceed?')
+            dialog.exec()
+
+            if dialog.confirm:
+                self.remove_out_prop()
+            else:
+                return  # Early stopping
+
+        if not isinstance(block, FunctionalBlock):
+            ref_id = block.id
+            block.remove()
+
+            if ref_id in self.blocks:
+                self.blocks.pop(ref_id)
+                self.sequential_list.remove(ref_id)
+                self.blocks_count -= 1
+                self.update_out_dim()
+
+                # Re-enable widgets in the previous block
+                prev_block = self.blocks[self.sequential_list[-2]]
+                if prev_block.has_parameters():
+                    prev_block.graphics_block.content.toggle_content_enabled(True)
+
+            elif self.pre_block is not None and ref_id == self.pre_block.id:
+                self.pre_block = None
+            elif self.post_block is not None and ref_id == self.post_block.id:
+                self.post_block = None
+
+            self.update_edges()
+
+            if logic:
+                self.project.delete_last_node()
 
     def remove_in_prop(self):
         if self.pre_block is not None:
