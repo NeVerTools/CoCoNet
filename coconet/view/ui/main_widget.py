@@ -14,9 +14,9 @@ from PyQt6.QtWidgets import QWidget, QHBoxLayout, QTreeWidget, QTreeWidgetItem, 
 
 import coconet.utils.rep as fu
 from coconet import RES_DIR
-from coconet.model.block import LayerBlock, PropertyBlock
+from coconet.model.component.block import LayerBlock, PropertyBlock
 from coconet.model.scene import Scene
-from coconet.view.components.inspector import InspectorDockToolbar
+from coconet.view.component.inspector import InspectorDockToolbar
 
 
 class CoCoNetWidget(QWidget):

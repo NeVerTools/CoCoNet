@@ -1,7 +1,7 @@
 """
 Module custom.py
 
-This module defines custom UI components with pre-defined style
+This module defines custom UI component with pre-defined style
 
 Author: Stefano Demarchi
 

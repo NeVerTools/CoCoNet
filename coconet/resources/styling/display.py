@@ -1,7 +1,7 @@
 """
 Module display.py
 
-This module contains the styling directives for components and widgets
+This module contains the styling directives for component and widgets
 
 Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 

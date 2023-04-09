@@ -272,7 +272,7 @@ class BlockContentWidget(QWidget):
             # Set label
             self.grid_layout.addWidget(CustomLabel(param_name + ':'), row_grid_count, 0)
 
-            # Switch components
+            # Switch component
             widget = None
 
             def_val = ''
@@ -335,7 +335,7 @@ class BlockContentWidget(QWidget):
             # Set label
             self.grid_layout.addWidget(CustomLabel(param_name + ':'), row_grid_count, 0)
 
-            # Switch components
+            # Switch component
             widget = None
 
             def_val = ''

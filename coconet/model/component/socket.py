@@ -11,7 +11,7 @@ from enum import Enum
 
 from coconet import get_classname
 from coconet.utils.rep import dump_exception
-from coconet.view.components.graphics_socket import GraphicsSocket
+from coconet.view.component.graphics_socket import GraphicsSocket
 
 
 class SocketPosition(Enum):

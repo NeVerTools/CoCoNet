@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import QGraphicsPathItem
 
 import coconet.resources.styling.dimension as dim
 import coconet.resources.styling.palette as palette
-from coconet.model.socket import SocketType
+from coconet.model.component.socket import SocketType
 
 
 class GraphicsEdge(QGraphicsPathItem):

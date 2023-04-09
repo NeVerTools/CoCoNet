@@ -14,8 +14,8 @@ from PyQt6.QtWidgets import QGraphicsItem
 from pynever.nodes import LayerNode
 
 import coconet.utils.rep as rep
-from coconet.model.block import FunctionalBlock, Block, LayerBlock, PropertyBlock
-from coconet.model.edge import Edge
+from coconet.model.component.block import FunctionalBlock, Block, LayerBlock, PropertyBlock
+from coconet.model.component.edge import Edge
 from coconet.model.project import Project
 from coconet.resources.styling.custom import CustomLabel
 from coconet.utils.container import PropertyContainer

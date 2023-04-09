@@ -9,8 +9,8 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 from enum import Enum
 
-from coconet.model.block import PropertyBlock
-from coconet.view.components.graphics_edge import GraphicsDirectEdge, GraphicsBezierEdge
+from coconet.model.component.block import PropertyBlock
+from coconet.view.component.graphics_edge import GraphicsDirectEdge, GraphicsBezierEdge
 
 
 class EdgeType(Enum):
