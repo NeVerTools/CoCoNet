@@ -16,7 +16,9 @@ from PyQt6.QtCore import Qt, QRectF, QPointF
 from PyQt6.QtGui import QPen, QColor, QPainter, QPolygonF, QPainterPath
 from PyQt6.QtWidgets import QGraphicsPathItem
 
+import coconet.resources.styling.dimension as dim
 import coconet.resources.styling.palette as palette
+from coconet.model.socket import SocketType
 
 
 class GraphicsEdge(QGraphicsPathItem):
@@ -56,30 +58,14 @@ class GraphicsEdge(QGraphicsPathItem):
 
         pass
 
-    def paint(self, painter: QPainter, option: 'QStyleOptionGraphicsItem', widget=None) -> None:
+    @abc.abstractmethod
+    def calc_path(self) -> QPainterPath:
         """
-        Draw the edge, the arrow in the destination and the label
+        Abstract method to be implemented
 
         """
 
-        # Draw edge path
-        self.update_path()
-        painter.setPen(self._pen)
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawPath(self.path())
-
-        # Draw edge label
-        painter.setBrush(QColor('yellow'))
-        label_rect = QRectF((self.src_pos[0] + self.dest_pos[0]) / 2 - 48,
-                            (self.src_pos[1] + self.dest_pos[1]) / 2, 100, 40)
-        painter.drawText(label_rect, Qt.AlignmentFlag.AlignCenter, self.label)
-
-        # Draw arrow
-        painter.setBrush(QColor(palette.BLUE))
-
-        if self.edge_ref.view_dim:
-            polygon = QPolygonF(self.build_arrow())
-            painter.drawPolygon(polygon)
+        pass
 
     def set_label(self, text):
         self.label = text
@@ -132,6 +118,37 @@ class GraphicsEdge(QGraphicsPathItem):
 
         return [point1, point2, point3]
 
+    def paint(self, painter: QPainter, option: 'QStyleOptionGraphicsItem', widget=None) -> None:
+        """
+        Draw the edge, the arrow in the destination and the label
+
+        """
+
+        # Draw edge path
+        self.update_path()
+        painter.setPen(self._pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawPath(self.path())
+
+        # Draw edge label
+        painter.setBrush(QColor('yellow'))
+        label_rect = QRectF((self.src_pos[0] + self.dest_pos[0]) / 2 - 48,
+                            (self.src_pos[1] + self.dest_pos[1]) / 2, 100, 40)
+        painter.drawText(label_rect, Qt.AlignmentFlag.AlignCenter, self.label)
+
+        # Draw arrow
+        painter.setBrush(QColor(palette.BLUE))
+
+        if self.edge_ref.view_dim:
+            polygon = QPolygonF(self.build_arrow())
+            painter.drawPolygon(polygon)
+
+    def shape(self) -> 'QtGui.QPainterPath':
+        return self.calc_path()
+
+    def boundingRect(self) -> 'QtCore.QRectF':
+        return self.shape().boundingRect()
+
 
 class GraphicsDirectEdge(GraphicsEdge):
     """
@@ -146,6 +163,21 @@ class GraphicsDirectEdge(GraphicsEdge):
         path = QPainterPath(QPointF(self.src_pos[0], self.src_pos[1]))
         path.lineTo(self.dest_pos[0], self.dest_pos[1])
         self.setPath(path)
+
+    def calc_path(self) -> QPainterPath:
+        """
+        Compute the direct line connection
+
+        Returns
+        ----------
+        QPainterPath
+            The path of this edge
+
+        """
+
+        path = QPainterPath(QPointF(self.src_pos[0], self.src_pos[1]))
+        path.lineTo(self.dest_pos[0], self.dest_pos[1])
+        return path
 
 
 class GraphicsBezierEdge(GraphicsEdge):
@@ -168,3 +200,42 @@ class GraphicsBezierEdge(GraphicsEdge):
             self.dest_pos[0], self.dest_pos[1]
         )
         self.setPath(path)
+
+    def calc_path(self) -> QPainterPath:
+        """
+        Compute the cubic Bezier line connection
+
+        Returns
+        ----------
+        QPainterPath
+            The path of this edge
+
+        """
+
+        s = self.src_pos
+        d = self.dest_pos
+        distance = (d[0] - s[0]) * 0.5
+
+        cpx_s = distance
+        cpx_d = - distance
+        cpy_s = 0
+        cpy_d = 0
+
+        if self.edge_ref.start_skt is not None:
+            ssin = self.edge_ref.start_skt.s_type == SocketType.INPUT
+            ssout = self.edge_ref.start_skt.s_type == SocketType.OUTPUT
+
+            if (s[0] > d[0] and ssout) or (s[0] < d[0] and ssin):
+                cpx_d *= -1
+                cpx_s *= -1
+
+                cpy_d = ((s[1] - d[1]) / math.fabs((s[1] - d[1]) if (s[1] - d[1]) != 0
+                                                   else 0.00001)) * dim.EDGE_CP_ROUNDNESS
+                cpy_s = ((d[1] - s[1]) / math.fabs((d[1] - s[1]) if (d[1] - s[1]) != 0
+                                                   else 0.00001)) * dim.EDGE_CP_ROUNDNESS
+
+        path = QPainterPath(QPointF(self.src_pos[0], self.src_pos[1]))
+        path.cubicTo(s[0] + cpx_s, s[1] + cpy_s, d[0] + cpx_d, d[1] + cpy_d,
+                     self.dest_pos[0], self.dest_pos[1])
+
+        return path
