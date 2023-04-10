@@ -544,7 +544,7 @@ class BlockContentWidget(QWidget):
 
         if prop_name in self.block_ref.scene_ref.editor_widget_ref.property_data.keys():
             self.wdg_param_dict['Property'][1] = prop_name
-            self.block_ref.scene_ref.create_property(prop_name, self.block_ref)
+            self.block_ref.scene_ref.add_property_block(prop_name, self.block_ref)
 
     def missing_params(self) -> bool:
         """
@@ -598,10 +598,42 @@ class BlockContentWidget(QWidget):
             if self.block_ref.get_property_block() is not None:
                 self.block_ref.get_property_block().variables = self.block_ref.get_variables()
 
-            # TODO UPDATE NETWORK
+            # Update the network
+            self.block_ref.scene_ref.project.reset_nn(name_wdg.text(), self.block_ref.id)
 
     def save_layer_params(self):
-        pass
+        """
+        Read the parameters widgets and try to re-build the graphics block
+
+        """
+
+        node_ref = self.block_ref.scene_ref.project.nn.nodes[self.block_ref.id]
+
+        try:
+            # Check required parameters
+            if not self.missing_params():
+                for param_name, param_value in self.wdg_param_dict.items():
+                    q_wdg = param_value[0]
+
+                    if isinstance(q_wdg, CustomTextBox) or isinstance(q_wdg, CustomComboBox):
+                        self.wdg_param_dict[param_name][1] = q_wdg.text()
+
+                # Update pynever node
+                self.block_ref.scene_ref.project.refresh_node(self.block_ref.id, self.wdg_param_dict)
+
+                # Update graphics block
+                self.block_ref.scene_ref.update_block_params(
+                    self.block_ref, self.block_ref.scene_ref.project.nn.nodes[self.block_ref.id])
+
+                # Update output block
+                self.block_ref.scene_ref.update_out_dim()
+
+        except Exception as e:
+            dialog = MessageDialog(str(e), MessageType.ERROR)
+            dialog.exec()
+
+            if self.block_ref.id not in self.block_ref.scene_ref.project.nn.nodes:
+                self.block_ref.scene_ref.project.link_to_nn(node_ref)
 
     def restore_default(self):
         pass

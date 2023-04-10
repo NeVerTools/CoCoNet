@@ -131,9 +131,9 @@ class Scene:
 
             for k, v in prop_dict.keys():
                 if k == self.input_block.tile:
-                    self.create_property('Generic SMT', self.input_block, v)
+                    self.add_property_block('Generic SMT', self.input_block, v)
                 elif k == self.output_block.title or k == self.project.nn.get_last_node().identifier:
-                    self.create_property('Generic SMT', self.output_block, v)
+                    self.add_property_block('Generic SMT', self.output_block, v)
 
     def add_layer_block(self, block_data: dict, block_sign: str,
                         block_id: str = None, load_dict: dict = None) -> Optional[LayerBlock]:
@@ -217,7 +217,7 @@ class Scene:
                 dialog = MessageDialog(str(e), MessageType.ERROR)
                 dialog.exec()
 
-                self.delete_block(added_block, logic=False)
+                self.remove_block(added_block, logic=False)
                 return None
 
         self.update_out_dim()
@@ -227,24 +227,7 @@ class Scene:
 
         return added_block
 
-    def add_edge(self, prev: Block, cur: Block):
-        """
-        Add and draw the edge connecting two blocks
-
-        Parameters
-        ----------
-        prev : Block
-            The block from where the edge starts
-
-        cur : Block
-            The block where the edge ends
-
-        """
-
-        if self.blocks_count > 0:
-            return Edge(self, prev, cur)
-
-    def create_property(self, name: str, parent: FunctionalBlock, prop_cnt: PropertyContainer = None):
+    def add_property_block(self, name: str, parent: FunctionalBlock, prop_cnt: PropertyContainer = None):
         """
         This function defines a property given the input or output block
 
@@ -294,6 +277,23 @@ class Scene:
             dialog = MessageDialog('No network defined for adding a property', MessageType.ERROR)
             dialog.exec()
 
+    def add_edge(self, prev: Block, cur: Block):
+        """
+        Add and draw the edge connecting two blocks
+
+        Parameters
+        ----------
+        prev : Block
+            The block from where the edge starts
+
+        cur : Block
+            The block where the edge ends
+
+        """
+
+        if self.blocks_count > 0:
+            return Edge(self, prev, cur)
+
     @staticmethod
     def update_block_params(added_block: LayerBlock, added_node: LayerNode):
         """
@@ -309,8 +309,8 @@ class Scene:
 
         """
 
-        if hasattr(added_block.graphics_block.content, 'wdg_param_dict'):
-            for param_name, param_value in added_block.graphics_block.content.wdg_param_dict.items():
+        if hasattr(added_block.content, 'wdg_param_dict'):
+            for param_name, param_value in added_block.content.wdg_param_dict.items():
                 q_wdg = param_value[0]
                 if isinstance(q_wdg, CustomLabel):
                     if hasattr(added_node, param_name):
@@ -341,9 +341,6 @@ class Scene:
             if start_block is not self.input_block or end_block is not self.output_block:
                 self.add_edge(start_block, end_block)
 
-    def update_out_dim(self):
-        pass
-
     def update_edge_dim(self, block: Block):
         """
         Display the output dimension of a block in the following edge
@@ -357,7 +354,25 @@ class Scene:
                 prev_out_dim = self.project.nn.nodes[prev_id].out_dim
                 block.input_sockets[0].edge.update_label(rep.tuple2text(prev_out_dim))
 
-    def delete_block(self, block: Block, logic: bool = False):
+    def update_out_dim(self):
+        """
+        Write the output dimension in the output block
+
+        """
+
+        last_id = self.sequential_list[-2]
+        dim_wdg = self.output_block.content.wdg_param_dict['Dimension'][0]
+
+        if last_id == 'INP':
+            dim_value = ''
+        else:
+            last_node = self.project.nn.get_last_node()
+            dim_value = rep.tuple2text(last_node.out_dim, prod=False)
+
+        dim_wdg.setText(dim_value)
+        self.output_block.content.wdg_param_dict['Dimension'][1] = dim_value
+
+    def remove_block(self, block: Block, logic: bool = False):
         """
         Remove a block both from the view and from the network
 
