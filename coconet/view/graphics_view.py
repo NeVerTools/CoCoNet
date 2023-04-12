@@ -12,6 +12,9 @@ from PyQt6.QtGui import QPainter
 from PyQt6.QtWidgets import QGraphicsView
 
 import coconet.resources.styling.dimension as dim
+import coconet.utils.rep as rep
+from coconet.model.component.block import LayerBlock, PropertyBlock
+from coconet.view.ui.dialog import MessageDialog, MessageType
 
 
 class GraphicsView(QGraphicsView):
@@ -61,3 +64,68 @@ class GraphicsView(QGraphicsView):
         # Set scene scale
         if not clipped:
             self.scale(factor, factor)
+
+    def check_delete(self):
+        """
+        This method checks the selected items in the scene and tries to delete them
+
+        """
+
+        delete = True
+        sel_ids = []
+
+        for item in self.gr_scene_ref.selectedItems():
+            if hasattr(item, 'block_ref'):
+                if isinstance(item.block_ref, LayerBlock):
+                    sel_ids.append(item.block_ref.id)
+
+        for i in range(len(sel_ids)):
+            if self.gr_scene_ref.scene_ref.sequential_list[-2 - i] not in sel_ids:
+                delete = False
+
+        if delete:
+            self.delete_items(sel_ids)
+        else:
+            dialog = MessageDialog('It is only allowed to delete blocks at the end of the network',
+                                   MessageType.ERROR)
+            dialog.exec()
+
+    def delete_items(self, sel_ids: list):
+        for block_id in sel_ids:
+            block = self.gr_scene_ref.scene_ref.blocks[block_id]
+            self.gr_scene_ref.scene_ref.remove_block(block, logic=True)
+
+        for item in self.gr_scene_ref.selectedItems():
+            if hasattr(item, 'block_ref'):
+                if isinstance(item.block_ref, PropertyBlock):
+                    self.gr_scene_ref.scene_ref.remove_block(item.block_ref)
+
+    def wheelEvent(self, event: 'QtGui.QWheelEvent') -> None:
+        """
+        Override the event to enable zoom
+
+        """
+
+        factor = 1 / dim.ZOOM_IN_FACTOR
+
+        if event.angleDelta().y() > 0:
+            factor = dim.ZOOM_IN_FACTOR
+            self.zoom += dim.ZOOM_STEP
+        else:
+            self.zoom -= dim.ZOOM_STEP
+
+        self.set_scale(factor)
+
+    def keyPressEvent(self, event: 'QtGui.QKeyEvent') -> None:
+        """
+        Intercept 'Del' for deleting blocks
+
+        """
+
+        # TODO this appears to be Ctrl + Del ???
+        if event.key() == Qt.Key.Key_Delete:
+            try:
+                self.check_delete()
+            except Exception as e:
+                rep.dump_exception(e)
+        super().keyPressEvent(event)
