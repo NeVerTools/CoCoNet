@@ -100,6 +100,29 @@ class Scene:
     def has_properties(self) -> bool:
         return self.pre_block is not None or self.post_block is not None
 
+    def get_properties(self) -> dict:
+        """
+        Pack properties in a container and return
+
+        """
+
+        props = dict()
+
+        if self.pre_block is not None:
+            props[self.input_block.get_identifier()] = PropertyContainer(self.pre_block.smt_string,
+                                                                         self.pre_block.variables,
+                                                                         self.pre_block.title)
+
+        if self.post_block is not None:
+            props[self.output_block.get_identifier()] = PropertyContainer(self.post_block.smt_string,
+                                                                          self.post_block.variables,
+                                                                          self.post_block.title)
+
+        return props
+
+    def draw_network(self, project: Project):
+        pass
+
     def load_properties(self, prop_dict: dict):
         """
         Load existing properties from a dictionary <ID> : <PropertyFormat>

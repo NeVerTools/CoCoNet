@@ -6,12 +6,15 @@ This module contains the Project class for handling pynever's representation and
 Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
-
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QApplication, QFileDialog
 from pynever.networks import SequentialNetwork
 from pynever.nodes import LayerNode
 
 import coconet.utils.rep as rep
+from coconet.utils.file import InputHandler, FileFormat, OutputHandler
 from coconet.utils.node_wrapper import NodeFactory
+from coconet.view.ui.dialog import FuncDialog
 
 
 class Project:
@@ -161,4 +164,60 @@ class Project:
         return self.nn.delete_last_node()
 
     def open(self):
-        pass
+        """
+        Load a network from file and convert it in the internal representation
+
+        """
+
+        if not self.nn.is_empty() and self.is_modified():
+            dialog = FuncDialog('Do you want to save your work?', self.save)
+            dialog.exec()
+
+        if self.filename != ('', ''):
+            handler = InputHandler()
+
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            self.nn = handler.read_network(self.filename[0])
+
+            if isinstance(self.nn, SequentialNetwork) and self.nn.input_id == '':
+                self.nn.input_id = 'X'
+
+            QApplication.restoreOverrideCursor()
+
+            # Display the network
+            self.scene_ref.draw_network(self)
+
+    def save(self, _as: bool = True) -> bool:
+        """
+        Convert the network and save to file
+
+        """
+
+        old_filename = self.filename  # Backup
+
+        if self.nn.is_empty():
+            raise Exception('The neural network is empty')
+
+        if _as or self.filename == ('', ''):
+            self.filename = QFileDialog.getSaveFileName(None, 'Save File', '', FileFormat.NETWORK_FORMATS_SAVE)
+
+            if self.filename == ('', ''):
+                self.filename = old_filename
+
+        if self.filename != ('', ''):
+            handler = OutputHandler()
+            self.nn.identifier = self.filename[0].split('/')[-1].split('.')[0]
+
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            handler.save(self.nn, self.filename)
+
+            if self.scene_ref.has_properties():
+                handler.save_properties(self.scene_ref.get_properties(), self.filename)
+
+            QApplication.restoreOverrideCursor()
+
+            self.set_modified(False)
+
+            return True
+
+        return False
