@@ -25,11 +25,11 @@ class Block:
 
     Attributes
     ----------
-    scene_ref : Scene
-        Reference to the scene
-
     _id : str
         Identifier of the block
+
+    scene_ref : Scene
+        Reference to the scene
 
     title : str
         Title of the block in the editor
@@ -51,6 +51,32 @@ class Block:
 
     is_newline : bool
         Flag used when rendering large networks
+
+    Methods
+    ----------
+    has_parameters()
+        Returns True if the block has some parameters, False otherwise
+
+    has_input()
+        Returns True if the block has a connection in input, False otherwise
+
+    has_output()
+        Returns True if the block has a connection in output, False otherwise
+
+    init_sockets(list, list)
+        Draws the sockets corresponding to the inputs and outputs
+
+    get_socket_position(int, SocketPosition, bool)
+        Returns the coordinates of a given socket
+
+    previous()
+        Returns the previous block, if it exists
+
+    set_rel_to(Block)
+        Sets this block position aligned to another one
+
+    update_edges()
+        Update the edges position
 
     """
 
@@ -234,6 +260,11 @@ class LayerBlock(Block):
     """
     This class represents a block for the definition of a neural network layer
 
+    Methods
+    ----------
+    remove()
+        Procedure to safely remove this block and the network node associated
+
     """
 
     def __init__(self, scene: 'Scene', inputs: list, outputs: list, build_dict: dict,
@@ -293,6 +324,26 @@ class FunctionalBlock(Block):
     """
     This class represents a block for the input and output of the neural network
 
+    Methods
+    ----------
+    get_identifier()
+        Returns the identifier associated to this block
+
+    get_dimension()
+        Returns the dimension associated to this block
+
+    get_property_block()
+        Returns the property block connected to this block, if it exists
+
+    get_variables()
+        Returns the variables associated to the dimension
+
+    add_property_socket()
+        Draws the socket for a property added
+
+    remove()
+        Is ignored since this block is permanent
+
     """
 
     def __init__(self, scene: 'Scene', is_input: bool = True):
@@ -320,14 +371,18 @@ class FunctionalBlock(Block):
 
         self.init_sockets(*sockets)
 
-    def get_name(self):
+    def get_identifier(self):
         return self.attr_dict['parameters']['Name'][1]
 
-    def get_shape(self):
+    def get_dimension(self):
         return self.attr_dict['parameters']['Dimension'][1]
 
     def get_property_block(self) -> 'PropertyBlock':
         return self.scene_ref.pre_block if self.title == 'Input' else self.scene_ref.post_block
+
+    def get_variables(self) -> Iterable:
+        return u.create_variables_from(self.attr_dict['Name'][1],
+                                       u.text2tuple(self.attr_dict['Dimension'][1]))
 
     def add_property_socket(self):
         """
@@ -342,10 +397,6 @@ class FunctionalBlock(Block):
             socket = Socket(self, 1, SocketPosition.RIGHT_TOP, SocketType.OUTPUT)
             self.output_sockets.append(socket)
 
-    def get_variables(self) -> Iterable:
-        return u.create_variables_from(self.attr_dict['Name'][1],
-                                       u.text2tuple(self.attr_dict['Dimension'][1]))
-
     def remove(self):
         """
         Prevent deletion of this block
@@ -357,6 +408,37 @@ class FunctionalBlock(Block):
 class PropertyBlock(Block):
     """
     This class represents a block for the specification of a VNN-LIB property
+
+    Attributes
+    ----------
+    ref_block : FunctionalBlock
+        Reference to the input or output block
+
+    property_label : CustomLabel
+        Label of the block
+
+    label_string : str
+        String displayed on the label
+
+    smt_string : str
+        String containing the property definition
+
+    variables : list
+        Variables associated to the dimension of ref_block
+
+    Methods
+    ----------
+    init_position()
+        Setup this block position
+
+    draw()
+        Draw the block content
+
+    edit()
+        Call the edit dialog for the property
+
+    remove()
+        Safely remove this block
 
     """
 
@@ -372,13 +454,26 @@ class PropertyBlock(Block):
         self.ref_block = ref_block
 
         # Display attributes
-        self.smt_string = ''
         self.label_string = ''
+        self.smt_string = ''
         self.variables = self.ref_block.get_variables()
 
         self.property_label = CustomLabel(self.label_string)
 
-    def draw_property(self):
+    def init_position(self):
+        """
+        This method sets the positions of the properties respect to the FunctionalBlocks
+
+        """
+
+        if self.ref_block.title == 'Input':
+            self.graphics_block.setPos(self.ref_block.pos.x() - 80 - self.width,
+                                       self.ref_block.pos.y() + self.ref_block.height / 2 - self.height / 2)
+        else:
+            self.graphics_block.setPos(self.ref_block.pos.x() + self.ref_block.width + 80,
+                                       self.ref_block.pos.y() + self.ref_block.height / 2 - self.height / 2)
+
+    def draw(self):
         # Init content
         self.graphics_block = GraphicsBlock(self)
         self.graphics_block.set_content(BlockContentWidget(self))
@@ -401,20 +496,7 @@ class PropertyBlock(Block):
         # Create edge between Input node and property
         self.scene_ref.add_edge(self, self.ref_block)
 
-    def init_position(self):
-        """
-        This method sets the positions of the properties respect to the FunctionalBlocks
-
-        """
-
-        if self.ref_block.title == 'Input':
-            self.graphics_block.setPos(self.ref_block.pos.x() - 80 - self.width,
-                                       self.ref_block.pos.y() + self.ref_block.height / 2 - self.height / 2)
-        else:
-            self.graphics_block.setPos(self.ref_block.pos.x() + self.ref_block.width + 80,
-                                       self.ref_block.pos.y() + self.ref_block.height / 2 - self.height / 2)
-
-    def edit_property(self) -> bool:
+    def edit(self) -> bool:
         """
         This method invokes the proper dialog to edit the property
 

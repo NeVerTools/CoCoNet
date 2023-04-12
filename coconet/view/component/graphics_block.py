@@ -397,7 +397,7 @@ class BlockContentWidget(QWidget):
         elif get_classname(self.block_ref) == 'PropertyBlock':
             # Create edit button
             edit = CustomButton('Edit', context='PropertyBlock')
-            edit.clicked.connect(self.block_ref.edit_property)
+            edit.clicked.connect(self.block_ref.edit)
 
             self.buttons_layout.addWidget(edit)
 

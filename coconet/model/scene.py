@@ -260,14 +260,14 @@ class Scene:
                         self.remove_out_prop()
 
                     if prop_cnt is None:
-                        has_edits = new_block.edit_property()
+                        has_edits = new_block.edit()
                     else:
                         has_edits = True
                         new_block.smt_string = prop_cnt.smt_string
                         new_block.variables = prop_cnt.variables
 
                     if has_edits:
-                        new_block.draw_property()
+                        new_block.draw()
 
                         if parent.title == 'Input' and not self.pre_block:
                             self.pre_block = new_block
