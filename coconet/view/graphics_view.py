@@ -115,17 +115,3 @@ class GraphicsView(QGraphicsView):
             self.zoom -= dim.ZOOM_STEP
 
         self.set_scale(factor)
-
-    def keyPressEvent(self, event: 'QtGui.QKeyEvent') -> None:
-        """
-        Intercept 'Del' for deleting blocks
-
-        """
-
-        # TODO this appears to be Ctrl + Del ???
-        if event.key() == Qt.Key.Key_Delete:
-            try:
-                self.check_delete()
-            except Exception as e:
-                rep.dump_exception(e)
-        super().keyPressEvent(event)

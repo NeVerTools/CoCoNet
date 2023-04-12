@@ -112,7 +112,7 @@ class CoCoNetWidget(QWidget):
         pass
 
     def remove_sel(self):
-        pass
+        self.scene.view.check_delete()
 
     def show_inspector(self):
         """
