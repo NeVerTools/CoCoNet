@@ -545,3 +545,10 @@ class PropertyBlock(Block):
                 socket.edge.end_skt.remove()
             else:
                 socket.edge.start_skt.remove()
+
+            # Remove the edge
+            socket.edge.remove()
+
+        self.scene_ref.graphics_scene.removeItem(self.graphics_block)
+        self.graphics_block = None
+        del self

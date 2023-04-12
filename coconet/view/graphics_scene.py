@@ -9,7 +9,7 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 import math
 
-from PyQt6.QtCore import QLine
+from PyQt6.QtCore import QLine, pyqtSignal
 from PyQt6.QtGui import QColor, QPen
 from PyQt6.QtWidgets import QGraphicsScene
 
@@ -18,6 +18,22 @@ import coconet.resources.styling.palette as palette
 
 
 class GraphicsScene(QGraphicsScene):
+    """
+    This class manages the graphics scene, i.e., the handler of graphical objects. Objects in the
+    GraphicsScene can be rendered in the viewport provided by the GraphicsView
+
+    Attributes
+    ----------
+
+    Methods
+    ----------
+
+    """
+
+    # The following signals are intercepted by QGraphicsScene.selectedItems()
+    itemSelected = pyqtSignal()
+    itemsDeselected = pyqtSignal()
+
     def __init__(self, scene: 'Scene', parent=None):
         super().__init__(parent)
 
