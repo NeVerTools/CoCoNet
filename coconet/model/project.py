@@ -72,7 +72,7 @@ class Project:
         """
 
         if self.nn.is_empty():
-            return rep.text2tuple(self.scene_ref.input_block.attr_dict['Dimension'][1])
+            return rep.text2tuple(self.scene_ref.input_block.content.wdg_param_dict['Dimension'][1])
         else:
             return self.nn.get_last_node().out_dim
 
@@ -156,9 +156,9 @@ class Project:
         new_node = self.add_to_nn(str(to_remove.__class__.__name__), node_id, data)
 
         # Update dimensions
-        dim_wdg = self.scene_ref.output_block.attr_dict['Dimension'][0]
+        dim_wdg = self.scene_ref.output_block.content.wdg_param_dict['Dimension'][0]
         dim_wdg.setText(str(new_node.out_dim))
-        self.scene_ref.output_block.attr_dict['Dimension'][1] = new_node.out_dim
+        self.scene_ref.output_block.content.wdg_param_dict['Dimension'][1] = new_node.out_dim
 
     def open(self):
         pass

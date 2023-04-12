@@ -208,7 +208,7 @@ class Scene:
                 if hasattr(added_block.graphics_block, 'content'):
                     added_node = self.project.add_to_nn(added_block.attr_dict['name'],
                                                         added_block.id,
-                                                        rep.format_data(added_block.attr_dict))
+                                                        rep.format_data(added_block.content.wdg_param_dict))
                     self.update_block_params(added_block, added_node)
                 else:
                     self.project.add_to_nn(added_block.attr_dict['name'],
