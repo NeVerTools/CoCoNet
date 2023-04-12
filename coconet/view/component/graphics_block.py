@@ -636,4 +636,26 @@ class BlockContentWidget(QWidget):
                 self.block_ref.scene_ref.project.link_to_nn(node_ref)
 
     def restore_default(self):
-        pass
+        """
+        This method resets the graphics parameters without editing the network
+
+        """
+
+        for param_name, param_value in self.wdg_param_dict.items():
+            if 'editable' in self.block_ref.attr_dict['parameters'][param_name]:
+
+                if self.block_ref.attr_dict['parameters']['editable'] == 'True':
+                    q_widget = param_value[0]
+
+                    if 'default' in self.block_ref.attr_dict['parameters'][param_name]:
+                        default_value = self.block_ref.attr_dict['parameters'][param_name]['default']
+
+                        if isinstance(q_widget, CustomTextBox) or isinstance(q_widget, CustomComboBox):
+                            q_widget.setText(default_value)
+                    else:
+                        if isinstance(q_widget, CustomTextBox):
+                            q_widget.setText('')
+                        elif isinstance(q_widget, CustomComboBox):
+                            q_widget.setText('True')
+
+        self.block_ref.scene_ref.update_out_dim()

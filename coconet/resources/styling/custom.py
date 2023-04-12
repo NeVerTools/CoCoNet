@@ -74,6 +74,9 @@ class CustomComboBox(QComboBox):
     def text(self) -> str:
         return self.currentText()
 
+    def setText(self, text: str) -> None:
+        self.setCurrentText(text)
+
 
 class CustomTextBox(QLineEdit):
     def __init__(self, text: str = '', color: str = 'white', context: str = None):
