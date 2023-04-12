@@ -281,21 +281,23 @@ class Scene:
                         self.remove_in_prop()
                     else:
                         self.remove_out_prop()
+                else:
+                    return
 
-                    if prop_cnt is None:
-                        has_edits = new_block.edit()
-                    else:
-                        has_edits = True
-                        new_block.smt_string = prop_cnt.smt_string
-                        new_block.variables = prop_cnt.variables
+            if prop_cnt is None:
+                has_edits = new_block.edit()
+            else:
+                has_edits = True
+                new_block.smt_string = prop_cnt.smt_string
+                new_block.variables = prop_cnt.variables
 
-                    if has_edits:
-                        new_block.draw()
+            if has_edits:
+                new_block.draw()
 
-                        if parent.title == 'Input' and not self.pre_block:
-                            self.pre_block = new_block
-                        elif parent.title == 'Output' and not self.post_block:
-                            self.post_block = new_block
+                if parent.title == 'Input' and not self.pre_block:
+                    self.pre_block = new_block
+                elif parent.title == 'Output' and not self.post_block:
+                    self.post_block = new_block
         else:
             dialog = MessageDialog('No network defined for adding a property', MessageType.ERROR)
             dialog.exec()

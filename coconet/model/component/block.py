@@ -372,17 +372,17 @@ class FunctionalBlock(Block):
         self.init_sockets(*sockets)
 
     def get_identifier(self):
-        return self.attr_dict['parameters']['Name'][1]
+        return self.content.wdg_param_dict['Name'][1]
 
     def get_dimension(self):
-        return self.attr_dict['parameters']['Dimension'][1]
+        return self.content.wdg_param_dict['Dimension'][1]
 
     def get_property_block(self) -> 'PropertyBlock':
         return self.scene_ref.pre_block if self.title == 'Input' else self.scene_ref.post_block
 
     def get_variables(self) -> Iterable:
-        return u.create_variables_from(self.attr_dict['Name'][1],
-                                       u.text2tuple(self.attr_dict['Dimension'][1]))
+        return u.create_variables_from(self.content.wdg_param_dict['Name'][1],
+                                       u.text2tuple(self.content.wdg_param_dict['Dimension'][1]))
 
     def add_property_socket(self):
         """

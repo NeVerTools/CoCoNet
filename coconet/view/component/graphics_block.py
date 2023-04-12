@@ -379,7 +379,7 @@ class BlockContentWidget(QWidget):
                 discard = CustomButton('Restore defaults', context='LayerBlock')
                 discard.clicked.connect(self.on_button_click)
                 save = CustomButton('Save', primary=True, context='LayerBlock')
-                discard.clicked.connect(self.on_button_click)
+                save.clicked.connect(self.on_button_click)
 
                 self.buttons_layout.addWidget(discard)
                 self.buttons_layout.addWidget(save)

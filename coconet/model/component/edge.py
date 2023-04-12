@@ -57,16 +57,16 @@ class Edge:
         self.scene_ref = scene
 
         self.view_dim = True
-        if isinstance(end_block, PropertyBlock):
+        if isinstance(start_block, PropertyBlock) or isinstance(end_block, PropertyBlock):
             self.view_dim = False
 
         # Link to sockets
-        self.start_skt = start_block.output_sockets[0]
-        self.end_skt = end_block.input_sockets[0]
-
         if len(start_block.output_sockets) == 0:
             self.start_skt = end_block.output_sockets[0]
             self.end_skt = start_block.input_sockets[0]
+        else:
+            self.start_skt = start_block.output_sockets[0]
+            self.end_skt = end_block.input_sockets[0]
 
         self.start_skt.edge = self
         self.end_skt.edge = self

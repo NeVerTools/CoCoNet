@@ -130,9 +130,9 @@ def tuple2text(tup: tuple, prod: bool = True) -> str:
         return str(tup).replace('(', '').replace(')', '').replace(',', '')
 
     if prod:
-        separator = 'x'
+        separator = ' x '
     else:
-        separator = ','
+        separator = ', '
 
     dim_list = [x.strip() for x in str(tup).replace('(', '').strip().replace(')', '').strip().split(',')]
     new_format = separator.join(dim_list)

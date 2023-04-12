@@ -378,7 +378,6 @@ class EditPolyhedralPropertyDialog(BaseDialog):
     show_properties_viewer()
         Show the viewer, a TextArea, listing the constraints
 
-
     """
 
     def __init__(self, property_block: 'PropertyBlock'):
@@ -469,5 +468,5 @@ class EditPolyhedralPropertyDialog(BaseDialog):
         self.close()
 
     def show_properties_viewer(self):
-        if self.property_block.label_smt_string:
-            self.viewer.appendPlainText(self.property_block.label_smt_string)
+        if self.property_block.label_string:
+            self.viewer.appendPlainText(self.property_block.label_string)
