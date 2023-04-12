@@ -205,7 +205,7 @@ class Scene:
         # Case 2: the network is built on the fly
         else:
             try:
-                if hasattr(added_block.graphics_block, 'content'):
+                if added_block.content is not None:
                     added_node = self.project.add_to_nn(added_block.attr_dict['name'],
                                                         added_block.id,
                                                         rep.format_data(added_block.content.wdg_param_dict))

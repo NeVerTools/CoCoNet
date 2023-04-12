@@ -237,6 +237,14 @@
         }
       },
       "parameters": {
+        "negative_slope": {
+          "type": "float",
+          "description": "Controls the angle of the negative slope (default: 1e-2).",
+          "object": "QLineEdit",
+          "required": "True",
+          "default": "1e-2",
+          "editable": "True"
+        }
       },
       "output": {
         "Y": {

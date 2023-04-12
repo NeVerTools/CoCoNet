@@ -63,7 +63,7 @@ class NodeFactory:
             node = CELUNode(node_id,
                             in_dim,
                             alpha=data['alpha'])
-        elif class_name == 'LeakyReLUNodeNode':
+        elif class_name == 'LeakyReLUNode':
             node = LeakyReLUNode(node_id,
                                  in_dim,
                                  negative_slope=data['negative_slope'])

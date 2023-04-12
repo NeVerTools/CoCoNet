@@ -49,15 +49,11 @@ class Project:
         else:
             self.filename = ('', '')
 
-    def set_modified(self, value: bool):
-        self.scene_ref.editor_widget_ref.main_wnd_ref.setWindowModified(value)
-
     def is_modified(self) -> bool:
         return self.scene_ref.editor_widget_ref.main_wnd_ref.isWindowModified() and self.nn.nodes
 
-    def delete_last_node(self) -> LayerNode:
-        self.set_modified(True)
-        return self.nn.delete_last_node()
+    def set_modified(self, value: bool):
+        self.scene_ref.editor_widget_ref.main_wnd_ref.setWindowModified(value)
 
     def last_out_dim(self) -> tuple:
         """
@@ -159,6 +155,10 @@ class Project:
         dim_wdg = self.scene_ref.output_block.content.wdg_param_dict['Dimension'][0]
         dim_wdg.setText(str(new_node.out_dim))
         self.scene_ref.output_block.content.wdg_param_dict['Dimension'][1] = new_node.out_dim
+
+    def delete_last_node(self) -> LayerNode:
+        self.set_modified(True)
+        return self.nn.delete_last_node()
 
     def open(self):
         pass
