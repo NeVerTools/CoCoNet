@@ -137,5 +137,9 @@ class CoCoNetWindow(QMainWindow):
         self.close()
 
     def closeEvent(self, a0: QCloseEvent) -> None:
-        self.editor_widget.save_prompt_dialog()
-        a0.accept()
+        dialog = self.editor_widget.save_prompt_dialog()
+
+        if dialog is not None and dialog.has_been_closed:
+            a0.ignore()
+        else:
+            a0.accept()

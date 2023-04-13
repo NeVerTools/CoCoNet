@@ -186,8 +186,9 @@ class Scene:
 
         # Check if there is an output property
         if self.post_block:
-            dialog = ConfirmDialog('Confirm required', 'If you edit the network the output property will be removed\n'
-                                                       'Do you wish to proceed?')
+            dialog = ConfirmDialog('Confirmation required',
+                                   'If you edit the network the output property will be removed\n'
+                                   'Do you wish to proceed?')
             dialog.exec()
 
             if dialog.confirm:

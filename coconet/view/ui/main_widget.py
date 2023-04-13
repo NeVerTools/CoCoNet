@@ -8,6 +8,7 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 """
 
 from functools import partial
+from typing import Optional
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QTreeWidget, QTreeWidgetItem, QSplitter, QPushButton, QFileDialog, \
@@ -97,19 +98,23 @@ class CoCoNetWidget(QWidget):
 
         self.scene.add_layer_block(block_data, block_sign)
 
-    def save_prompt_dialog(self):
+    def save_prompt_dialog(self) -> Optional[ConfirmDialog]:
         """
         This method opens a dialog for asking to save the work
 
         """
 
+        dialog = None
+
         if self.scene.project.is_modified():
-            dialog = ConfirmDialog('', 'Save current work?')
+            dialog = ConfirmDialog('Confirm required', 'There are unsaved changes. Save current work before exit?')
             dialog.set_buttons_text('Discard changes', 'Save')
             dialog.exec()
 
             if dialog.confirm:
                 self.save()
+
+        return dialog
 
     def new(self):
         """
