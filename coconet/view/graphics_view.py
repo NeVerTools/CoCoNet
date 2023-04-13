@@ -7,12 +7,11 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPainter
+from PyQt6.QtCore import Qt, QEvent
+from PyQt6.QtGui import QPainter, QMouseEvent
 from PyQt6.QtWidgets import QGraphicsView
 
 import coconet.resources.styling.dimension as dim
-import coconet.utils.rep as rep
 from coconet.model.component.block import LayerBlock, PropertyBlock
 from coconet.view.ui.dialog import MessageDialog, MessageType
 
@@ -102,6 +101,53 @@ class GraphicsView(QGraphicsView):
                         self.gr_scene_ref.scene_ref.remove_in_prop()
                     else:
                         self.gr_scene_ref.scene_ref.remove_out_prop()
+
+    def mousePressEvent(self, event: 'QtGui.QMouseEvent') -> None:
+        """
+        Differentiate the mouse buttons click
+
+        """
+
+        if event.button() == Qt.MouseButton.MiddleButton:
+            self.middle_mouse_click(event)
+        else:
+            super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event: 'QtGui.QMouseEvent') -> None:
+        """
+        Differentiate the mouse buttons click
+
+        """
+
+        if event.button() == Qt.MouseButton.MiddleButton:
+            self.middle_mouse_release(event)
+        else:
+            super().mouseReleaseEvent(event)
+
+    def middle_mouse_click(self, event: 'QtGui.QMouseEvent') -> None:
+        """
+        Drag the view
+
+        """
+
+        release_event = QMouseEvent(QEvent.Type.MouseButtonRelease, event.position(), event.globalPosition(),
+                                    Qt.MouseButton.LeftButton, Qt.MouseButton.NoButton, event.modifiers())
+        super().mouseReleaseEvent(release_event)
+
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+
+        # Fake press event
+        fake_event = QMouseEvent(event.type(), event.position(), event.globalPosition(),
+                                 Qt.MouseButton.LeftButton, event.buttons() | Qt.MouseButton.LeftButton,
+                                 event.modifiers())
+        super().mousePressEvent(fake_event)
+
+    def middle_mouse_release(self, event: 'QtGui.QMouseEvent') -> None:
+        fake_event = QMouseEvent(event.type(), event.position(), event.globalPosition(),
+                                 Qt.MouseButton.LeftButton, event.buttons() & ~Qt.MouseButton.LeftButton,
+                                 event.modifiers())
+        super().mouseReleaseEvent(fake_event)
+        self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
 
     def wheelEvent(self, event: 'QtGui.QWheelEvent') -> None:
         """

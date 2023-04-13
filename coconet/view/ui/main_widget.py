@@ -107,7 +107,8 @@ class CoCoNetWidget(QWidget):
         dialog = None
 
         if self.scene.project.is_modified():
-            dialog = ConfirmDialog('Confirm required', 'There are unsaved changes. Save current work before exit?')
+            dialog = ConfirmDialog('Confirmation required',
+                                   'There are unsaved changes. Save current work before exit?')
             dialog.set_buttons_text('Discard changes', 'Save')
             dialog.exec()
 
