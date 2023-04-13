@@ -10,13 +10,17 @@ Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 from functools import partial
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QWidget, QHBoxLayout, QTreeWidget, QTreeWidgetItem, QSplitter, QPushButton
+from PyQt6.QtWidgets import QWidget, QHBoxLayout, QTreeWidget, QTreeWidgetItem, QSplitter, QPushButton, QFileDialog, \
+    QApplication
 
-import coconet.utils.rep as fu
+import coconet.utils.rep as rep
 from coconet import RES_DIR
 from coconet.model.component.block import LayerBlock, PropertyBlock
+from coconet.model.project import Project
 from coconet.model.scene import Scene
+from coconet.utils.file import FileFormat, read_properties
 from coconet.view.component.inspector import InspectorDockToolbar
+from coconet.view.ui.dialog import MessageDialog, MessageType, ConfirmDialog
 
 
 class CoCoNetWidget(QWidget):
@@ -46,7 +50,7 @@ class CoCoNetWidget(QWidget):
         self.layout.addWidget(self.splitter)
 
         # Objects data from JSON
-        self.block_data, self.property_data, self.functional_data = fu.read_json_data()
+        self.block_data, self.property_data, self.functional_data = rep.read_json_data()
 
         # Layers toolbar
         self.layers_toolbar = self.create_layers_toolbar()
@@ -94,24 +98,109 @@ class CoCoNetWidget(QWidget):
         self.scene.add_layer_block(block_data, block_sign)
 
     def save_prompt_dialog(self):
-        pass
+        """
+        This method opens a dialog for asking to save the work
+
+        """
+
+        if self.scene.project.is_modified():
+            dialog = ConfirmDialog('', 'Save current work?')
+            dialog.set_buttons_text('Discard changes', 'Save')
+            dialog.exec()
+
+            if dialog.confirm:
+                self.save()
 
     def new(self):
-        pass
+        """
+        This method clears the workspace and creates a new project
+
+        """
+
+        self.save_prompt_dialog()
+        self.scene.clear_scene()
+        self.scene.project = Project(self.scene)
+
+        self.main_wnd_ref.set_project_title('')
 
     def open(self):
-        pass
+        """
+        This method loads a network from a file and draws it
+
+        """
+
+        try:
+            self.save_prompt_dialog()
+
+            filename = QFileDialog.getOpenFileName(None, 'Open network', '', FileFormat.NETWORK_FORMATS_OPENING)
+
+            if filename != ('', ''):
+                self.clear()
+                self.scene.project = Project(self.scene, filename)
+
+                filename_reduced = filename[0].split('/')[-1]
+                self.main_wnd_ref.set_project_title(filename_reduced)
+
+        except Exception as e:
+            dialog = MessageDialog(f'Error: {str(e)}', MessageType.ERROR)
+            dialog.exec()
 
     def open_property(self):
-        pass
+        """
+        This method loads a SMT property associated to the network
+
+        """
+
+        try:
+            if self.scene.project.nn.is_empty():
+                dialog = MessageDialog('No network loaded', MessageType.ERROR)
+                dialog.exec()
+
+            else:
+                filename = QFileDialog.getOpenFileName(None, 'Open property', '', FileFormat.PROPERTY_FORMATS)
+
+                if filename != ('', ''):
+                    QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+                    properties = read_properties(filename[0])
+                    QApplication.restoreOverrideCursor()
+
+                    self.scene.load_properties(properties)
+
+        except Exception as e:
+            dialog = MessageDialog(f'Error: {str(e)}', MessageType.ERROR)
+            dialog.exec()
 
     def save(self, _as: bool = False):
-        pass
+        """
+        This method saves the current network in the window
+
+        """
+
+        try:
+            success = self.scene.project.save(_as)
+
+            if success:
+                filename_reduced = self.scene.project.filename[0].split('/')[-1]
+                self.main_wnd_ref.set_project_title(filename_reduced)
+        except Exception as e:
+            dialog = MessageDialog(f'Error: {str(e)}', MessageType.ERROR)
+            dialog.exec()
 
     def clear(self):
-        pass
+        """
+        This method clears the workspace in order to start from scratch
+
+        """
+
+        self.scene.clear_scene()
+        self.scene.project.reset_nn('X', 'INP')
 
     def remove_sel(self):
+        """
+        This method tries to delete the element selected, if allowed
+
+        """
+
         self.scene.view.check_delete()
 
     def show_inspector(self):

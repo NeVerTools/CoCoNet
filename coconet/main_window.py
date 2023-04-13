@@ -14,9 +14,9 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon, QGuiApplication, QAction, QCloseEvent
 from PyQt6.QtWidgets import QMainWindow
 
+import coconet.resources.styling.dimension as dim
 from coconet import APP_NAME, RES_DIR
 from coconet.view.ui.main_widget import CoCoNetWidget
-import coconet.resources.styling.dimension as dim
 
 
 def open_guide():
@@ -75,6 +75,12 @@ class CoCoNetWindow(QMainWindow):
         frame = self.frameGeometry()
         frame.moveCenter(QGuiApplication.primaryScreen().availableGeometry().center())
         self.move(frame.topLeft())
+
+    def set_project_title(self, name: str):
+        if name == '':
+            self.setWindowTitle(APP_NAME)
+        else:
+            self.setWindowTitle(APP_NAME + ' :: ' + name)
 
     def create_menu(self):
         """
