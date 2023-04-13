@@ -541,7 +541,7 @@ class PropertyBlock(Block):
 
         for socket in self.input_sockets + self.output_sockets:
             # Remove the functional socket
-            if self.title == 'Input':
+            if self.ref_block.title == 'Input':
                 socket.edge.end_skt.remove()
             else:
                 socket.edge.start_skt.remove()

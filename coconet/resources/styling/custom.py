@@ -94,12 +94,12 @@ class CustomTextBox(QLineEdit):
 
 
 class CustomTextArea(QPlainTextEdit):
-    def __init__(self, color: str = 'white', parent=None):
+    def __init__(self, color: str = palette.WHITE, parent=None):
         super(CustomTextArea, self).__init__(parent)
         self.setStyleSheet('color: ' + color + ';' +
-                           'background-color: grey;' +
+                           'background-color: ' + palette.GREY_2 + ';' +
                            'border: none;' +
                            'padding: 2px;' +
                            'QPlainTextEdit::placeholder {' +
-                           'color: grey;' +
+                           'color: ' + palette.GREY_4 + ';' +
                            '}')

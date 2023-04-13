@@ -98,7 +98,10 @@ class GraphicsView(QGraphicsView):
         for item in self.gr_scene_ref.selectedItems():
             if hasattr(item, 'block_ref'):
                 if isinstance(item.block_ref, PropertyBlock):
-                    self.gr_scene_ref.scene_ref.remove_block(item.block_ref)
+                    if item.block_ref.ref_block.title == 'Input':
+                        self.gr_scene_ref.scene_ref.remove_in_prop()
+                    else:
+                        self.gr_scene_ref.scene_ref.remove_out_prop()
 
     def wheelEvent(self, event: 'QtGui.QWheelEvent') -> None:
         """

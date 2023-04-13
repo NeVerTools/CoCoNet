@@ -439,9 +439,9 @@ class Scene:
                 if prev_block.has_parameters():
                     prev_block.graphics_block.content.toggle_content_enabled(True)
 
-            elif self.pre_block is not None and ref_id == self.pre_block.id:
+            if self.pre_block is not None and ref_id == self.pre_block.id:
                 self.pre_block = None
-            elif self.post_block is not None and ref_id == self.post_block.id:
+            if self.post_block is not None and ref_id == self.post_block.id:
                 self.post_block = None
 
             self.update_edges()
