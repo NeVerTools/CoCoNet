@@ -6,6 +6,7 @@ This module contains the Project class for handling pynever's representation and
 Author: Andrea Gimelli, Giacomo Rosato, Stefano Demarchi
 
 """
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication, QFileDialog
 from pynever.networks import SequentialNetwork
