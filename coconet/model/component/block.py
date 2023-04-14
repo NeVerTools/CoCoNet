@@ -166,7 +166,10 @@ class Block:
         else:
             x = self.graphics_block.width
 
-        y = dim.TITLE_HEIGHT + dim.TITLE_PAD + dim.EDGE_ROUNDNESS + index * dim.SOCKET_SPACING
+        if self.has_parameters():
+            y = dim.TITLE_HEIGHT + dim.TITLE_PAD + dim.EDGE_ROUNDNESS + index * dim.SOCKET_SPACING
+        else:
+            y = self.graphics_block.height / 2
 
         if absolute:
             return [x + self.pos.x(), y + self.pos.y()]
