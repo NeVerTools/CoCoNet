@@ -224,7 +224,7 @@ class Scene:
                 return None
 
         # Add the block
-        added_block = LayerBlock(self, [1], [1], block_data, block_sign, block_id)
+        added_block = LayerBlock(self, [1], [1], block_data, block_sign, block_id, load_dict)
         self.blocks_count += 1
 
         # Ex last block is the second last (output is included)
