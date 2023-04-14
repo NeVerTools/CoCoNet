@@ -19,6 +19,7 @@ from coconet.model.component.edge import Edge
 from coconet.model.project import Project
 from coconet.resources.styling.custom import CustomLabel
 from coconet.utils.container import PropertyContainer
+from coconet.utils.node_wrapper import NodeFactory
 from coconet.view.graphics_scene import GraphicsScene
 from coconet.view.graphics_view import GraphicsView
 from coconet.view.ui.dialog import ConfirmDialog, MessageDialog, MessageType
@@ -121,7 +122,33 @@ class Scene:
         return props
 
     def draw_network(self, project: Project):
-        pass
+        """
+        Draw the opened network in the project
+
+        """
+
+        self.clear_scene()
+        self.project = project
+
+        in_dim = project.nn.get_first_node().in_dim
+        self.input_block.content.wdg_param_dict['Name'][0].setText(str(project.nn.input_id))
+        self.input_block.content.wdg_param_dict['Name'][1] = str(project.nn.input_id)
+        self.input_block.content.wdg_param_dict['Dimension'][0].setText(rep.tuple2text(in_dim, prod=False))
+        self.input_block.content.wdg_param_dict['Dimension'][1] = str(in_dim)
+
+        node = project.nn.get_first_node()
+        last_node = project.nn.get_last_node()
+
+        for i in range(len(project.nn.nodes)):
+            load_dict, node_id = NodeFactory.create_datanode(node)
+            is_last = True if node_id == last_node.identifier else False
+
+            signature = str(load_dict['category']) + ':' + str(load_dict['name'])
+            self.add_layer_block(self.editor_widget_ref.block_data[load_dict['category']][load_dict['name']],
+                                 signature, node_id, load_dict)
+
+            if not is_last:
+                node = project.nn.get_next_node(node)
 
     def load_properties(self, prop_dict: dict):
         """
