@@ -157,7 +157,7 @@ class Scene:
         """
 
         if len(prop_dict.keys()) <= 2:  # At most one pre-condition and one post-condition
-            available_list = [self.input_block.tile, self.output_block.title,
+            available_list = [self.input_block.get_identifier(), self.output_block.get_identifier(),
                               self.project.nn.get_last_node().identifier]
 
             # Check variables compatibility
@@ -169,20 +169,20 @@ class Scene:
             # Check output id
             if self.project.nn.get_last_node().identifier in prop_dict.keys():
                 new_smt_string = prop_dict[self.project.nn.get_last_node().identifier].smt_string.replace(
-                    self.project.nn.get_last_node().identifier, self.output_block.title)
+                    self.project.nn.get_last_node().identifier, self.output_block.get_identifier())
 
                 new_variable_list = []
                 for variable in prop_dict[self.project.nn.get_last_node().identifier].variables:
                     new_variable_list.append(variable.replace(
-                        self.project.nn.get_last_node().identifier, self.output_block.title))
+                        self.project.nn.get_last_node().identifier, self.output_block.get_identifier()))
 
-                prop_dict[self.output_block.title] = PropertyContainer(new_smt_string, new_variable_list)
+                prop_dict[self.output_block.get_identifier()] = PropertyContainer(new_smt_string, new_variable_list)
                 prop_dict.pop(self.project.nn.get_last_node().identifier)
 
-            for k, v in prop_dict.keys():
-                if k == self.input_block.tile:
+            for k, v in prop_dict.items():
+                if k == self.input_block.get_identifier():
                     self.add_property_block('Generic SMT', self.input_block, v)
-                elif k == self.output_block.title or k == self.project.nn.get_last_node().identifier:
+                elif k == self.output_block.get_identifier() or k == self.project.nn.get_last_node().identifier:
                     self.add_property_block('Generic SMT', self.output_block, v)
 
     def add_layer_block(self, block_data: dict, block_sign: str,
