@@ -131,10 +131,8 @@ class Scene:
         self.project = project
 
         in_dim = project.nn.get_first_node().in_dim
-        self.input_block.content.wdg_param_dict['Name'][0].setText(str(project.nn.input_id))
-        self.input_block.content.wdg_param_dict['Name'][1] = str(project.nn.input_id)
-        self.input_block.content.wdg_param_dict['Dimension'][0].setText(rep.tuple2text(in_dim, prod=False))
-        self.input_block.content.wdg_param_dict['Dimension'][1] = str(in_dim)
+        self.input_block.set_identifier(project.nn.input_id)
+        self.input_block.set_dimension(in_dim)
 
         node = project.nn.get_first_node()
         last_node = project.nn.get_last_node()

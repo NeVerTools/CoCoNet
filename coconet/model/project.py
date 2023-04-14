@@ -42,7 +42,7 @@ class Project:
 
         # Default init is sequential, future extensions should either consider multiple initialization or
         # on-the-fly switch between Sequential and ResNet etc.
-        self.nn = SequentialNetwork('net', self.scene_ref.input_block.content.wdg_param_dict['Name'][1])
+        self.nn = SequentialNetwork('net', self.scene_ref.input_block.get_identifier())
 
         self.set_modified(False)
 

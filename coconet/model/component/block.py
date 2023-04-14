@@ -11,7 +11,7 @@ from typing import Optional, Iterable
 from uuid import uuid4
 
 import coconet.resources.styling.dimension as dim
-import coconet.utils.rep as u
+import coconet.utils.rep as rep
 from coconet.model.component.socket import Socket, SocketPosition, SocketType
 from coconet.resources.styling.custom import CustomLabel
 from coconet.view.component.graphics_block import GraphicsBlock, BlockContentWidget
@@ -66,7 +66,7 @@ class Block:
     init_sockets(list, list)
         Draws the sockets corresponding to the inputs and outputs
 
-    get_socket_position(int, SocketPosition, bool)
+    get_socket_pos(int, SocketPosition, bool)
         Returns the coordinates of a given socket
 
     previous()
@@ -141,7 +141,7 @@ class Block:
         if self.output_sockets:
             return self.output_sockets[-1].edge is not None
 
-    def init_sockets(self, inputs, outputs):
+    def init_sockets(self, inputs, outputs) -> None:
         """
         Draw the sockets given the inputs and outputs of the block
 
@@ -158,6 +158,11 @@ class Block:
     def get_socket_pos(self, index: int, position: SocketPosition, absolute: bool) -> list:
         """
         Method to return the relative or absolute position of the sockets of this block
+
+        Returns
+        ----------
+        list
+            The x and y coordinates in a list
 
         """
 
@@ -182,7 +187,8 @@ class Block:
 
         Returns
         ----------
-        The previous block, if it exists, None otherwise
+        Block, Optional
+            The previous block, if it exists, None otherwise
 
         """
 
@@ -195,7 +201,7 @@ class Block:
 
         return prev
 
-    def set_rel_to(self, other: 'Block'):
+    def set_rel_to(self, other: 'Block') -> None:
         """
         Utility method to set the block position with respect to another one
 
@@ -248,7 +254,7 @@ class Block:
 
         self.update_edges()
 
-    def update_edges(self):
+    def update_edges(self) -> None:
         """
         This method updates the edges connected to the block
 
@@ -295,7 +301,7 @@ class LayerBlock(Block):
 
         self.init_sockets(inputs, outputs)
 
-    def remove(self):
+    def remove(self) -> None:
         """
         Procedure to remove this block
 
@@ -374,20 +380,77 @@ class FunctionalBlock(Block):
 
         self.init_sockets(*sockets)
 
-    def get_identifier(self):
+    def get_identifier(self) -> str:
+        """
+        Get the identifier of the input or the output
+
+        Returns
+        ----------
+        str
+            The identifier name
+
+        """
+
         return self.content.wdg_param_dict['Name'][1]
 
-    def get_dimension(self):
-        return self.content.wdg_param_dict['Dimension'][1]
+    def set_identifier(self, identifier: str) -> None:
+        """
+        Set the identifier of the block
+
+        """
+
+        self.content.wdg_param_dict['Name'][0].setText(identifier)
+        self.content.wdg_param_dict['Name'][1] = identifier
+
+    def get_dimension(self) -> tuple:
+        """
+        Get the dimension in input or output
+
+        Returns
+        ----------
+        tuple
+            The shape in input or output
+
+        """
+
+        return rep.text2tuple(self.content.wdg_param_dict['Dimension'][1])
+
+    def set_dimension(self, dimension: tuple) -> None:
+        """
+        Set the dimension of the block
+
+        """
+
+        self.content.wdg_param_dict['Dimension'][0].setText(rep.tuple2text(dimension, prod=False))
+        self.content.wdg_param_dict['Dimension'][1] = str(dimension)
 
     def get_property_block(self) -> 'PropertyBlock':
+        """
+        Get the property block associated to this functional block
+
+        Returns
+        ----------
+        PropertyBlock
+            The pre-condition or post-condition block
+
+        """
+
         return self.scene_ref.pre_block if self.title == 'Input' else self.scene_ref.post_block
 
     def get_variables(self) -> Iterable:
-        return u.create_variables_from(self.content.wdg_param_dict['Name'][1],
-                                       u.text2tuple(self.content.wdg_param_dict['Dimension'][1]))
+        """
+        Get the variables associated to this block dimension
 
-    def add_property_socket(self):
+        Returns
+        ----------
+        list
+            The list of input or output variables
+
+        """
+
+        return rep.create_variables_from(self.get_identifier(), self.get_dimension())
+
+    def add_property_socket(self) -> None:
         """
         Method to add a socket only when a property is connected
 
@@ -463,7 +526,7 @@ class PropertyBlock(Block):
 
         self.property_label = CustomLabel(self.label_string)
 
-    def init_position(self):
+    def init_position(self) -> None:
         """
         This method sets the positions of the properties respect to the FunctionalBlocks
 
@@ -476,7 +539,12 @@ class PropertyBlock(Block):
             self.graphics_block.setPos(self.ref_block.pos.x() + self.ref_block.width + 80,
                                        self.ref_block.pos.y() + self.ref_block.height / 2 - self.height / 2)
 
-    def draw(self):
+    def draw(self) -> None:
+        """
+        Draw this block and add the corresponding sockets in the functional block
+
+        """
+
         # Init content
         self.graphics_block = GraphicsBlock(self)
         self.graphics_block.set_content(BlockContentWidget(self))
@@ -536,9 +604,9 @@ class PropertyBlock(Block):
 
         return dialog.has_edits if dialog is not None else False
 
-    def remove(self):
+    def remove(self) -> None:
         """
-        Remove this block and hide sockets
+        Remove this block and the corresponding sockets
 
         """
 
