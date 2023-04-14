@@ -132,8 +132,6 @@ def write_smt_property(path: str, props: dict, dtype: str) -> None:
     with open(path, "w") as f:
         # Variables
         for p in props.values():
-            if p.property_type == 'Local robustness':
-                p.variables = read_variables(p.smt_string)
             for v in p.variables:
                 f.write(f"(declare-fun {v} () {dtype})\n")
         f.write("\n")
