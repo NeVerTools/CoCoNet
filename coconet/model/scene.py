@@ -17,7 +17,7 @@ import coconet.utils.rep as rep
 from coconet.model.component.block import FunctionalBlock, Block, LayerBlock, PropertyBlock
 from coconet.model.component.edge import Edge
 from coconet.model.project import Project
-from coconet.resources.styling.custom import CustomLabel
+from coconet.resources.styling.custom import CustomLabel, CustomTextBox
 from coconet.utils.container import PropertyContainer
 from coconet.utils.node_wrapper import NodeFactory
 from coconet.view.graphics_scene import GraphicsScene
@@ -381,6 +381,9 @@ class Scene:
                             q_wdg.setText(rep.tuple2text(sh))
                         else:
                             q_wdg.setText(str(node_param))
+                elif isinstance(q_wdg, CustomTextBox):
+                    if hasattr(added_node, param_name) and getattr(added_node, param_name) != eval(q_wdg.text()):
+                        q_wdg.setText(rep.tuple2text(getattr(added_node, param_name), prod=False))
 
     def update_edges(self):
         """
