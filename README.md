@@ -7,6 +7,26 @@ for usage terms. \
 __CoCoNet__ is written in Python, and relies on the 
 [pyNeVer](https://www.github.com/nevertools/pynever) API.
 
+## Publications
+
+Here we collect the bibtex entries on our publications related to __CoCoNet__
+
+```
+@inproceedings{FoMLAS2023:DemarchiGPT23,
+  author    = {Stefano Demarchi and Dario Guidotti and Luca Pulina and Armando Tacchella},
+  title     = {Supporting Standardization of Neural Networks Verification with {VNNLIB} and {CoCoNet}},
+  booktitle = {Proceedings of the 6th Workshop on Formal Methods for ML-Enabled Autonomous Systems},
+  editor    = {Nina Narodytska and Guy Amir and Guy Katz and Omri Isac},
+  series    = {Kalpa Publications in Computing},
+  volume    = {16},
+  pages     = {47--58},
+  year      = {2023},
+  publisher = {EasyChair},
+  issn      = {2515-1762},
+  url       = {https://easychair.org/publications/paper/Qgdn},
+  doi       = {10.29007/5pdh}}
+```
+
 ---
 ## Execution requirements
 
